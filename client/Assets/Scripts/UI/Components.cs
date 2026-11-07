@@ -115,9 +115,20 @@ namespace Hackathon.UI
             RegisterCallback<PointerMoveEvent>(OnMove, TrickleDown.TrickleDown);
             RegisterCallback<PointerUpEvent>(OnUp, TrickleDown.TrickleDown);
             RegisterCallback<PointerCancelEvent>(OnCancel, TrickleDown.TrickleDown);
-            RegisterCallback<WheelEvent>(OnWheel, TrickleDown.TrickleDown);
+            RegisterCallback<PointerCaptureOutEvent>(_ => { if (_dragging) Reset(); });
             RegisterCallback<GeometryChangedEvent>(_ => Apply(Mathf.Clamp(_offset, 0, Max)));
+            // Wheel/trackpad anywhere on the page scrolls (desktop: margins beside the column, header).
+            RegisterCallback<AttachToPanelEvent>(e => e.destinationPanel.visualTree.RegisterCallback<WheelEvent>(OnWheel, TrickleDown.TrickleDown));
+            RegisterCallback<DetachFromPanelEvent>(e => e.originPanel.visualTree.UnregisterCallback<WheelEvent>(OnWheel, TrickleDown.TrickleDown));
             schedule.Execute(Tick).Every(0);
+        }
+
+        // Forget any in-progress press/drag (e.g. we never saw the pointer-up because the screen changed).
+        void Reset()
+        {
+            if (_pointerId != PointerId.invalidPointerId && this.HasPointerCapture(_pointerId)) this.ReleasePointer(_pointerId);
+            _dragging = false;
+            _pointerId = PointerId.invalidPointerId;
         }
 
         public override bool ContainsPoint(Vector2 localPoint) => PickingManager.ContainsPoint(localPoint);
@@ -136,7 +147,8 @@ namespace Hackathon.UI
 
         void OnDown(PointerDownEvent e)
         {
-            if (_pointerId != PointerId.invalidPointerId) return;
+            if (_pointerId != PointerId.invalidPointerId && e.pointerId != _pointerId) return; // second finger
+            Reset();
             _pointerId = e.pointerId;
             _dragging = false;
             _startY = _lastY = e.position.y;
@@ -148,6 +160,8 @@ namespace Hackathon.UI
         void OnMove(PointerMoveEvent e)
         {
             if (e.pointerId != _pointerId) return;
+            // A mouse moving with no button held is a hover, not a drag: we missed its pointer-up.
+            if (e.pointerType == UnityEngine.UIElements.PointerType.mouse && e.pressedButtons == 0) { Reset(); return; }
             var y = e.position.y;
             if (!_dragging)
             {
@@ -189,6 +203,9 @@ namespace Hackathon.UI
 
         void OnWheel(WheelEvent e)
         {
+            // Wheeling means no button is held: drop any stale press so the wheel always works.
+            if (e.pressedButtons == 0) Reset();
+            if (_dragging) return;
             var max = Max;
             if (max <= 0) return;
             var from = float.IsNaN(_wheelTarget) ? _offset : _wheelTarget;
