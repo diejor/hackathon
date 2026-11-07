@@ -1,0 +1,12 @@
+<!-- IL2CPP (WebGL) strips unused code. RishRoot finds the app class by name via reflection,
+     and Rish/Sappy rely on generated code reached through reflection, so keep these whole. -->
+<linker>
+  <assembly fullname="Assembly-CSharp" preserve="all" />
+  <assembly fullname="ClockworkLabs.Rish" preserve="all" />
+  <assembly fullname="ClockworkLabs.Roots" preserve="all" />
+  <assembly fullname="ClockworkLabs.Sappy" preserve="all" />
+  <!-- Rish reflects into internal UI Toolkit members (PointerDeviceState.GetPointerPosition,
+       VisualElement.containedPointerIds/pseudoStates/worldBoundingBox, ...). Without this,
+       WebGL strips them and buttons never receive presses. -->
+  <assembly fullname="UnityEngine.UIElementsModule" preserve="all" />
+</linker>

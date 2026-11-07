@@ -1,0 +1,280 @@
+/* Security Arcade — phone-first lobby styles (UI Toolkit USS).
+   Panel scales to a ~420px-wide reference, so px values here ≈ CSS px on a phone. */
+
+:root {
+    --magenta: #E20074;
+    --magenta-dark: #B0005B;
+    --magenta-soft: rgba(226, 0, 116, 0.16);
+    --bg: #0E0E13;
+    --surface: #1A1A22;
+    --surface-2: #24242E;
+    --border: #33333F;
+    --text: #FFFFFF;
+    --muted: #A3A3B2;
+    --ok: #2BD48A;
+    --danger: #FF4D5E;
+    font-size: 16px;
+    color: var(--text);
+}
+
+/* ---------- Layout ---------- */
+
+/* Rish elements inherit pointer detection from their parent and default to "ignore" at the
+   top of the tree. Opt in at the root, and again on .screen because the native ScrollView's
+   content container (between .body and .screen) breaks the inheritance chain. */
+.app, .screen, .toast { --pointer-detection: rect; }
+
+.app {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: var(--bg);
+    align-items: center;
+}
+
+.header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    max-width: 480px;
+    padding: 14px 20px 6px 20px;
+    flex-shrink: 0;
+}
+
+.brand-mark {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    background-color: var(--magenta);
+    margin-right: 10px;
+}
+
+.brand {
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: var(--text);
+}
+
+.body {
+    flex-grow: 1;
+    width: 100%;
+    max-width: 480px;
+}
+
+.screen {
+    padding: 12px 20px 28px 20px;
+    flex-grow: 1;
+}
+
+.center {
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+}
+
+.row { flex-direction: row; align-items: center; }
+.grow { flex-grow: 1; flex-shrink: 1; }
+.stack > * { margin-top: 12px; }
+
+/* ---------- Text ---------- */
+
+.h1 {
+    font-size: 32px;
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.h2 {
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 16px 0 14px 0;
+}
+
+.muted { color: var(--muted); font-size: 16px; white-space: normal; }
+.hint  { color: var(--muted); font-size: 14px; white-space: normal; -unity-text-align: middle-center; margin-top: 12px; }
+.label-small { color: var(--muted); font-size: 12px; letter-spacing: 1.5px; -unity-font-style: bold; }
+.section-title { color: var(--muted); font-size: 12px; letter-spacing: 1.5px; -unity-font-style: bold; margin: 22px 0 8px 2px; }
+.name { font-size: 20px; -unity-font-style: bold; }
+
+.hero { margin: 24px 0 24px 0; }
+
+/* ---------- Cards ---------- */
+
+.card {
+    background-color: var(--surface);
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: var(--border);
+    padding: 14px 16px;
+}
+
+.name-card { margin-bottom: 8px; }
+.name-card .row { margin-top: 4px; }
+
+.share-card { align-items: center; padding: 18px 16px 14px 16px; margin-top: 8px; }
+
+.room-code {
+    font-size: 52px;
+    -unity-font-style: bold;
+    letter-spacing: 10px;
+    color: var(--text);
+    margin: 2px 0 10px 0;
+}
+
+.qr {
+    width: 200px; height: 200px;
+    border-radius: 12px;
+    background-color: #FFFFFF;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+    min-height: 56px;
+    border-radius: 14px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    transition-property: scale, background-color;
+    transition-duration: 0.08s;
+}
+
+.btn-label { font-size: 18px; -unity-font-style: bold; }
+
+.btn-primary { background-color: var(--magenta); }
+.btn-primary .btn-label { color: #FFFFFF; }
+.btn-primary.pressed { background-color: var(--magenta-dark); scale: 0.97 0.97; }
+
+.btn-secondary { background-color: var(--surface-2); border-width: 1px; border-color: var(--border); }
+.btn-secondary .btn-label { color: var(--text); }
+.btn-secondary.pressed { background-color: var(--border); scale: 0.97 0.97; }
+
+.btn-ghost { background-color: rgba(0, 0, 0, 0); }
+.btn-ghost .btn-label { color: var(--magenta); }
+.btn-ghost.pressed { background-color: var(--magenta-soft); }
+
+.btn-danger { background-color: var(--danger); }
+
+.btn-small { min-height: 40px; padding: 0 12px; border-radius: 10px; }
+.btn-small .btn-label { font-size: 15px; }
+
+.btn.disabled { opacity: 0.4; }
+
+/* ---------- Join keypad ---------- */
+
+.code-slots { flex-direction: row; justify-content: center; margin-bottom: 18px; }
+
+.code-slot {
+    width: 64px; height: 76px;
+    margin: 0 5px;
+    border-radius: 14px;
+    background-color: var(--surface);
+    border-width: 2px;
+    border-color: var(--border);
+    align-items: center;
+    justify-content: center;
+}
+.code-slot.active { border-color: var(--magenta); }
+.code-slot.filled { background-color: var(--surface-2); }
+.code-char { font-size: 36px; -unity-font-style: bold; }
+
+.keypad { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+
+.key {
+    width: 50px; height: 54px;
+    margin: 3px;
+    border-radius: 10px;
+    background-color: var(--surface-2);
+    align-items: center;
+    justify-content: center;
+}
+.key.pressed { background-color: var(--magenta); }
+.key.disabled { opacity: 0.35; }
+.key-wide { width: 106px; }
+.key-label { font-size: 20px; -unity-font-style: bold; }
+
+/* ---------- Lobby ---------- */
+
+.member {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-width: 1px;
+    border-color: var(--surface);
+}
+.member.me { border-color: var(--magenta); }
+
+.seat-dot { width: 14px; height: 14px; border-radius: 7px; margin-right: 12px; }
+.seat-0 { background-color: #E20074; }
+.seat-1 { background-color: #3DA5FF; }
+.seat-2 { background-color: #2BD48A; }
+.seat-3 { background-color: #FFC233; }
+.seat-4 { background-color: #A472FF; }
+.seat-5 { background-color: #FF7A3D; }
+.seat-6 { background-color: #3DE1E1; }
+.seat-7 { background-color: #F0F0F0; }
+
+.member-name { font-size: 17px; -unity-font-style: bold; }
+.member-tags { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+.ready-pill {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 10px;
+    background-color: var(--surface-2);
+}
+.ready-pill.on { color: #0E0E13; background-color: var(--ok); }
+
+.game-card {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--surface);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: var(--surface);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+}
+.game-card.selected { border-color: var(--magenta); background-color: var(--magenta-soft); }
+.game-card.pressed { background-color: var(--surface-2); }
+.game-title { font-size: 17px; -unity-font-style: bold; }
+.game-blurb { font-size: 13px; color: var(--muted); white-space: normal; }
+
+.radio { width: 20px; height: 20px; border-radius: 10px; border-width: 2px; border-color: var(--border); margin-left: 10px; }
+.radio.on { border-color: var(--magenta); background-color: var(--magenta); }
+
+.sticky-footer { margin-top: 18px; }
+
+/* ---------- Misc ---------- */
+
+.spinner {
+    width: 40px; height: 40px;
+    border-radius: 20px;
+    border-width: 4px;
+    border-color: var(--surface-2);
+    border-top-color: var(--magenta);
+    margin-bottom: 16px;
+}
+
+.toast {
+    position: absolute;
+    bottom: 24px;
+    left: 20px; right: 20px;
+    max-width: 440px;
+    align-self: center;
+    background-color: var(--danger);
+    color: #FFFFFF;
+    font-size: 15px;
+    -unity-font-style: bold;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    padding: 12px 16px;
+    border-radius: 12px;
+}

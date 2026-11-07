@@ -24,6 +24,36 @@
       },
       "hash": "aa5fc638d623f56178d50329d9ad8c541a57fe66"
     },
+    "com.unity.burst": {
+      "version": "1.8.31",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.modules.jsonserialize": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.collab-proxy": {
+      "version": "2.14.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.collections": {
+      "version": "2.7.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.29",
+        "com.unity.mathematics": "1.3.2",
+        "com.unity.test-framework": "1.4.6",
+        "com.unity.nuget.mono-cecil": "1.11.6",
+        "com.unity.test-framework.performance": "3.0.3"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.ext.nunit": {
       "version": "2.0.5",
       "depth": 1,
@@ -57,6 +87,20 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.mathematics": {
+      "version": "1.3.3",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.mono-cecil": {
+      "version": "1.11.6",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
     "com.unity.nuget.newtonsoft-json": {
       "version": "3.2.2",
       "depth": 1,
@@ -73,6 +117,16 @@
         "com.unity.modules.imgui": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
       }
+    },
+    "com.unity.test-framework.performance": {
+      "version": "3.5.0",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.33",
+        "com.unity.modules.jsonserialize": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
       "version": "1.8.9",
@@ -94,6 +148,42 @@
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
+    },
+    "io.clockworklabs.motion": {
+      "version": "https://github.com/clockworklabs/Motion.git#1.8.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.collections": "1.2.4"
+      },
+      "hash": "4721ca4d760eb4c47ac4aa6533b43b4d60ced4cb"
+    },
+    "io.clockworklabs.rish": {
+      "version": "https://github.com/clockworklabs/Rish.git#3.1.2",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.collections": "1.2.4",
+        "io.clockworklabs.sappy": "1.0.0"
+      },
+      "hash": "978a4bda287ca5554fd0f9e471e4bb1348cac43b"
+    },
+    "io.clockworklabs.roots": {
+      "version": "https://github.com/clockworklabs/Roots.git#1.0.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "io.clockworklabs.rish": "3.0.0",
+        "io.clockworklabs.motion": "1.8.0"
+      },
+      "hash": "318b300bed0615812d2050b9fa04984d53fb40c3"
+    },
+    "io.clockworklabs.sappy": {
+      "version": "https://github.com/clockworklabs/SappyEvents.git#1.1.2",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "83687020a120a4f78d46173bc1450b82967d3898"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

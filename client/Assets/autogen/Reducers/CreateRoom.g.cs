@@ -12,17 +12,17 @@ namespace SpacetimeDB.Types
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void AddHandler(ReducerEventContext ctx, string name);
-        public event AddHandler? OnAdd;
+        public delegate void CreateRoomHandler(ReducerEventContext ctx, string name);
+        public event CreateRoomHandler? OnCreateRoom;
 
-        public void Add(string name)
+        public void CreateRoom(string name)
         {
-            conn.InternalCallReducer(new Reducer.Add(name));
+            conn.InternalCallReducer(new Reducer.CreateRoom(name));
         }
 
-        public bool InvokeAdd(ReducerEventContext ctx, Reducer.Add args)
+        public bool InvokeCreateRoom(ReducerEventContext ctx, Reducer.CreateRoom args)
         {
-            if (OnAdd == null)
+            if (OnCreateRoom == null)
             {
                 if (InternalOnUnhandledReducerError != null)
                 {
@@ -35,7 +35,7 @@ namespace SpacetimeDB.Types
                 }
                 return false;
             }
-            OnAdd(
+            OnCreateRoom(
                 ctx,
                 args.Name
             );
@@ -47,22 +47,22 @@ namespace SpacetimeDB.Types
     {
         [SpacetimeDB.Type]
         [DataContract]
-        public sealed partial class Add : Reducer, IReducerArgs
+        public sealed partial class CreateRoom : Reducer, IReducerArgs
         {
             [DataMember(Name = "name")]
             public string Name;
 
-            public Add(string Name)
+            public CreateRoom(string Name)
             {
                 this.Name = Name;
             }
 
-            public Add()
+            public CreateRoom()
             {
                 this.Name = "";
             }
 
-            string IReducerArgs.ReducerName => "add";
+            string IReducerArgs.ReducerName => "create_room";
         }
     }
 }

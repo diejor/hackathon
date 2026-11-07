@@ -27,7 +27,8 @@ namespace SpacetimeDB.Types
     {
         public RemoteTables(DbConnection conn)
         {
-            AddTable(Person = new(conn));
+            AddTable(MyRoom = new(conn));
+            AddTable(MyRoomMembers = new(conn));
         }
     }
 
@@ -524,14 +525,16 @@ namespace SpacetimeDB.Types
 
         internal static string[] AllTablesSqlQueries() => new string[]
         {
-            new QueryBuilder().From.Person().ToSql(),
+            new QueryBuilder().From.MyRoom().ToSql(),
+            new QueryBuilder().From.MyRoomMembers().ToSql(),
         }
         ;
     }
 
     public sealed class From
     {
-        public global::SpacetimeDB.Table<Person, PersonCols, PersonIxCols> Person() => new("person", new PersonCols("person"), new PersonIxCols("person"));
+        public global::SpacetimeDB.Table<Room, MyRoomCols, MyRoomIxCols> MyRoom() => new("my_room", new MyRoomCols("my_room"), new MyRoomIxCols("my_room"));
+        public global::SpacetimeDB.Table<RoomMember, MyRoomMembersCols, MyRoomMembersIxCols> MyRoomMembers() => new("my_room_members", new MyRoomMembersCols("my_room_members"), new MyRoomMembersIxCols("my_room_members"));
     }
 
     public sealed class TypedSubscriptionBuilder
@@ -613,8 +616,14 @@ namespace SpacetimeDB.Types
             var eventContext = (ReducerEventContext)context;
             return reducer switch
             {
-                Reducer.Add args => Reducers.InvokeAdd(eventContext, args),
-                Reducer.SayHello args => Reducers.InvokeSayHello(eventContext, args),
+                Reducer.ChooseGame args => Reducers.InvokeChooseGame(eventContext, args),
+                Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
+                Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
+                Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
+                Reducer.ReturnToLobby args => Reducers.InvokeReturnToLobby(eventContext, args),
+                Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
+                Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
+                Reducer.StartGame args => Reducers.InvokeStartGame(eventContext, args),
                 _ => throw new ArgumentOutOfRangeException("Reducer", $"Unknown reducer {reducer}")
             };
         }

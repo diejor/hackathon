@@ -19,6 +19,11 @@
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.3.0"
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.3.0",
+    "io.clockworklabs.sappy": "https://github.com/clockworklabs/SappyEvents.git#1.1.2",
+    "io.clockworklabs.rish": "https://github.com/clockworklabs/Rish.git#3.1.2",
+    "io.clockworklabs.motion": "https://github.com/clockworklabs/Motion.git#1.8.1",
+    "io.clockworklabs.roots": "https://github.com/clockworklabs/Roots.git#1.0.3",
+    "com.unity.collab-proxy": "2.14.0"
   }
 }

@@ -12,17 +12,17 @@ namespace SpacetimeDB.Types
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void SayHelloHandler(ReducerEventContext ctx);
-        public event SayHelloHandler? OnSayHello;
+        public delegate void ChooseGameHandler(ReducerEventContext ctx, string game);
+        public event ChooseGameHandler? OnChooseGame;
 
-        public void SayHello()
+        public void ChooseGame(string game)
         {
-            conn.InternalCallReducer(new Reducer.SayHello());
+            conn.InternalCallReducer(new Reducer.ChooseGame(game));
         }
 
-        public bool InvokeSayHello(ReducerEventContext ctx, Reducer.SayHello args)
+        public bool InvokeChooseGame(ReducerEventContext ctx, Reducer.ChooseGame args)
         {
-            if (OnSayHello == null)
+            if (OnChooseGame == null)
             {
                 if (InternalOnUnhandledReducerError != null)
                 {
@@ -35,8 +35,9 @@ namespace SpacetimeDB.Types
                 }
                 return false;
             }
-            OnSayHello(
-                ctx
+            OnChooseGame(
+                ctx,
+                args.Game
             );
             return true;
         }
@@ -46,9 +47,22 @@ namespace SpacetimeDB.Types
     {
         [SpacetimeDB.Type]
         [DataContract]
-        public sealed partial class SayHello : Reducer, IReducerArgs
+        public sealed partial class ChooseGame : Reducer, IReducerArgs
         {
-            string IReducerArgs.ReducerName => "say_hello";
+            [DataMember(Name = "game")]
+            public string Game;
+
+            public ChooseGame(string Game)
+            {
+                this.Game = Game;
+            }
+
+            public ChooseGame()
+            {
+                this.Game = "";
+            }
+
+            string IReducerArgs.ReducerName => "choose_game";
         }
     }
 }
