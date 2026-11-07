@@ -12,3 +12,4 @@ client/.vs/
 # SpacetimeDB module
 spacetimedb/bin/
 spacetimedb/obj/
+client/Builds/

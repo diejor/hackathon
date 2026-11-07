@@ -24,6 +24,18 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Override from the page URL, e.g. index.html?server=wss://maincloud.spacetimedb.com&db=hackathon
+        var query = new System.Uri(Application.absoluteURL).Query.TrimStart('?').Split('&');
+        foreach (var kv in query)
+        {
+            var parts = kv.Split('=', 2);
+            if (parts.Length != 2) continue;
+            var value = System.Uri.UnescapeDataString(parts[1]);
+            if (parts[0] == "server") serverUri = value;
+            else if (parts[0] == "db") databaseName = value;
+        }
+#endif
         Conn = DbConnection.Builder()
             .WithUri(serverUri)
             .WithDatabaseName(databaseName)
