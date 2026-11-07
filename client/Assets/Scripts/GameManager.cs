@@ -7,8 +7,10 @@ using UnityEngine;
 // (which ticks the connection) to the same GameObject, so you don't call FrameTick yourself.
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] string serverUri = "ws://127.0.0.1:3001";
-    [SerializeField] string databaseName = "hackathon";
+    // Defaults to the shared Maincloud db. For local dev, place a GameManager in your scene and set
+    // serverUri = ws://127.0.0.1:3001, databaseName = hackathon (or use ?server=&db= on WebGL).
+    [SerializeField] string serverUri = "wss://maincloud.spacetimedb.com";
+    [SerializeField] string databaseName = "hackathon-1aa18263";
 
     public static GameManager Instance { get; private set; }
     public static DbConnection Conn { get; private set; }
