@@ -3,8 +3,8 @@ using SpacetimeDB;
 using SpacetimeDB.Types;
 using UnityEngine;
 
-// Drop on an empty GameObject in your first scene. The SDK's SpacetimeDBNetworkManager
-// ticks the connection automatically; you don't need to call FrameTick yourself.
+// Drop on an empty GameObject in your first scene. It adds the SDK's SpacetimeDBNetworkManager
+// (which ticks the connection) to the same GameObject, so you don't call FrameTick yourself.
 public class GameManager : MonoBehaviour
 {
     [SerializeField] string serverUri = "ws://127.0.0.1:3001";
@@ -20,6 +20,11 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         Application.runInBackground = true; // keep ticking when testing 2 clients side by side
+
+        // The SDK only ticks connections (and, on WebGL, parses messages) via this component.
+        // It must exist before DbConnection.Builder().Build() runs.
+        if (FindFirstObjectByType<SpacetimeDBNetworkManager>() == null)
+            gameObject.AddComponent<SpacetimeDBNetworkManager>();
     }
 
     void Start()
