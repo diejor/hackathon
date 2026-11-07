@@ -14,6 +14,15 @@ public class GameManager : MonoBehaviour
     public static DbConnection Conn { get; private set; }
     public static Identity LocalIdentity { get; private set; }
 
+    // Auto-spawn on Play in any scene, so there's nothing to wire up. If you place a GameManager
+    // in a scene yourself (e.g. to change serverUri in the Inspector), that one is used instead.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (FindFirstObjectByType<GameManager>() == null)
+            new GameObject("GameManager").AddComponent<GameManager>();
+    }
+
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
