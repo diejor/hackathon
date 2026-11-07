@@ -34,14 +34,18 @@ namespace Hackathon.UI
             var children = new Children
             {
                 Header(),
-                Scroll.Create(className: "body", children: Lobby.CurrentScreen switch
-                {
-                    Lobby.Screen.Home => Home(),
-                    Lobby.Screen.Join => Join(),
-                    Lobby.Screen.Room => RoomScreen(),
-                    Lobby.Screen.Playing => Playing(),
-                    _ => Connecting(),
-                }),
+                // .body is the clipping viewport; Scroller moves inside it (resets per screen).
+                Div.Create(className: "body", children: Scroller.Create(
+                    className: "scroller",
+                    page: (uint)Lobby.CurrentScreen,
+                    children: Lobby.CurrentScreen switch
+                    {
+                        Lobby.Screen.Home => Home(),
+                        Lobby.Screen.Join => Join(),
+                        Lobby.Screen.Room => RoomScreen(),
+                        Lobby.Screen.Playing => Playing(),
+                        _ => Connecting(),
+                    })),
             };
             if (Lobby.Error is { } err) children.Add(Label.Create(className: "toast", text: err));
             return Div.Create(className: "app", children: children);

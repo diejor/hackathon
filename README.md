@@ -38,8 +38,10 @@ room, others scan its QR code or type the 4-character code, then they play real-
 ## Rish gotchas we hit
 
 - Rish elements **ignore pointer input unless an ancestor sets `--pointer-detection: rect`** in USS
-  (see the top of `app.uss`). A native UI Toolkit element in between (like the ScrollView's content
-  container) breaks inheritance, so set it again below it.
+  (see the top of `app.uss`). A native (non-Rish) UI Toolkit element in between breaks inheritance.
+- Don't use UI Toolkit's `ScrollView` on WebGL: trackpad ticks jump ~100px, the wheel overshoots and
+  snaps back, and drags hitch when they start on a button. Use our `Scroller` (`Components.cs`) inside
+  a `overflow: hidden` viewport instead.
 - Pass callbacks to `AbstractButton` as `Action`s (cast method groups: `(Action)Press`).
 - `Label`/`StyleBackground` clash between `RishUI` and `UnityEngine.UIElements` — alias them.
 - `link.xml` keeps Rish/Roots/Sappy and `UnityEngine.UIElementsModule` from being stripped (Rish reflects into UI Toolkit internals).

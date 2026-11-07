@@ -20,9 +20,8 @@
 /* ---------- Layout ---------- */
 
 /* Rish elements inherit pointer detection from their parent and default to "ignore" at the
-   top of the tree. Opt in at the root, and again on .screen because the native ScrollView's
-   content container (between .body and .screen) breaks the inheritance chain. */
-.app, .screen, .toast { --pointer-detection: rect; }
+   top of the tree, so opt in at the root (any non-Rish element in between breaks inheritance). */
+.app, .toast { --pointer-detection: rect; }
 
 .app {
     position: absolute;
@@ -56,8 +55,15 @@
 
 .body {
     flex-grow: 1;
+    flex-shrink: 1;
     width: 100%;
     max-width: 480px;
+    overflow: hidden;       /* viewport for .scroller */
+}
+
+.scroller {
+    flex-shrink: 0;         /* keep full content height so it can scroll */
+    min-height: 100%;
 }
 
 .screen {

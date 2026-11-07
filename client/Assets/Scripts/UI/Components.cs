@@ -80,27 +80,168 @@ namespace Hackathon.UI
         public Action<char> onPress;
     }
 
-    // Native UI Toolkit ScrollView (touch/elastic scrolling on phones). Rish adds children with
-    // parent.Add(), which ScrollView routes into its content container.
-    public partial class Scroll : UnityEngine.UIElements.ScrollView, IVisualElement
+    // Vertical scroller for phones + desktop. Put it inside a viewport with `overflow: hidden`; it moves
+    // itself with style.translate. Replaces UI Toolkit's ScrollView, which on WebGL jumps ~100px per
+    // trackpad tick, overshoots/snaps on wheel, and hitches when a drag starts on a button.
+    //  - touch/mouse drag: 1:1 from the moment the drag starts (no catch-up jump), momentum, soft edges
+    //  - wheel/trackpad: pixel-based, eased, clamped
+    //  - a drag that starts on a button steals the pointer, so the button never fires
+    // Props.page: change it (e.g. per screen) to reset the scroll position to the top.
+    public partial class Scroller : VisualElement, IVisualElement<ScrollerProps>
     {
-        Bridge Bridge { get; }
-        Bridge IVisualElement.Bridge => Bridge;
+        Bridge<ScrollerProps> Bridge { get; }
+        Bridge<ScrollerProps> IVisualElement<ScrollerProps>.Bridge => Bridge;
         PickingManager PickingManager { get; }
         PickingManager ICustomPicking.Manager => PickingManager;
 
-        public Scroll() : base(ScrollViewMode.Vertical)
+        const float DragSlop = 8f;          // px before a press becomes a scroll
+        const float WheelScale = 1.5f;      // WheelEvent.delta units -> px
+        const float Friction = 3.5f;        // momentum decay per second (exp)
+        const float EdgeResistance = 0.35f; // how far you can pull past the ends while dragging
+        const float Spring = 16f;           // snap-back speed at the ends
+
+        float _offset, _velocity, _wheelTarget = float.NaN;
+        int _pointerId = PointerId.invalidPointerId;
+        bool _dragging;
+        float _startY, _dragBase, _lastY;
+        long _lastTs;
+        uint _page;
+
+        public Scroller()
         {
-            Bridge = new Bridge(this);
+            Bridge = new Bridge<ScrollerProps>(this);
             PickingManager = new RectPickingManager(Bridge);
-            touchScrollBehavior = TouchScrollBehavior.Elastic;
-            horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-            verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            RegisterCallback<PointerDownEvent>(OnDown, TrickleDown.TrickleDown);
+            RegisterCallback<PointerMoveEvent>(OnMove, TrickleDown.TrickleDown);
+            RegisterCallback<PointerUpEvent>(OnUp, TrickleDown.TrickleDown);
+            RegisterCallback<PointerCancelEvent>(OnCancel, TrickleDown.TrickleDown);
+            RegisterCallback<WheelEvent>(OnWheel, TrickleDown.TrickleDown);
+            RegisterCallback<GeometryChangedEvent>(_ => Apply(Mathf.Clamp(_offset, 0, Max)));
+            schedule.Execute(Tick).Every(0);
         }
 
         public override bool ContainsPoint(Vector2 localPoint) => PickingManager.ContainsPoint(localPoint);
 
-        void IVisualElement.Setup() { }
+        void IVisualElement<ScrollerProps>.Setup(ScrollerProps props)
+        {
+            if (props.page != _page)
+            {
+                _page = props.page;
+                _offset = 0; _velocity = 0; _wheelTarget = float.NaN;
+            }
+            Apply(_offset);
+        }
+
+        float Max => parent == null ? 0 : Mathf.Max(0, layout.height - parent.layout.height);
+
+        void OnDown(PointerDownEvent e)
+        {
+            if (_pointerId != PointerId.invalidPointerId) return;
+            _pointerId = e.pointerId;
+            _dragging = false;
+            _startY = _lastY = e.position.y;
+            _lastTs = e.timestamp;
+            _velocity = 0;
+            _wheelTarget = float.NaN;
+        }
+
+        void OnMove(PointerMoveEvent e)
+        {
+            if (e.pointerId != _pointerId) return;
+            var y = e.position.y;
+            if (!_dragging)
+            {
+                if (Mathf.Abs(y - _startY) < DragSlop) return;
+                _dragging = true;
+                _dragBase = _offset + y; // start from here: no jump
+                this.CapturePointer(e.pointerId);
+            }
+
+            var target = _dragBase - y;
+            var max = Max;
+            if (target < 0) target *= EdgeResistance;
+            else if (target > max) target = max + (target - max) * EdgeResistance;
+
+            var dt = Mathf.Max((e.timestamp - _lastTs) / 1000f, 0.004f);
+            _velocity = Mathf.Lerp(_velocity, (_lastY - y) / dt, 0.5f);
+            _lastY = y;
+            _lastTs = e.timestamp;
+            Apply(target);
+            e.StopPropagation();
+        }
+
+        void OnUp(PointerUpEvent e) { if (e.pointerId == _pointerId) End(e); }
+        void OnCancel(PointerCancelEvent e) { if (e.pointerId == _pointerId) End(e); }
+
+        void End(IPointerEvent pe)
+        {
+            var e = (EventBase)pe;
+            if (_dragging)
+            {
+                if (this.HasPointerCapture(_pointerId)) this.ReleasePointer(_pointerId);
+                if (e.timestamp - _lastTs > 80) _velocity = 0; // finger stopped before lifting
+                e.StopPropagation();
+            }
+            else _velocity = 0;
+            _dragging = false;
+            _pointerId = PointerId.invalidPointerId;
+        }
+
+        void OnWheel(WheelEvent e)
+        {
+            var max = Max;
+            if (max <= 0) return;
+            var from = float.IsNaN(_wheelTarget) ? _offset : _wheelTarget;
+            _wheelTarget = Mathf.Clamp(from + e.delta.y * WheelScale, 0, max);
+            _velocity = 0;
+            e.StopPropagation();
+        }
+
+        void Tick(TimerState _)
+        {
+            if (_dragging || panel == null) return;
+            var dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            var max = Max;
+            var o = _offset;
+
+            if (!float.IsNaN(_wheelTarget))
+            {
+                o = Mathf.Lerp(o, _wheelTarget, 1 - Mathf.Exp(-dt * 20f));
+                if (Mathf.Abs(o - _wheelTarget) < 0.5f) { o = _wheelTarget; _wheelTarget = float.NaN; }
+            }
+            else
+            {
+                if (_velocity != 0)
+                {
+                    o += _velocity * dt;
+                    var decay = o < 0 || o > max ? 20f : Friction; // stop fast once past an edge
+                    _velocity *= Mathf.Exp(-dt * decay);
+                    if (Mathf.Abs(_velocity) < 10f) _velocity = 0;
+                }
+                if (_velocity == 0 || o < 0 || o > max)
+                {
+                    var clamped = Mathf.Clamp(o, 0, max);
+                    if (o != clamped)
+                    {
+                        o = Mathf.Lerp(o, clamped, 1 - Mathf.Exp(-dt * Spring));
+                        if (Mathf.Abs(o - clamped) < 0.5f) o = clamped;
+                    }
+                }
+            }
+            if (o != _offset) Apply(o);
+        }
+
+        void Apply(float o)
+        {
+            _offset = o;
+            style.translate = new Translate(0, -Mathf.Round(o * 2f) / 2f);
+        }
+    }
+
+    [RishValueType]
+    public struct ScrollerProps
+    {
+        public uint page;
     }
 
     // Renders a QR code for Props.text as a crisp pixel texture.
