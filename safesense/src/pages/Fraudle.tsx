@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { ArrowLeftRight, ArrowRight, Check, Lightbulb, Minus, Shuffle } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, Check, Lightbulb, Minus, Shuffle, Sprout } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
 import { href } from '../router'
 import { logActivity } from '../lib/stdb'
@@ -197,6 +197,11 @@ function Board({ puzzle, onNext }: { puzzle: Puzzle; onNext: () => void }) {
           <button className="btn btn-primary btn-block" onClick={onNext}>
             <ArrowRight size={20} /> Next word
           </button>
+          <p className="see-progress-row">
+            <a className="see-progress" href={href('profile')}>
+              <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
+            </a>
+          </p>
         </div>
       ) : (
         <div className="two-btns">

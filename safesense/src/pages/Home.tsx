@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from 'react'
-import { ArrowRight, HeartHandshake, MessagesSquare, ScanSearch, ShieldCheck, SpellCheck } from 'lucide-react'
+import { ArrowRight, HeartHandshake, MessagesSquare, ScanSearch, ShieldCheck, SpellCheck, Sprout } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
 
@@ -88,6 +88,9 @@ export default function Home() {
             <HeartHandshake size={22} strokeWidth={1.5} className="icon-muted" />
             No scores to chase. No pressure to hurry.
           </p>
+          <a className="see-progress" href={href('profile')}>
+            <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
+          </a>
         </div>
         <aside className="panel">
           <ShieldCheck size={30} strokeWidth={1.4} className="icon-muted" />

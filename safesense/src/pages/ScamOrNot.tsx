@@ -14,6 +14,7 @@ import {
   RotateCcw,
   ShieldAlert,
   ShieldCheck,
+  Sprout,
   UserRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -125,6 +126,11 @@ function WrapUp({ missed, onAgain }: { missed: Scenario[]; onAgain: () => void }
         <a className="btn btn-secondary btn-block" href={href('chat')}>
           <MessageCircle size={20} /> Talk it through with us
         </a>
+        <p className="see-progress-row">
+          <a className="see-progress" href={href('profile')}>
+            <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
+          </a>
+        </p>
       </div>
     </section>
   )

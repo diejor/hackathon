@@ -9,6 +9,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Smartphone,
+  Sprout,
   VenetianMask,
 } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
@@ -103,6 +104,11 @@ function Debrief({
         <button className="btn btn-secondary btn-block" onClick={onOther}>
           <ArrowRight size={20} /> Try the other scenario
         </button>
+        <p className="see-progress-row">
+          <a className="see-progress" href={href('profile')}>
+            <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
+          </a>
+        </p>
       </div>
     </section>
   )
