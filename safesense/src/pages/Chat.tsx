@@ -1,41 +1,26 @@
 import { useRef, useState } from 'react'
-import { ArrowUp, HeartHandshake, ImagePlus, LockKeyhole, Mic, MicOff, X } from 'lucide-react'
+import { HeartHandshake, LockKeyhole } from 'lucide-react'
 import { PageHead } from '../components/Layout'
+import { Composer } from '../components/chat/Composer'
+import { Conversation } from '../components/chat/Conversation'
+import { ForgetMe } from '../components/chat/ForgetMe'
+import { useBot } from '../lib/useBot'
+import '../chat.css'
 
-type Msg = { from: 'assistant' | 'me'; time: string; text: string }
-
-const HISTORY: Msg[] = [
-  { from: 'assistant', time: '10:15', text: 'Hello, I’m here to help you think things through. What is worrying you today?' },
-  { from: 'me', time: '10:16', text: 'A caller said they were my bank. They told me to move my savings to a “safe account”.' },
-  {
-    from: 'assistant',
-    time: '10:16',
-    text: 'That is a common scam tactic. Do not move money or share any codes.\n\nEnd the call. Contact your bank using the number on your bank card, ideally from another phone. Do not use a number the caller gave you.',
-  },
-  { from: 'me', time: '10:18', text: 'I haven’t moved any money. I’ll call the number on my card.' },
-  {
-    from: 'assistant',
-    time: '10:18',
-    text: 'Taking time to check is a good step. Your bank can look into what happened. You do not need to stay on the line with the caller.',
-  },
-]
-
-const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-
+// The conversation is the real Help Bot (web/src/bot/bot.ts over SpacetimeDB, through src/lib/useBot.ts).
 export default function Chat() {
-  const [messages, setMessages] = useState<Msg[]>(HISTORY)
+  const bot = useBot()
   const [draft, setDraft] = useState('')
-  const [listening, setListening] = useState(false)
-  const [image, setImage] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // UI only: the message is shown locally; no reply is generated without a backend.
-  const send = () => {
-    const text = [draft.trim(), image && `📎 ${image}`].filter(Boolean).join('\n')
-    if (!text) return
-    setMessages([...messages, { from: 'me', time: now(), text }])
-    setDraft('')
-    setImage(null)
+  // Example chips fill the box (never send) so the person can finish the sentence or paste the message.
+  const fillExample = (text: string) => {
+    setDraft(text)
+    const field = textareaRef.current
+    if (field) {
+      field.focus()
+      requestAnimationFrame(() => field.setSelectionRange(text.length, text.length))
+    }
   }
 
   return (
@@ -49,76 +34,10 @@ export default function Chat() {
         <section className="card" aria-label="Conversation">
           <div className="chat-head">
             <h2>Conversation history</h2>
-            <span className="muted">Today</span>
+            <span className="muted">Only you can see this</span>
           </div>
-          <div className="messages" aria-live="polite">
-            {messages.map((m, i) => (
-              <div key={i} className={`bubble ${m.from === 'me' ? 'mine' : ''}`}>
-                <span className="meta">
-                  {m.from === 'me' ? 'You' : 'Steady assistant'} · {m.time}
-                </span>
-                {m.text}
-              </div>
-            ))}
-          </div>
-
-          <div className="composer">
-            <button
-              className={`btn btn-primary btn-block ${listening ? 'listening' : ''}`}
-              onClick={() => setListening(!listening)}
-              aria-pressed={listening}
-            >
-              {listening ? <MicOff size={20} strokeWidth={1.75} /> : <Mic size={20} strokeWidth={1.75} />}
-              {listening ? 'Stop microphone' : 'Use microphone'}
-            </button>
-            <p className="mic-hint" aria-live="polite">
-              {listening
-                ? 'Microphone is on. Speak when you are ready. Select the button again to stop.'
-                : 'Microphone is off. Select the button to start speaking. Your words will appear as text.'}
-            </p>
-
-            <label htmlFor="question">Or type your question</label>
-            <textarea
-              id="question"
-              placeholder="What would you like help with?"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  send()
-                }
-              }}
-            />
-            {image && (
-              <span className="attachment">
-                <ImagePlus size={16} /> {image}
-                <button onClick={() => setImage(null)} aria-label="Remove image">
-                  <X size={16} />
-                </button>
-              </span>
-            )}
-
-            <div className="composer-actions">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                tabIndex={-1}
-                onChange={(e) => {
-                  setImage(e.target.files?.[0]?.name ?? null)
-                  e.target.value = ''
-                }}
-              />
-              <button className="btn btn-secondary" onClick={() => fileRef.current?.click()}>
-                <ImagePlus size={20} strokeWidth={1.5} /> Add an image
-              </button>
-              <button className="btn btn-secondary" onClick={send}>
-                <ArrowUp size={20} strokeWidth={1.75} /> Send message
-              </button>
-            </div>
-          </div>
+          <Conversation bot={bot} onExample={fillExample} />
+          <Composer bot={bot} draft={draft} setDraft={setDraft} textareaRef={textareaRef} />
         </section>
 
         <aside className="stack">
@@ -132,17 +51,16 @@ export default function Chat() {
             <h2 className="h3" style={{ fontSize: '1.3rem' }}>
               Keep private details private
             </h2>
-            <p>Please do not share passwords, PINs, full bank details or one-time codes here.</p>
+            <p>Please do not share passwords, PINs, full account numbers or one-time codes here.</p>
           </div>
           <div className="panel">
             <h2 className="h3" style={{ marginTop: 0 }}>
               Already sent money?
             </h2>
-            <p>Contact your bank straight away using the number on your card. Tell them you may have been scammed.</p>
+            <p>Call your bank right away using the number on the back of your card. Tell them you may have been scammed.</p>
           </div>
-          <button className="btn btn-secondary btn-block" onClick={() => setMessages(HISTORY.slice(0, 1))}>
-            Start a new conversation
-          </button>
+          {/* The design's "Start a new conversation" is left out: the only way to clear the history is Forget me. */}
+          <ForgetMe bot={bot} />
         </aside>
       </div>
     </>

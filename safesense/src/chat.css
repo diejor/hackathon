@@ -1,0 +1,299 @@
+/* SafeSense chat wired to the Help Bot (src/pages/Chat.tsx, src/components/chat/*).
+   Builds on the design's .messages / .bubble / .composer / .attachment styles in index.css. */
+
+/* ---------- Message list ---------- */
+.chat-scroll {
+  max-height: min(62vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 4px 4px 2px;
+  gap: 20px;
+}
+.chat-bubble {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.chat-text {
+  white-space: pre-line;
+}
+.chat-bubble.chat-answer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  max-width: 92%;
+}
+.chat-bubble-error {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+}
+.chat-error-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--warn-text);
+  margin-bottom: 4px;
+}
+.chat-note {
+  color: var(--text-muted);
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* ---------- Verdict badge ---------- */
+.chat-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+.chat-verdict-scam {
+  background: #fbeeea;
+  border-color: var(--scam);
+  color: var(--scam-dark);
+}
+.chat-verdict-suspicious {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  color: var(--warn-text);
+}
+.chat-verdict-likely_safe {
+  background: var(--green-100);
+  border-color: var(--green-600);
+  color: var(--green-700);
+}
+
+/* ---------- Signs to notice / What to do ---------- */
+.chat-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--neutral-200);
+}
+.chat-section h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green-900);
+}
+.chat-section ul {
+  margin: 6px 0 0;
+  padding-left: 1.3em;
+  font-size: 1.05rem;
+}
+.chat-section li + li {
+  margin-top: 4px;
+}
+
+/* ---------- Image shared (user message) ---------- */
+.chat-shot {
+  margin-bottom: 6px;
+}
+.chat-shot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--green-700);
+}
+.chat-shot details {
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+.chat-shot summary {
+  cursor: pointer;
+  color: var(--green-700);
+  font-weight: 600;
+}
+.chat-shot details p {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+/* ---------- Empty state ---------- */
+.chat-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.chat-examples-label {
+  width: 100%;
+  font-weight: 600;
+  color: var(--green-900);
+}
+.chat-example {
+  min-height: 48px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--green-700);
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: left;
+}
+.chat-example:hover {
+  border-color: var(--green-700);
+  background: var(--green-50);
+}
+
+/* ---------- Thinking ---------- */
+.chat-thinking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+}
+.chat-thinking .meta {
+  width: 100%;
+  margin-bottom: 0;
+}
+.chat-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.chat-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-600);
+  animation: chat-dot 1.4s ease-in-out infinite;
+}
+.chat-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.chat-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes chat-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.chat-spin {
+  animation: chat-spin 1s linear infinite;
+}
+@keyframes chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-dots span,
+  .chat-spin {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ---------- Composer additions ---------- */
+.composer .btn-primary:disabled {
+  background: var(--neutral-200);
+  color: var(--text-muted);
+  opacity: 1;
+}
+.chat-preview img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.chat-preview-failed {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  color: var(--warn-text);
+}
+.chat-alert {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  color: var(--warn-text);
+  font-weight: 600;
+}
+.chat-alert svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.chat-alert p + p {
+  margin-top: 4px;
+}
+.chat-footnote {
+  margin-top: 14px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Forget me ---------- */
+.chat-forget-sub {
+  margin-top: 8px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.chat-done {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: var(--green-100);
+  border-radius: var(--radius-sm);
+  color: var(--green-900);
+  font-weight: 600;
+}
+.chat-confirm {
+  padding: 20px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-lg);
+}
+.chat-confirm p {
+  margin-top: 10px;
+}
+.chat-confirm-sub {
+  font-weight: 600;
+  color: var(--green-900);
+}
+.chat-confirm ul {
+  margin: 6px 0 0;
+  padding-left: 1.3em;
+}
+.chat-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+.chat-btn-danger {
+  background: var(--scam);
+  color: #fff;
+}
+.chat-btn-danger:hover {
+  background: var(--scam-dark);
+}
+
+@media (max-width: 720px) {
+  .chat-scroll {
+    max-height: 58vh;
+  }
+  .chat-bubble.chat-answer {
+    max-width: 100%;
+  }
+}
