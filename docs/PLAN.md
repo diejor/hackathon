@@ -161,6 +161,8 @@ Each band runs as a subagent in its own git worktree and branch, and owns only i
 
 ### B4 — SafeSense by text (Photon, path A) · after B1's gate, ~03:15–04:30
 
+Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tools/photon-sim.mjs`.
+
 - **Owns:** the Photon part of the module (TS, or `spacetimedb/Photon.cs` if B1 failed), the Photon section of the chat page (a "Text SafeSense" card with the number and a LINK code), and the README Photon section.
 - **Builds:**
   - The webhook flow (verify signature → dedupe → LINK, UNLINK and FORGET ME commands → run the bot → reply as plain text).
