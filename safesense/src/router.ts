@@ -13,7 +13,7 @@ const TITLES: Record<Route, string> = {
   fraudle: 'Fraudle · SafeSense',
   'scam-or-not': 'Scam or Not? · SafeSense',
   'role-reversal': 'Role Reversal · SafeSense',
-  chat: 'Ask SafeSense · SafeSense',
+  chat: 'Chat with us · SafeSense',
   profile: 'Your progress · SafeSense',
   about: 'About SafeSense',
   'phone-call': 'The Phone Call · SafeSense',

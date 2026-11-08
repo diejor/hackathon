@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronRight, Hand, Headset, Landmark, MessageCircle, Package, RotateCcw, Search, Smartphone } from 'lucide-react'
-import { BackHome, Crumb, PageHead, TipHead } from '../components/Layout'
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
+import { useTapHighlight } from '../components/useTapHighlight'
+import { ArrowRight, ChevronRight, Headset, Landmark, MessageCircle, Package, RotateCcw, Search, Smartphone } from 'lucide-react'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
 import { ASK_LABEL, THE_ASSISTANT } from '../components/chat/copy'
 import { EndOverlay } from '../points'
 import { href } from '../router'
@@ -117,6 +118,33 @@ function Thread({ s }: { s: CampaignState }) {
   )
 }
 
+/** A story or message choice: dark green on hover, or briefly on a tap (see useTapHighlight). */
+function Choice({
+  onChoose,
+  className = '',
+  disabled,
+  btnRef,
+  children,
+}: {
+  onChoose: () => void
+  className?: string
+  disabled?: boolean
+  btnRef?: Ref<HTMLButtonElement>
+  children: ReactNode
+}) {
+  const [pressed, tap] = useTapHighlight()
+  return (
+    <button
+      ref={btnRef}
+      className={`choice ${className} ${pressed ? 'is-pressed' : ''}`.trim()}
+      onClick={() => !pressed && tap(onChoose)}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  )
+}
+
 /** The story picker, inside the designer's card. */
 function Picker({ onPick }: { onPick: (c: Campaign) => void }) {
   return (
@@ -133,7 +161,7 @@ function Picker({ onPick }: { onPick: (c: Campaign) => void }) {
         {CAMPAIGNS.map((c) => {
           const Icon = ICONS[c.icon]
           return (
-            <button key={c.id} className="choice con-campaign" onClick={() => onPick(c)}>
+            <Choice key={c.id} className="con-campaign" onChoose={() => onPick(c)}>
               <span className="text">
                 <span className="chip">
                   <Icon size={16} strokeWidth={1.75} /> {c.chip}
@@ -142,7 +170,7 @@ function Picker({ onPick }: { onPick: (c: Campaign) => void }) {
                 <span className="con-campaign-pitch">{c.pitch}</span>
               </span>
               <ChevronRight size={18} className="chev" />
-            </button>
+            </Choice>
           )
         })}
       </div>
@@ -205,16 +233,16 @@ function Play({
           <h2 className="dock-title">Choose your message</h2>
           <div className="choices" role="group" aria-label="Your options">
             {scene.ask.map((o, i) => (
-              <button
-                key={i}
-                ref={i === 0 ? first : undefined}
-                className="choice"
-                onClick={() => onPick(i)}
+              // Keyed per scene so a tapped choice's highlight doesn't carry over to the next scene's options.
+              <Choice
+                key={`${s.scene}-${i}`}
+                btnRef={i === 0 ? first : undefined}
+                onChoose={() => onPick(i)}
                 disabled={s.waiting}
               >
                 <span className="text">{o.label}</span>
                 <ChevronRight size={18} className="chev" />
-              </button>
+              </Choice>
             ))}
           </div>
           <button className="btn btn-secondary btn-block restart-btn" onClick={onRestart}>
@@ -256,7 +284,6 @@ function WhyPanel() {
         people resist it later, a little like a vaccine. Seeing a scam built one move at a time makes the moves
         easier to spot when they’re aimed at you.
       </p>
-      <p className="con-credit">Game design adapted from BadScam by Krishna (SafeSense team).</p>
     </div>
   )
 }
@@ -272,7 +299,7 @@ function UnsurePanel() {
         {THE_ASSISTANT.slice(1)} can help you think through the next step.
       </p>
       <a className="btn btn-secondary btn-block" href={href('chat')} style={{ marginTop: 20 }}>
-        {ASK_LABEL}
+        <MessageCircle size={20} aria-hidden="true" /> {ASK_LABEL}
       </a>
     </div>
   )
@@ -335,13 +362,7 @@ export default function RoleReversal() {
             </>
           ) : (
             <>
-              <div className="panel">
-                <TipHead icon={Hand}>It is okay to pause.</TipHead>
-                <p>
-                  A message from “family” or “your bank” can feel very real. You don’t have to send money just
-                  because someone asks you to hurry.
-                </p>
-              </div>
+              <WhyPanel />
               <div className="plain watch">
                 <h2 className="h3">What to watch for</h2>
                 <ul className="watch-list">
@@ -357,7 +378,6 @@ export default function RoleReversal() {
                 </ul>
               </div>
               <UnsurePanel />
-              <WhyPanel />
             </>
           )}
           {state && (

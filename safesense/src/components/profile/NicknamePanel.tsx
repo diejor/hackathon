@@ -26,7 +26,7 @@ export function NicknamePanel() {
       </div>
       <p>Your progress is saved privately on SafeSense’s server, linked to this browser. No account needed.</p>
       <a className="btn btn-secondary btn-block" href={href('chat')}>
-        <MessageCircle size={20} /> <span>{ASK_LABEL} about my progress</span>
+        <MessageCircle size={20} /> <span>{ASK_LABEL} about your progress</span>
       </a>
       {editing && <NameDialog current={name} onClose={() => setEditing(false)} />}
     </div>

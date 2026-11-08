@@ -78,10 +78,15 @@
 
 /* ---------- "Check it" panel ---------- */
 .son-inspect {
+  position: relative; /* holds the frosted .clue-cover (index.css), as on the Fraudle clue */
   padding: 16px 18px;
   background: #f7f8f5;
   border: 1px dashed var(--border);
   border-radius: var(--radius-lg);
+}
+/* The cover sits inside the dashed border; keep the box tall enough for the eye button. */
+.son-inspect.is-covered {
+  min-height: 84px;
 }
 .son-inspect-title svg {
   flex-shrink: 0;

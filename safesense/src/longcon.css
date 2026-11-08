@@ -16,6 +16,53 @@
 .con-campaign {
   padding: 18px 20px;
 }
+
+/* Story and message choices: the home game cards' dark green highlight, without the scale change.
+   Hover screens only (so it never sticks on a phone); a tap shows it briefly via .is-pressed. */
+.rr-page .choice {
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.rr-page .choice :is(.chip, .con-campaign-title, .con-campaign-pitch, .chev) {
+  transition: background 0.18s, color 0.18s;
+}
+.rr-page .choice.is-pressed,
+.rr-page .choice:focus-visible {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(36, 57, 47, 0.22);
+}
+.rr-page .choice.is-pressed :is(.con-campaign-title, .con-campaign-pitch, .chev),
+.rr-page .choice:focus-visible :is(.con-campaign-title, .con-campaign-pitch, .chev) {
+  color: #fff;
+}
+.rr-page .choice.is-pressed .chip,
+.rr-page .choice:focus-visible .chip {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+@media (hover: hover) {
+  .rr-page .choice:not(:disabled):hover {
+    background: var(--green-700);
+    border-color: var(--green-700);
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(36, 57, 47, 0.22);
+  }
+  .rr-page .choice:not(:disabled):hover :is(.con-campaign-title, .con-campaign-pitch, .chev) {
+    color: #fff;
+  }
+  .rr-page .choice:not(:disabled):hover .chip {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rr-page .choice,
+  .rr-page .choice * {
+    transition: none;
+  }
+}
 .con-campaign .text {
   display: flex;
   flex-direction: column;
@@ -427,13 +474,9 @@
 .con-about p {
   margin-top: 10px;
 }
-.con-credit,
 .con-fineprint {
   font-size: 0.9rem;
   color: var(--text-muted);
-}
-.con-credit {
-  font-style: italic;
 }
 
 /* ---------- Debrief ---------- */

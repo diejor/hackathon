@@ -327,11 +327,6 @@
   color: var(--green-700);
   font-weight: 500;
 }
-.fraudle-credit {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
 
 /* One column (phones): the lesson card already shows the count after a solved word, so the side
    card would repeat it on the same screen. */

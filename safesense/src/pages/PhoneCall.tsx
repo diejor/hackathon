@@ -1,18 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { CircleCheck, HeartHandshake, LockKeyhole, MessagesSquare, PhoneCall as PhoneIcon, ScanSearch, ShieldCheck, SpellCheck } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
+import { CircleCheck, HeartHandshake, LockKeyhole, PhoneCall as PhoneIcon, ShieldCheck } from 'lucide-react'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
 import { UnlockProgress } from '../components/LockedGame'
 import { UPCOMING, pointsToGo } from '../content/upcoming'
 import { helpBot } from '../lib/stdb'
 import { useProgress } from '../lib/useProgress'
-import { href, type Route } from '../router'
-
-const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
-  { route: 'scam-or-not', icon: ScanSearch, label: 'Play Scam or Not?' },
-  { route: 'fraudle', icon: SpellCheck, label: 'Play Fraudle' },
-  { route: 'role-reversal', icon: MessagesSquare, label: 'Play Role Reversal' },
-]
 
 /** The same calm line the server gives when calls are off or the number isn't invited (challenge.ts). */
 const BETA = 'Phone practice calls are in a private beta right now. Try the games or text SafeSense instead.'
@@ -76,11 +68,7 @@ export default function PhoneCall() {
               <UnlockProgress id="pc-have" />
             </div>
           )}
-          {GAMES.map(({ route, icon: Icon, label }, i) => (
-            <a key={route} className={`btn btn-block ${i === 0 && !unlocked ? 'btn-primary' : 'btn-secondary'}`} href={href(route)}>
-              <Icon size={20} aria-hidden="true" /> {label}
-            </a>
-          ))}
+          <BackHome />
         </aside>
       </div>
     </>

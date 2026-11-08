@@ -169,7 +169,7 @@ function WrapUp({ missed, checked, best, onAgain }: WrapProps) {
           <RotateCcw size={20} /> Play again
         </button>
         <a className="btn btn-secondary btn-block" href={href('chat')}>
-          <MessageCircle size={20} /> Ask SafeSense about a message
+          <MessageCircle size={20} /> Chat with us about a message
         </a>
         <a className="btn btn-secondary btn-block" href={href('home')}>
           <Gamepad2 size={20} /> Try another game
@@ -301,7 +301,7 @@ export default function ScamOrNot() {
             <SenderCard s={s} revealed={revealed} marks={marks} />
             <MessageCard s={s} marks={marks} />
 
-            <InspectPanel checks={s.inspect} opened={opened} onCheck={check} answered={revealed} />
+            <InspectPanel key={s.id} checks={s.inspect} opened={opened} onCheck={check} answered={revealed} />
 
             {/* Controls (design01): docked to the bottom of the screen on phones; on wider screens the
                 wrapper is display: contents and CSS order keeps verdicts → feedback → next. */}

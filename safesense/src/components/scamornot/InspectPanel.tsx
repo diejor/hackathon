@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { Eye, Search } from 'lucide-react'
 import type { Inspect } from '../../content/scamOrNot'
+import { useCoverReveal } from '../useCoverReveal'
 
 type Props = {
   checks: Inspect[]
@@ -21,11 +22,29 @@ export function InspectPanel({ checks, opened, onCheck, answered }: Props) {
     focusNext.current = null
   }, [opened])
 
+  // Covered like the Fraudle clue until the eye button is pressed (ScamOrNot keys this per message).
+  const [cover, reveal] = useCoverReveal()
+
   if (!checks.length) return null
   const left = checks.length - opened.length
+  const covered = cover !== 'shown'
 
   return (
-    <section className="son-inspect" aria-labelledby="son-inspect-title">
+    <section className={`son-inspect${covered ? ' is-covered' : ''}`} aria-labelledby="son-inspect-title">
+      {covered && (
+        <div className={`clue-cover ${cover === 'fading' ? 'fading' : ''}`}>
+          <button
+            type="button"
+            className={`clue-eye ${cover !== 'hidden' ? 'pressed' : ''}`}
+            onClick={reveal}
+            aria-label="Reveal the clues"
+            title="Reveal the clues"
+          >
+            <Eye size={24} strokeWidth={1.75} />
+          </button>
+        </div>
+      )}
+      <div className="son-inspect-body" inert={covered}>
       <h3 id="son-inspect-title" className="son-inspect-title">
         <Search size={18} strokeWidth={2} aria-hidden="true" /> Check it before you decide
       </h3>
@@ -62,6 +81,7 @@ export function InspectPanel({ checks, opened, onCheck, answered }: Props) {
           ),
         )}
       </ul>
+      </div>
     </section>
   )
 }

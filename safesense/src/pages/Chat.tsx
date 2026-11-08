@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Gamepad2, HeartHandshake, LockKeyhole } from 'lucide-react'
-import { PageHead, TipHead } from '../components/Layout'
+import { LockKeyhole } from 'lucide-react'
+import { BackHome, PageHead, TipHead } from '../components/Layout'
 import { Composer } from '../components/chat/Composer'
 import { Conversation, ExampleChips } from '../components/chat/Conversation'
 import { ASSISTANT, THE_ASSISTANT } from '../components/chat/copy'
 import { ForgetMe } from '../components/chat/ForgetMe'
 import { TextSafeSense } from '../components/chat/TextSafeSense'
 import { useBot } from '../lib/useBot'
-import { href } from '../router'
 import { KEYS, load, save, session } from '../storage'
 import '../chat.css'
 
@@ -90,10 +89,6 @@ export default function Chat() {
         </section>
 
         <aside className="stack" ref={asideRef}>
-          <div className="panel chat-not-alone">
-            <TipHead icon={HeartHandshake}>You are not alone.</TipHead>
-            <p>Scams can happen to anyone. Ask in your own words, and take it one step at a time.</p>
-          </div>
           <TextSafeSense bot={bot} />
           <div className="plain">
             <TipHead icon={LockKeyhole}>Keep private details private</TipHead>
@@ -105,9 +100,7 @@ export default function Chat() {
             </h2>
             <p>Call your bank right away using the number on the back of your card. Tell them you may have been scammed.</p>
           </div>
-          <a className="btn btn-secondary btn-block" href={href('home')}>
-            <Gamepad2 size={20} strokeWidth={1.5} aria-hidden="true" /> Practice with a game
-          </a>
+          <BackHome />
           {/* The design's "Start a new conversation" is left out: the only way to clear the history is Forget me. */}
           <ForgetMe bot={bot} />
         </aside>

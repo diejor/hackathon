@@ -89,7 +89,7 @@ function Header({ route }: { route: Route }) {
   )
 }
 
-/** "Forget me" sits at the bottom of the Ask SafeSense page: open that page, then bring the button into view. */
+/** "Forget me" sits at the bottom of the Chat with us page: open that page, then bring the button into view. */
 function goToForgetMe(e: MouseEvent<HTMLAnchorElement>) {
   e.preventDefault()
   window.location.hash = href('chat')
@@ -114,6 +114,11 @@ function Footer({ route }: { route: Route }) {
             Practice spotting scams, and ask {THE_ASSISTANT} (an AI) when a message worries you. Made by the
             SafeSense team at HackUTD 2026.
           </p>
+          <p className="footer-link">
+            <a href={href('about')} aria-current={route === 'about' ? 'page' : undefined}>
+              About SafeSense
+            </a>
+          </p>
         </div>
         <div className="footer-privacy">
           <p className="footer-head">Your privacy</p>
@@ -121,15 +126,12 @@ function Footer({ route }: { route: Route }) {
             Your chat and game progress are saved privately for you. An AI service (Google Gemini) reads your
             messages to answer. Screenshots and photos aren’t stored.
           </p>
+          <p className="footer-link">
+            <a href={href('chat')} onClick={goToForgetMe}>
+              Delete my data (Forget me)
+            </a>
+          </p>
         </div>
-        <nav className="footer-links" aria-label="About and privacy">
-          <a href={href('about')} aria-current={route === 'about' ? 'page' : undefined}>
-            About SafeSense
-          </a>
-          <a href={href('chat')} onClick={goToForgetMe}>
-            Delete my data (Forget me)
-          </a>
-        </nav>
       </div>
     </footer>
   )

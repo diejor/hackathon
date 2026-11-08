@@ -232,7 +232,7 @@ main {
 }
 .footer-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 32px;
   align-items: start;
   padding-top: 28px;
@@ -252,13 +252,11 @@ main {
   font-size: 1.15rem;
   font-weight: 500;
 }
-.footer-links {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: -10px; /* first link lines up with the column headings (links keep 44px tap height) */
+/* Each column's link sits under its blurb (links keep a 44px tap height). */
+.footer-link {
+  margin-top: 2px;
 }
-.footer-links a {
+.footer-link a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -267,7 +265,7 @@ main {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.footer-links a:hover {
+.footer-link a:hover {
   color: var(--green-900);
 }
 
@@ -677,6 +675,16 @@ a.last-played:hover svg {
 .dash-intro {
   margin-top: 28px;
   max-width: 520px;
+}
+/* A second, quieter line of advice under the intro. */
+.dash-tip {
+  margin-top: 14px;
+  max-width: 520px;
+  padding-left: 14px;
+  border-left: 3px solid var(--green-700);
+  color: var(--green-900);
+  font-size: 1.05rem;
+  line-height: 1.55;
 }
 .dash-side {
   display: flex;
@@ -1981,9 +1989,6 @@ a.last-played:hover svg {
     padding-top: 24px;
     padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
-  .footer-links {
-    margin-top: 0;
-  }
   .card {
     padding: 20px 16px;
   }
@@ -2536,6 +2541,11 @@ a.points-badge:hover {
 @media (min-width: 961px) {
   .dashboard {
     align-items: center;
+  }
+  /* Desktop: a bigger "Hello …!" greeting. */
+  .dash-title {
+    font-size: 3.75rem;
+    line-height: 1.1;
   }
 }
 

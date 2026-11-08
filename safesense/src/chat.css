@@ -362,9 +362,6 @@
   .chat-page .page-title {
     margin-top: 4px;
   }
-  .chat-not-alone {
-    display: none; /* repeats the home page; keeps Forget me closer */
-  }
 }
 @media (max-width: 720px) {
   .chat-scroll {
