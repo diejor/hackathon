@@ -1,5 +1,6 @@
 import { AlertTriangle, CircleAlert, Image as ImageIcon, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { ChatMessage } from '../../lib/useBot'
+import { ASSISTANT } from './copy'
 
 // Every piece of message text is rendered as plain React text: model output and pasted scam messages are
 // untrusted, and links are deliberately never made clickable.
@@ -37,18 +38,18 @@ export function Message({ m }: { m: ChatMessage }) {
   return (
     <div className={cls}>
       <span className="meta">
-        {mine ? 'You' : 'Steady assistant'} · {time(m)}
+        {mine ? 'You' : ASSISTANT} · {time(m)}
         {via && ` · via ${via}`}
       </span>
 
       {mine && m.hadImage && (
         <div className="chat-shot">
           <span className="chat-shot-label">
-            <ImageIcon size={16} strokeWidth={1.75} aria-hidden="true" /> Image shared
+            <ImageIcon size={16} strokeWidth={1.75} aria-hidden="true" /> Picture shared
           </span>
           {m.imageNote && (
             <details>
-              <summary>What the assistant read in it</summary>
+              <summary>What {ASSISTANT} read in it</summary>
               <p className="chat-text">{m.imageNote}</p>
             </details>
           )}

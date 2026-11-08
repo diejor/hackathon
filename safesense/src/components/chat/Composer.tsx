@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react'
-import { ArrowUp, ImagePlus, Loader2, Mic, MicOff, TriangleAlert, X } from 'lucide-react'
+import { ArrowUp, ImagePlus, Loader2, Mic, MicOff, Square, TriangleAlert, X } from 'lucide-react'
 import { botActions, type BotSnapshot } from '../../lib/useBot'
 import { createDictation, voiceSupported, type Dictation } from '../../../../web/src/bot/voice'
+import { ASSISTANT } from './copy'
 
 const MAX_CHARS = 4000 // must match the server (Bot.cs MaxBotTextChars)
 
 /** Reword the server's terse messages for the page. */
 function friendly(error: string): string {
   if (/^slow down/i.test(error)) return 'One moment, please. You can send another message in a few seconds.'
-  if (/^not connected/i.test(error)) return 'The assistant is still connecting. Try again in a moment.'
+  if (/^not connected/i.test(error)) return `${ASSISTANT} is still connecting. Try again in a moment.`
   return error
 }
 
 function statusNote(bot: BotSnapshot): string | null {
   if (bot.status === 'reconnecting') return 'The connection dropped. Reconnecting… Your conversation is safe.'
   if (bot.status === 'offline')
-    return 'Can’t reach the assistant right now. Check your internet connection, then reload the page.'
+    return `Can’t reach ${ASSISTANT} right now. Check your internet connection, then reload the page.`
   return null
 }
 
@@ -101,32 +102,15 @@ export function Composer({
   let micHint: string
   if (!voice.ok)
     micHint = voice.secure
-      ? 'Voice input isn’t available in this browser. You can type your question instead.'
+      ? 'Speaking isn’t available in this browser. You can type your question instead.'
       : 'The microphone only works on a secure (https) page. You can type your question instead.'
-  else if (!ready && !listening) micHint = 'The microphone will be ready once the assistant connects.'
-  else if (listening) micHint = 'Microphone is on. Speak when you are ready. Select the button again to stop.'
-  else micHint = 'Microphone is off. Select the button to start speaking. Your words will appear as text.'
+  else if (!ready && !listening) micHint = `The microphone will be ready once ${ASSISTANT} connects.`
+  else if (listening) micHint = 'Microphone is on. Speak when you are ready, then select Stop.'
+  else micHint = 'Select Speak and talk. Your words will appear in the box.'
 
   return (
     <div className="composer">
-      <button
-        type="button"
-        className={`btn btn-primary btn-block ${listening ? 'listening' : ''}`}
-        onClick={() => {
-          botActions.clearError()
-          dictation.current?.toggle()
-        }}
-        aria-pressed={listening}
-        disabled={!voice.ok || !ready}
-      >
-        {listening || !voice.ok ? <MicOff size={20} strokeWidth={1.75} /> : <Mic size={20} strokeWidth={1.75} />}
-        {!voice.ok ? 'Microphone unavailable' : listening ? 'Stop microphone' : 'Use microphone'}
-      </button>
-      <p className="mic-hint" aria-live="polite">
-        {micHint}
-      </p>
-
-      <label htmlFor="question">Or type your question</label>
+      <label htmlFor="question">Your question</label>
       <textarea
         id="question"
         ref={textareaRef}
@@ -157,11 +141,11 @@ export function Composer({
 
       {(image || preparing || imageFailed) && (
         <span className={`attachment chat-preview ${imageFailed ? 'chat-preview-failed' : ''}`}>
-          {image && <img src={image} alt="Your image, ready to send" />}
+          {image && <img src={image} alt="Your picture, ready to send" />}
           {preparing && <Loader2 size={16} className="chat-spin" aria-hidden="true" />}
           {imageFailed && <TriangleAlert size={16} aria-hidden="true" />}
-          <span>{image ? 'Image ready to send' : preparing ? 'Preparing your image…' : 'Image not added'}</span>
-          <button type="button" onClick={() => void attach(null)} aria-label="Remove image">
+          <span>{image ? 'Picture ready to send' : preparing ? 'Preparing your picture…' : 'Picture not added'}</span>
+          <button type="button" onClick={() => void attach(null)} aria-label="Remove picture">
             <X size={16} />
           </button>
         </span>
@@ -177,7 +161,16 @@ export function Composer({
         </div>
       )}
 
-      <div className="composer-actions">
+      <button
+        type="button"
+        className="btn btn-primary btn-block chat-send"
+        onClick={() => void submit()}
+        disabled={!canSend}
+      >
+        <ArrowUp size={20} strokeWidth={1.75} /> {bot.pending ? 'Waiting for an answer…' : 'Send'}
+      </button>
+
+      <div className="chat-tools">
         <input
           ref={fileRef}
           type="file"
@@ -193,17 +186,36 @@ export function Composer({
         />
         <button
           type="button"
+          className={`btn btn-secondary ${listening ? 'chat-listening' : ''}`}
+          onClick={() => {
+            botActions.clearError()
+            dictation.current?.toggle()
+          }}
+          aria-pressed={listening}
+          aria-describedby="mic-hint"
+          disabled={!voice.ok || !ready}
+        >
+          {!voice.ok ? (
+            <MicOff size={20} strokeWidth={1.75} />
+          ) : listening ? (
+            <Square size={18} strokeWidth={2} />
+          ) : (
+            <Mic size={20} strokeWidth={1.75} />
+          )}
+          {!voice.ok ? 'No microphone' : listening ? 'Stop' : 'Speak'}
+        </button>
+        <button
+          type="button"
           className="btn btn-secondary"
           onClick={() => fileRef.current?.click()}
           disabled={!ready || bot.pending}
         >
-          <ImagePlus size={20} strokeWidth={1.5} /> Add an image
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={() => void submit()} disabled={!canSend}>
-          <ArrowUp size={20} strokeWidth={1.75} /> {bot.pending ? 'Waiting for an answer…' : 'Send message'}
+          <ImagePlus size={20} strokeWidth={1.5} /> Add a picture
         </button>
       </div>
-      <p className="chat-footnote">Answers are guidance, not a guarantee. When in doubt, call the company at a number you trust.</p>
+      <p id="mic-hint" className="mic-hint" aria-live="polite">
+        {micHint}
+      </p>
     </div>
   )
 }
