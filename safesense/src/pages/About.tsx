@@ -1,6 +1,6 @@
 import { ArrowRight, Gamepad2, HeartHandshake, LockKeyhole, MessageCircle, Phone, Users } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
-import { ASSISTANT } from '../components/chat/copy'
+import { ASK_LABEL, ASSISTANT, THE_ASSISTANT } from '../components/chat/copy'
 import { href } from '../router'
 
 /** About SafeSense: what it is, who made it, and what happens to your data. Kept short and plain. */
@@ -30,7 +30,7 @@ export default function About() {
                 <MessageCircle size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
                   <strong>The {ASSISTANT}</strong> is an AI. Tell it about a message that worries you: type it, say
-                  it, or add a screenshot. It explains what it notices and what you could do next. It gives
+                  it, or add a screenshot or photo. It explains what it notices and what you could do next. It gives
                   guidance, not guarantees, and it can be wrong.
                 </span>
               </li>
@@ -60,16 +60,16 @@ export default function About() {
               <li>
                 <MessageCircle size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
-                  To answer you, the messages you send to the assistant are read by an AI service (Google Gemini).
-                  Screenshots aren’t stored; only a short note of what they say is kept.
+                  To answer you, the messages you send to {THE_ASSISTANT} are read by an AI service (Google Gemini).
+                  Screenshots and photos aren’t stored; only a short note of what they say is kept.
                 </span>
               </li>
               <li>
                 <LockKeyhole size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
                   Please don’t share passwords, PINs, full account numbers or one-time codes.{' '}
-                  <strong>Forget me</strong>, at the bottom of the <a href={href('chat')}>Ask SafeSense</a> page,
-                  deletes your chat, what the assistant remembers, and your game history.
+                  <strong>Forget me</strong>, at the bottom of the <a href={href('chat')}>{ASK_LABEL}</a> page,
+                  deletes your chat, what {THE_ASSISTANT} remembers, and your game history and points.
                 </span>
               </li>
             </ul>
@@ -96,7 +96,7 @@ export default function About() {
             </p>
           </div>
           <a className="btn btn-primary btn-block" href={href('chat')}>
-            <ArrowRight size={20} aria-hidden="true" /> Ask SafeSense
+            <ArrowRight size={20} aria-hidden="true" /> {ASK_LABEL}
           </a>
           <a className="btn btn-secondary btn-block" href={href('home')}>
             <Gamepad2 size={20} strokeWidth={1.5} aria-hidden="true" /> Practice with a game

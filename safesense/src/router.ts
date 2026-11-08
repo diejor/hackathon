@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
-export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'long-con' | 'chat' | 'profile' | 'about'
+export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'long-con' | 'chat' | 'profile' | 'about' | 'phone-call'
 
-const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'long-con', 'chat', 'profile', 'about']
+const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'long-con', 'chat', 'profile', 'about', 'phone-call']
 
 /** The browser tab title for each page, so screen readers and tab lists say where you are. */
 const TITLES: Record<Route, string> = {
@@ -13,6 +13,7 @@ const TITLES: Record<Route, string> = {
   chat: 'Ask SafeSense · SafeSense',
   profile: 'Your progress · SafeSense',
   about: 'About SafeSense',
+  'phone-call': 'The Phone Call (coming soon) · SafeSense',
 }
 
 export const href = (route: Route) => (route === 'home' ? '#/' : `#/${route}`)

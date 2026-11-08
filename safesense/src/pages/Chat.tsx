@@ -3,14 +3,14 @@ import { Gamepad2, HeartHandshake, LockKeyhole, Sparkles } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
 import { Composer } from '../components/chat/Composer'
 import { Conversation, ExampleChips } from '../components/chat/Conversation'
-import { ASSISTANT } from '../components/chat/copy'
+import { ASK_LABEL, ASSISTANT, THE_ASSISTANT } from '../components/chat/copy'
 import { ForgetMe } from '../components/chat/ForgetMe'
 import { useBot } from '../lib/useBot'
 import { href } from '../router'
 import '../chat.css'
 
 // The conversation is the real Help Bot (web/src/bot/bot.ts over SpacetimeDB, through src/lib/useBot.ts).
-// Voice: page copy talks about "SafeSense assistant" by name; the assistant says "I" in its own messages.
+// Voice: page copy says "the SafeSense assistant" (THE_ASSISTANT); the assistant says "I" in its own messages.
 export default function Chat() {
   const bot = useBot()
   const [draft, setDraft] = useState('')
@@ -29,14 +29,14 @@ export default function Chat() {
 
   return (
     <div className="chat-page">
-      <PageHead crumb={<Crumb label="Ask SafeSense" />} title="Ask before you act." lead="Type it, say it, or add a picture." />
+      <PageHead crumb={<Crumb label={ASK_LABEL} />} title="Ask before you act." lead="Type it, say it, or add a screenshot or photo." />
       <div className="page-grid">
         <section className="card" aria-labelledby="chat-title">
           <div className="chat-head">
             <h2 id="chat-title">
               <Sparkles size={20} strokeWidth={1.75} aria-hidden="true" /> {ASSISTANT}
             </h2>
-            <p className="chat-ai-note">{ASSISTANT} is an AI. It gives guidance, not guarantees.</p>
+            <p className="chat-ai-note">The {ASSISTANT} is an AI. It gives guidance, not guarantees.</p>
           </div>
           <Conversation bot={bot} />
           <Composer bot={bot} draft={draft} setDraft={setDraft} textareaRef={textareaRef} />
@@ -45,9 +45,9 @@ export default function Chat() {
             <LockKeyhole size={16} strokeWidth={1.75} aria-hidden="true" />
             <span>
               Your chat is saved privately on SafeSense’s server; only you can read it here. An AI service (Google
-              Gemini) reads your messages to answer. Pictures aren’t stored, only a short note of what they say. Forget
+              Gemini) reads your messages to answer. Screenshots and photos aren’t stored, only a short note of what they say. Forget
               me deletes your
-              chat, what {ASSISTANT} remembers, and your game history.
+              chat, what {THE_ASSISTANT} remembers, and your game history and points.
             </span>
           </p>
         </section>

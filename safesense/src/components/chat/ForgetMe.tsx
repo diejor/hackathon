@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { botActions, type BotSnapshot } from '../../lib/useBot'
-import { ASSISTANT } from './copy'
+import { THE_ASSISTANT } from './copy'
 
 /** "Forget me": deletes the conversation, what the assistant remembers and game activity, after an in-page confirm. */
 export function ForgetMe({ bot }: { bot: BotSnapshot }) {
@@ -27,12 +27,12 @@ export function ForgetMe({ bot }: { bot: BotSnapshot }) {
           Delete everything?
         </h2>
         <p id="forget-text">
-          This deletes this conversation, your game history and everything {ASSISTANT} remembers about you. It can’t
+          This deletes this conversation, your game history and points, and everything {THE_ASSISTANT} remembers about you. It can’t
           be undone.
         </p>
         {bot.facts.length > 0 && (
           <>
-            <p className="chat-confirm-sub">What {ASSISTANT} remembers:</p>
+            <p className="chat-confirm-sub">What {THE_ASSISTANT} remembers:</p>
             <ul>
               {bot.facts.map((f) => (
                 <li key={String(f.id)}>{f.fact}</li>
@@ -74,7 +74,7 @@ export function ForgetMe({ bot }: { bot: BotSnapshot }) {
     <div className="chat-forget">
       {step === 'done' && (
         <p ref={doneRef} className="chat-done" role="status" tabIndex={-1}>
-          Done. Your conversation, game history and what {ASSISTANT} remembered have been deleted.
+          Done. Your conversation, game history, points and what {THE_ASSISTANT} remembered have been deleted.
         </p>
       )}
       <button
@@ -86,7 +86,7 @@ export function ForgetMe({ bot }: { bot: BotSnapshot }) {
       >
         <Trash2 size={20} strokeWidth={1.5} /> Forget me
       </button>
-      <p className="chat-forget-sub">Deletes this conversation, your game history and what {ASSISTANT} remembers.</p>
+      <p className="chat-forget-sub">Deletes this conversation, your game history and points, and what {THE_ASSISTANT} remembers.</p>
     </div>
   )
 }

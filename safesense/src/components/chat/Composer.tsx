@@ -2,21 +2,21 @@ import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetSta
 import { ArrowUp, ImagePlus, Loader2, Mic, MicOff, Square, TriangleAlert, X } from 'lucide-react'
 import { botActions, type BotSnapshot } from '../../lib/useBot'
 import { createDictation, voiceSupported, type Dictation } from '../../../../web/src/bot/voice'
-import { ASSISTANT } from './copy'
+import { ASSISTANT, THE_ASSISTANT } from './copy'
 
 const MAX_CHARS = 4000 // must match the server (Bot.cs MaxBotTextChars)
 
 /** Reword the server's terse messages for the page. */
 function friendly(error: string): string {
   if (/^slow down/i.test(error)) return 'One moment, please. You can send another message in a few seconds.'
-  if (/^not connected/i.test(error)) return `${ASSISTANT} is still connecting. Try again in a moment.`
+  if (/^not connected/i.test(error)) return `The ${ASSISTANT} is still connecting. Try again in a moment.`
   return error
 }
 
 function statusNote(bot: BotSnapshot): string | null {
   if (bot.status === 'reconnecting') return 'The connection dropped. Reconnecting… Your conversation is safe.'
   if (bot.status === 'offline')
-    return `Can’t reach ${ASSISTANT} right now. Check your internet connection, then reload the page.`
+    return `Can’t reach ${THE_ASSISTANT} right now. Check your internet connection, then reload the page.`
   return null
 }
 
@@ -104,7 +104,7 @@ export function Composer({
     micHint = voice.secure
       ? 'Speaking isn’t available in this browser. You can type your question instead.'
       : 'The microphone only works on a secure (https) page. You can type your question instead.'
-  else if (!ready && !listening) micHint = `The microphone will be ready once ${ASSISTANT} connects.`
+  else if (!ready && !listening) micHint = `The microphone will be ready once ${THE_ASSISTANT} connects.`
   else if (listening) micHint = 'Microphone is on. Speak when you are ready, then select Stop.'
   else micHint = 'Select Speak and talk. Your words will appear in the box.'
 

@@ -9,6 +9,7 @@ import { href, type Route } from '../router'
 import { useProgress } from '../lib/useProgress'
 import { useNickname } from '../lib/profileStore'
 import type { Progress } from '../lib/progress'
+import { UPCOMING, pointsToGo } from '../content/upcoming'
 
 const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
   { route: 'scam-or-not', icon: ScanSearch, label: 'Try Scam or Not?' },
@@ -27,6 +28,7 @@ function Empty() {
         Play any game, at your own pace. The signs you learn to spot will collect on this page, along with a
         few gentle tips on what is worth another look.
       </p>
+      <NextUnlock points={0} />
       <div className="stack profile-empty-actions">
         {GAMES.map(({ route, icon: Icon, label }, i) => (
           <a key={route} className={`btn btn-block ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} href={href(route)}>
@@ -58,6 +60,7 @@ function Summary({ p }: { p: Progress }) {
         <p className="muted">Points show how much you’ve practiced — there’s no rush.</p>
         {/* A level could appear here later (being designed separately). */}
       </div>
+      <NextUnlock points={p.points} />
       <ul className="count-list">
         {items.map(([n, label, game]) => (
           <li key={label} className="count-item">
@@ -68,6 +71,18 @@ function Summary({ p }: { p: Progress }) {
         ))}
       </ul>
     </section>
+  )
+}
+
+/** One quiet line about the next locked game, linking to its coming-soon page. */
+function NextUnlock({ points }: { points: number }) {
+  const toGo = pointsToGo(points)
+  return (
+    <p className="profile-next-unlock">
+      {toGo > 0 ? 'Next unlock: ' : 'Unlocked: '}
+      <a href={href('phone-call')}>{UPCOMING.title}</a>
+      {toGo > 0 ? ` — ${toGo} ${toGo === 1 ? 'point' : 'points'} to go` : ' — coming soon'}
+    </p>
   )
 }
 
@@ -100,9 +115,13 @@ export default function Profile() {
         crumb={<Crumb label="Your progress" />}
         title="Your progress"
         lead={
-          name
-            ? `Hi, ${name}. Here’s what you’ve practiced so far.`
-            : 'Here’s what you’ve practiced so far. Take it at your own pace.'
+          status === 'ready' && progress.events === 0
+            ? name
+              ? `Hi, ${name}. Play any game and your progress will show up here.`
+              : 'Play any game and your progress will show up here.'
+            : name
+              ? `Hi, ${name}. Here’s what you’ve practiced so far.`
+              : 'Here’s what you’ve practiced so far. Take it at your own pace.'
         }
       />
       <div className="page-grid">
@@ -116,7 +135,7 @@ export default function Profile() {
           )}
           {status === 'offline' && (
             <section className="card profile-section">
-              <h2 className="h3">We can’t show your progress right now</h2>
+              <h2 className="h3">Your progress can’t be shown right now</h2>
               <p className="muted profile-intro">
                 It’s still saved. Check your internet connection, then reload the page.
               </p>

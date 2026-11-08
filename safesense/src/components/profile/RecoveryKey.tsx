@@ -54,7 +54,7 @@ function SaveKey({ db }: { db: string }) {
   if (!open)
     return (
       <button className="btn btn-primary btn-block" onClick={() => setOpen(true)}>
-        <KeyRound size={20} /> Save my progress
+        <KeyRound size={20} /> Show my recovery key
       </button>
     )
 
@@ -81,7 +81,10 @@ function SaveKey({ db }: { db: string }) {
         <p className="feedback-title">
           <AlertTriangle size={20} strokeWidth={1.5} /> Keep it private
         </p>
-        <p>This key is like a password for your progress. Keep it private. Anyone with it can see your progress.</p>
+        <p>
+          This key works like a password. Anyone with it can see your progress and your chats with the SafeSense
+          assistant, and can delete them. Never share it, even with someone who says they’re from support.
+        </p>
       </div>
       <label htmlFor="recovery-key" className="recovery-label">
         Your recovery key
@@ -126,7 +129,7 @@ function UseKey({ db }: { db: string }) {
   if (!open)
     return (
       <button className="btn btn-secondary btn-block" onClick={() => setOpen(true)}>
-        Use my progress on this device
+        I have a recovery key
       </button>
     )
 
@@ -151,7 +154,7 @@ function UseKey({ db }: { db: string }) {
     if (current) writeStore(backupKey(db), current)
     if (!writeStore(tokenKey(db), k)) {
       setConfirming(false)
-      setError('This browser won’t let us save the key. Check that it isn’t in private mode, then try again.')
+      setError('This browser won’t save the key. Check that it isn’t in private mode, then try again.')
       return
     }
     window.location.reload()
@@ -233,7 +236,7 @@ function RestorePrevious({ db }: { db: string }) {
     const current = readStore(tokenKey(db))
     if (!writeStore(tokenKey(db), previous)) {
       setConfirming(false)
-      setError('This browser won’t let us switch keys. Check that it isn’t in private mode, then try again.')
+      setError('This browser won’t switch keys. Check that it isn’t in private mode, then try again.')
       return
     }
     if (current) writeStore(backupKey(db), current)

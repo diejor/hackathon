@@ -1,6 +1,6 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { MessageCircle, ShieldCheck, Sprout } from 'lucide-react'
-import { ASSISTANT } from './chat/copy'
+import { ASK_LABEL, THE_ASSISTANT } from './chat/copy'
 import { href, type Route } from '../router'
 import { useProgress } from '../lib/useProgress'
 import '../profile.css'
@@ -81,11 +81,11 @@ function Header({ route }: { route: Route }) {
             className="chat-link"
             href={href('chat')}
             aria-current={route === 'chat' ? 'page' : undefined}
-            aria-label="Ask SafeSense"
-            title={`Ask the ${ASSISTANT}`}
+            aria-label={ASK_LABEL}
+            title={`Ask ${THE_ASSISTANT}`}
           >
             <MessageCircle size={20} strokeWidth={1.75} aria-hidden="true" />
-            <span className="chat-label">Ask SafeSense</span>
+            <span className="chat-label">{ASK_LABEL}</span>
           </a>
         </div>
       </div>
@@ -115,7 +115,7 @@ function Footer({ route }: { route: Route }) {
             <ShieldCheck size={18} strokeWidth={1.75} aria-hidden="true" /> SafeSense
           </p>
           <p>
-            Practice spotting scams, and ask the {ASSISTANT} (an AI) when a message worries you. Made by the
+            Practice spotting scams, and ask {THE_ASSISTANT} (an AI) when a message worries you. Made by the
             SafeSense team at HackUTD 2026.
           </p>
         </div>
@@ -123,7 +123,7 @@ function Footer({ route }: { route: Route }) {
           <p className="footer-head">Your privacy</p>
           <p>
             Your chat and game progress are saved privately for you. An AI service (Google Gemini) reads your
-            messages to answer. Screenshots aren’t stored.
+            messages to answer. Screenshots and photos aren’t stored.
           </p>
         </div>
         <nav className="footer-links" aria-label="About and privacy">

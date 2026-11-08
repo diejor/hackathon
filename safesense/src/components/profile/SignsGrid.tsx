@@ -57,7 +57,7 @@ function withExtras(signs: Sign[], caught: Map<string, Caught>): [Sign, boolean]
 export function SignsGrid({ caught }: { caught: Map<string, Caught> }) {
   const [all, setAll] = useState(false)
   const extra = [...caught.keys()].filter((slug) => !isKnownSign(slug)).map(signFor)
-  const messageTiles = withExtras([...MESSAGE_SIGNS, ...extra, GENUINE_SIGN], caught)
+  const messageTiles = withExtras([...MESSAGE_SIGNS, ...extra], caught)
   const moveTiles = withExtras(MOVE_SIGNS, caught)
   const hidden = [...messageTiles, ...moveTiles].filter(([, isExtra]) => isExtra).length
 
@@ -73,14 +73,13 @@ export function SignsGrid({ caught }: { caught: Map<string, Caught> }) {
       <h3 className="h3 sign-group-title">Scam messages</h3>
       <ul className="sign-grid">
         {messageTiles.map(([s, isExtra]) => (
-          <Tile
-            key={s.slug}
-            sign={s}
-            caught={caught.get(s.slug)}
-            strength={s.slug === GENUINE_SIGN.slug}
-            extra={isExtra}
-          />
+          <Tile key={s.slug} sign={s} caught={caught.get(s.slug)} extra={isExtra} />
         ))}
+      </ul>
+
+      <h3 className="h3 sign-group-title">Safe messages</h3>
+      <ul className="sign-grid">
+        <Tile sign={GENUINE_SIGN} caught={caught.get(GENUINE_SIGN.slug)} strength />
       </ul>
 
       <h3 className="h3 sign-group-title">Scammer moves</h3>

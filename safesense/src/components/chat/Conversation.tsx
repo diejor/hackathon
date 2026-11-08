@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { BotSnapshot } from '../../lib/useBot'
-import { ASSISTANT } from './copy'
+import { ASSISTANT, THE_ASSISTANT } from './copy'
 import { Message } from './Message'
 
 // Each chip fills the box with a start the person can finish (or paste the message after).
@@ -70,12 +70,12 @@ export function Conversation({ bot }: { bot: BotSnapshot }) {
       {status !== 'ready' && (
         <p className="chat-note" role="status">
           {status === 'offline'
-            ? `Can’t reach ${ASSISTANT} right now. Check your internet connection, then reload the page.`
+            ? `Can’t reach ${THE_ASSISTANT} right now. Check your internet connection, then reload the page.`
             : status === 'reconnecting'
               ? 'The connection dropped. Reconnecting…'
               : bot.slow
                 ? 'Still connecting… This is taking longer than usual. Check your internet connection.'
-                : `Connecting to ${ASSISTANT}…`}
+                : `Connecting to ${THE_ASSISTANT}…`}
         </p>
       )}
 
