@@ -245,6 +245,18 @@ Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tool
 - **Diego picks** what to fix; fix bands run on non-overlapping files; then a second audit round.
 - **Devpost and the demo script (B8) wait** until polish settles (~06:00–07:00).
 
+### B12 — Port Krishna's game feel (decided ~01:00 CST)
+
+Diego played Krishna's mini-games (`web-app` `fddafcd`, `HackUTD/mini-games/`) and wants their game feel in SafeSense, restyled to the designer's calm look and credited to Krishna. Gentle game feel: "4 people believed it", not "MARKS HOOKED"; no red flashing.
+
+| Port | Into | Status |
+| --- | --- | --- |
+| BadScam engine: scenes, narrator, people-fooled counter, credibility dial, reacting victims, tactic → defense debrief | The Long Con | started ~01:00 |
+| Friend or Fraud's "Inspect" evidence button plus FTC source links | Scam or Not? | after the content band merges |
+| Tile-flip reveal plus solved/streak counter, rewritten from scratch (his CSS is copied from Ania Kubów's tutorial) | Fraudle | after the content band merges |
+
+Never ship his GPL or copied Wordle code, his OpenAI server, his Photon sender or "T-Life" branding. The designer's zips will need more careful merging in these three pages.
+
 ## 7. Schedule and gates (CST)
 
 | Time | What | Gate |
