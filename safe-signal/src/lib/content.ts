@@ -8,7 +8,7 @@
 //   were verified not to resolve (BANK_SAFE_DOMAINS), never a newly invented registrable domain.
 // - Phone numbers stay in the 555-01xx fictional range.
 import bank from '../../../docs/content/messages.json';
-import type { RedFlag, Tactic, TraitKey } from '../contracts';
+import { TACTIC_TO_TRAIT, type Archetype, type RedFlag, type Tactic, type TraitKey } from '../contracts';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Plain words for the enums
@@ -136,7 +136,7 @@ const ANNOTATIONS: Record<string, FofAnnotation> = {
   },
   'sunpass-balance-due': {
     redFlags: ['sender_identity', 'url_domain', 'urgency_clause'],
-    clues: ['link', 'pressure', 'sender'], crowdFraud: 0.55,
+    clues: ['link', 'pressure', 'sender'], crowdFraud: 0.6,
     rebrand: {
       body: 'MetroToll: Our records show an outstanding toll balance of $6.99 on your vehicle. To avoid additional fees, please settle your balance today at https://metrotoll.tollsvc-billing.xyz',
       flags: ["Real domain is tollsvc-billing.xyz, not MetroToll's site", 'Polite tone, still an unsolicited pay link', 'Sent from an ordinary phone number'],
@@ -181,7 +181,7 @@ const ANNOTATIONS: Record<string, FofAnnotation> = {
   },
   'boa-safe-account-call': {
     redFlags: ['authority_claim', 'sender_identity', 'urgency_clause', 'payment_rail'],
-    clues: ['ask', 'context', 'sender'], crowdFraud: 0.5,
+    clues: ['ask', 'context', 'sender'], crowdFraud: 0.4,
     rebrand: {
       sender: 'Caller ID: Keystone Credit Union',
       body: "\"This is Keystone Credit Union fraud prevention. Someone is trying to drain your checking right now. To protect your money we need to move it to a secure holding account. I'll walk you through a payment-app transfer. Stay on the line and don't tell branch staff.\"",
@@ -278,7 +278,7 @@ const ANNOTATIONS: Record<string, FofAnnotation> = {
   },
   'geek-squad-auto-renewal': {
     redFlags: ['sender_identity', 'reply_bait', 'urgency_clause', 'plausibility_bait'],
-    clues: ['context', 'ask', 'sender'], crowdFraud: 0.55,
+    clues: ['context', 'ask', 'sender'], crowdFraud: 0.6,
     rebrand: {
       sender: 'TechGuard Billing <invoice@gs-renewal-center.com>',
       subject: 'Invoice #GS-449812: Auto-Renewal Successful',
@@ -308,7 +308,7 @@ const ANNOTATIONS: Record<string, FofAnnotation> = {
     marks: [['Reply YES or NO.', 'green'], ['We will never ask for your PIN, password or a code by text.', 'green']],
   },
   'google-code-you-requested': {
-    redFlags: [], clues: ['context', 'ask', 'pressure'], crowdFraud: 0.55,
+    redFlags: [], clues: ['context', 'ask', 'pressure'], crowdFraud: 0.7,
     rebrand: {
       sender: 'Nimbus ID',
       body: "[You're signing in to LinkMail on your new laptop]\n\nN-482913 is your Nimbus ID verification code. Don't share it with anyone.",
@@ -386,7 +386,7 @@ const ANNOTATIONS: Record<string, FofAnnotation> = {
     marks: [["We won't ask for your PIN, password or any code.", 'green'], ['hang up and call the number on the back of your card', 'green']],
   },
   'tmobile-recruiter-linkedin': {
-    redFlags: [], clues: ['link', 'context', 'ask'], crowdFraud: 0.5,
+    redFlags: [], clues: ['link', 'context', 'ask'], crowdFraud: 0.65,
     rebrand: {
       sender: 'Nimbus Mobile recruiter (verified profile)',
       body: "Hi! I saw your hackathon project and think you'd be a great fit for our Associate Security Engineer role. Here's the posting on our official careers page. Open to a 20-min video call next week?",
@@ -524,15 +524,17 @@ export const PERSONAS: Persona[] = [
 ];
 
 /** The two Bad Scam rounds (archetype ids from data/scam-archetypes.json) and the slot values used (allowed + fictional). */
-export const BADSCAM_ROUNDS: { archetypeId: string; slots: Record<string, string>; pitch: string; crowdPick: Partial<Record<Tactic, number>> }[] = [
+export const BADSCAM_ROUNDS: { archetypeId: string; slots: Record<string, string>; senderMark: string; pitch: string; lesson: string; crowdPick: Partial<Record<Tactic, number>> }[] = [
   {
-    archetypeId: 'delivery-fee', slots: { amount: '$2.99' },
+    archetypeId: 'delivery-fee', slots: { amount: '$2.99' }, senderMark: 'Parcelo:',
     pitch: 'A fake "Parcelo" redelivery-fee text.',
+    lesson: "Now you know the recipe: a tiny fee, a clock and a link. When all three show up, open the carrier's own app instead.",
     crowdPick: { urgency_deadline: 0.6, small_plausible_amount: 0.5, authority_impersonation: 0.3, social_proof: 0.15 },
   },
   {
-    archetypeId: 'boss-gift-card', slots: { bossName: 'Dana', count: '8', brand: 'Beacon' },
+    archetypeId: 'boss-gift-card', slots: { bossName: 'Dana', count: '8', brand: 'Beacon' }, senderMark: "Hey, it's Dana",
     pitch: 'A "boss" text asking for gift cards.',
+    lesson: 'Authority plus urgency plus gift cards is the whole trick. One call to the real person on a number you already have breaks it.',
     crowdPick: { authority_impersonation: 0.65, urgency_deadline: 0.55, favor_then_ask: 0.3, bypass_verification: 0.2 },
   },
 ];
@@ -548,3 +550,20 @@ export const TACTIC_LINE: Record<Tactic, { line: string; flag: RedFlag }> = {
   bypass_verification: { line: "No need to call anyone to check, it's all handled here.", flag: 'url_domain' },
   switch_channel: { line: 'Text us back on ChatterBox for faster help.', flag: 'reply_bait' },
 };
+
+/** Reach estimate for a built scam: how many of 100 people like this persona would tap (educational heuristic).
+ *  base 15 + 25 × how well the story itself fits the persona + 45 × the chosen tactics' fit; a tactic the story
+ *  can't carry (no trait load in the archetype) costs 8. */
+export function reachEstimate(archetype: Archetype, persona: Persona, tactics: Tactic[]) {
+  const loads = Object.entries(archetype.traitLoads) as [TraitKey, number][];
+  const loadSum = loads.reduce((s, [, v]) => s + v, 0) || 1;
+  const storyFit = loads.reduce((s, [t, v]) => s + v * persona.traits[t], 0) / loadSum;
+  const notes = tactics.map((tactic) => {
+    const trait = TACTIC_TO_TRAIT[tactic];
+    const load = archetype.traitLoads[trait] ?? 0;
+    return { tactic, fits: load > 0, fit: load * persona.traits[trait] };
+  });
+  const tacticFit = notes.reduce((s, n) => s + (n.fits ? n.fit : -8 / 45), 0);
+  const score = Math.round(Math.max(5, Math.min(95, 15 + 25 * storyFit + 45 * tacticFit)));
+  return { score, notes };
+}

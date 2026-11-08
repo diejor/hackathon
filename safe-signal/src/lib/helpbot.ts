@@ -23,27 +23,37 @@ export function helpBot(): Promise<Lobby> {
 type Activity = { game: string; kind: string; details: string };
 const pending: Activity[] = [];
 
-/** Map one Safe Signal game result onto log_activity rows (see spacetimedb/Activity.cs). */
+/** Map one Safe Signal game round onto log_activity rows (see spacetimedb/Activity.cs).
+ *  game/kind are slugs (<= 32 chars); details is single-line JSON (<= 500 chars). Kinds containing "wrong"
+ *  feed the bot's most-missed-tactic summary through the `tactic` field, which holds a Tactic slug from
+ *  src/contracts.ts ("none" for legit messages). One row per round keeps the bot's 200-row cap roomy. */
 export function toActivities(e: GameEvent): Activity[] {
-  const row = (game: string, kind: string, d: Record<string, unknown>) => ({ game, kind, details: JSON.stringify(d).slice(0, 500) });
+  const row = (game: string, kind: string, d: Record<string, unknown>) => {
+    let details = JSON.stringify(d);
+    if (details.length > 500) details = JSON.stringify({ item: d.item, tactic: d.tactic });
+    return { game, kind, details };
+  };
   const s = (ms: number) => Math.round(ms / 1000);
-  if (e.game === 'scamdle') return [
-    ...e.flagsFound.map((f) => row('scamdle', 'answer_correct', { item: e.puzzleId, tactic: f })),
-    ...e.flagsMissed.map((f) => row('scamdle', 'answer_wrong', { item: e.puzzleId, tactic: f, missed: 'red flag not spotted' })),
-    ...e.flagsFalsePositive.map((f) => row('scamdle', 'false_alarm', { item: e.puzzleId, tactic: f })),
-    row('scamdle', 'round_done', { item: e.puzzleId, attempts: e.attempts, found: e.flagsFound.length, missed: e.flagsMissed.length, falseAlarms: e.flagsFalsePositive.length, seconds: s(e.elapsedMs) }),
-  ];
+  const round = e.roundIndex === undefined ? {} : { round: e.roundIndex + 1 };
+  if (e.game === 'scamdle') {
+    const missed = e.flagsMissed.length > 0;
+    return [row('scamdle', missed ? 'flags_missed_wrong' : 'answer_correct', {
+      item: e.puzzleId, tactic: e.tactic ?? 'none', ...round, found: e.flagsFound, missed: e.flagsMissed,
+      falseAlarms: e.flagsFalsePositive, seconds: s(e.elapsedMs),
+    })];
+  }
   if (e.game === 'guesswho') {
     const ok = e.guessedContactId === e.correctContactId;
     const d = e.questionsDiagnosticity;
-    return [row('guess-who', ok ? 'answer_correct' : 'answer_wrong', {
-      item: e.roundId, tactic: 'authority_impersonation', chose: e.guessedContactId, answer: e.correctContactId,
-      questions: e.questionsAsked.length, diagnosticity: d.length ? +(d.reduce((a, b) => a + b, 0) / d.length).toFixed(2) : 0,
-      deferredToBot: e.deferredToBot, followedBotConsensus: e.followedBotConsensus, seconds: s(e.elapsedMs),
+    return [row('friend-or-fraud', ok ? 'answer_correct' : 'answer_wrong', {
+      item: e.roundId, tactic: e.tactic ?? (e.isFraud === false ? 'none' : 'authority_impersonation'), ...round,
+      chose: e.guessedContactId, answer: e.correctContactId, clues: e.questionsAsked,
+      diagnosticity: d.length ? +(d.reduce((a, b) => a + b, 0) / d.length).toFixed(2) : 0,
+      crowdShown: e.crowdShown ?? false, followedCrowd: e.followedBotConsensus, wentWithCrowd: e.deferredToBot, seconds: s(e.elapsedMs),
     })];
   }
   // Bad Scam: the player builds the scam, so there is no right/wrong; tactics they reach for are what they understand.
-  return [row('bad-scam', 'round_done', { item: e.archetypeId, target: e.targetPersonaId, tacticsChosen: e.tacticsChosen, rail: e.paymentRail, reach: e.reachScore, seconds: s(e.elapsedMs) })];
+  return [row('bad-scam', 'round_done', { item: e.archetypeId, ...round, target: e.targetPersonaId, tacticsChosen: e.tacticsChosen, rail: e.paymentRail, reach: e.reachScore, seconds: s(e.elapsedMs) })];
 }
 
 /** Fire-and-forget: report a finished game to the bot. Never throws (the game already saved to Safe Signal). */
