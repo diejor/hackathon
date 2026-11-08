@@ -7,6 +7,7 @@ import {
   Check,
   CheckCircle2,
   ExternalLink,
+  Gamepad2,
   Info,
   Lightbulb,
   Mail,
@@ -27,7 +28,7 @@ import { ProgressTrack } from '../components/scamornot/ProgressTrack'
 import { marksFor, type Marks } from '../components/scamornot/evidence'
 import { href } from '../router'
 import { logActivity } from '../lib/stdb'
-import { REMEMBER, REMEMBER_DEFAULT, SCENARIOS, type Guess, type Kind, type Scenario } from '../content/scamOrNot'
+import { dealRounds, REMEMBER, REMEMBER_DEFAULT, SCENARIOS, type Guess, type Kind, type Scenario } from '../content/scamOrNot'
 import '../scamornot.css'
 
 const FORMAT: Record<Kind, { label: string; icon: LucideIcon }> = {
@@ -52,7 +53,7 @@ function SenderCard({ s, revealed, marks }: { s: Scenario; revealed: boolean; ma
         <span className="format-label">
           <FormatIcon size={14} strokeWidth={2} /> {format.label}
         </span>
-        <h2 className="sender-name">
+        <h2 className={`sender-name${/^[+\d\s()-]+$/.test(s.name) ? ' is-number' : ''}`}>
           <Marked text={s.name} marks={marks.name} />
         </h2>
         {s.bio && (
@@ -169,6 +170,9 @@ function WrapUp({ missed, checked, best, onAgain }: WrapProps) {
         <a className="btn btn-secondary btn-block" href={href('chat')}>
           <MessageCircle size={20} /> Ask SafeSense about a message
         </a>
+        <a className="btn btn-secondary btn-block" href={href('home')}>
+          <Gamepad2 size={20} /> Try another game
+        </a>
         <p className="see-progress-row">
           <a className="see-progress" href={href('profile')}>
             <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
@@ -180,6 +184,8 @@ function WrapUp({ missed, checked, best, onAgain }: WrapProps) {
 }
 
 export default function ScamOrNot() {
+  // A new order every play (see dealRounds): an easy scam first, then a mix with no long runs.
+  const [rounds, setRounds] = useState(dealRounds)
   const [round, setRound] = useState(0)
   const [guess, setGuess] = useState<Guess | null>(null)
   const [missed, setMissed] = useState<Scenario[]>([])
@@ -192,10 +198,10 @@ export default function ScamOrNot() {
   const [streak, setStreak] = useState(0)
   const [best, setBest] = useState(0)
 
-  const s = SCENARIOS[round]
+  const s = rounds[round]
   const revealed = guess !== null
   const correct = guess === s.answer
-  const last = round === SCENARIOS.length - 1
+  const last = round === rounds.length - 1
   const marks = marksFor(s, opened)
 
   const check = (i: number) => setOpened((o) => (o.includes(i) ? o : [...o, i]))
@@ -230,6 +236,7 @@ export default function ScamOrNot() {
   }
 
   const again = () => {
+    setRounds(dealRounds())
     setRound(0)
     setGuess(null)
     setMissed([])
@@ -244,7 +251,7 @@ export default function ScamOrNot() {
   return (
     <>
       <PageHead
-        crumb={<Crumb label="Scam or not?" />}
+        crumb={<Crumb label="Scam or Not?" />}
         title="Scam or Not?"
         lead="Look closely at each message, then decide: is it a scam or not?"
       />
@@ -254,7 +261,7 @@ export default function ScamOrNot() {
         ) : (
         <section className="game-shell" aria-label="Game">
           <div className="section-top">
-            <ProgressTrack total={SCENARIOS.length} done={round + (revealed ? 1 : 0)} current={round} />
+            <ProgressTrack total={rounds.length} done={round + (revealed ? 1 : 0)} current={round} />
           </div>
 
           <div className="section play">
@@ -289,7 +296,7 @@ export default function ScamOrNot() {
                 <p className="feedback-title">
                   {correct ? <CheckCircle2 size={20} strokeWidth={1.5} /> : <Info size={20} strokeWidth={1.5} />}
                   {correct
-                    ? `Well spotted — it ${s.answer === 'scam' ? 'is a scam' : 'is not a scam'}.`
+                    ? `Nice catch — it ${s.answer === 'scam' ? 'is a scam' : 'is not a scam'}.`
                     : `Good try — this one ${s.answer === 'scam' ? 'is a scam' : 'is not a scam'}.`}
                 </p>
                 <p>{s.why}</p>
@@ -300,12 +307,15 @@ export default function ScamOrNot() {
                   ))}
                 </ul>
                 <ul className="son-reveal-notes">
-                  <li>
-                    <Search size={16} strokeWidth={2} aria-hidden="true" />
-                    {checkedAtAnswer
-                      ? `You checked ${clues(checkedAtAnswer)} before deciding. Looking closer is a good habit.`
-                      : 'You went with your first look. Next time, try a “Check it” too.'}
-                  </li>
+                  {/* The nudge to use "Check it" only shows after a miss, so it never scolds a right answer. */}
+                  {(checkedAtAnswer > 0 || !correct) && (
+                    <li>
+                      <Search size={16} strokeWidth={2} aria-hidden="true" />
+                      {checkedAtAnswer
+                        ? `You checked ${clues(checkedAtAnswer)} before deciding. Looking closer is a good habit.`
+                        : 'You went with your first look. Next time, try a “Check it” too.'}
+                    </li>
+                  )}
                   {correct && streak >= 3 && (
                     <li>
                       <Sprout size={16} strokeWidth={2} aria-hidden="true" />
@@ -317,9 +327,12 @@ export default function ScamOrNot() {
                   <p className="son-source">
                     Learn more:{' '}
                     <a href={s.source.url} target="_blank" rel="noopener noreferrer">
-                      {s.source.label}
-                      <span className="sr-only"> (opens in a new tab)</span>
-                      <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+                      {s.source.label.slice(0, s.source.label.lastIndexOf(' ') + 1)}
+                      <span className="son-source-end">
+                        {s.source.label.slice(s.source.label.lastIndexOf(' ') + 1)}
+                        <span className="sr-only"> (opens in a new tab)</span>
+                        <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+                      </span>
                     </a>
                   </p>
                 )}
@@ -344,10 +357,10 @@ export default function ScamOrNot() {
               real company won’t mind if you hang up and contact them using details you already trust.
             </p>
             <p>Not sure? Use “Check it” to look closer at the sender, the link or the wording before you decide.</p>
-            <p className="son-credit">Inspect mechanic adapted from Friend or Fraud? by Krishna (SafeSense team).</p>
+            <p className="son-credit">The “Check it” idea comes from Friend or Fraud? by Krishna (SafeSense team).</p>
           </div>
           <a className="btn btn-secondary btn-block" href={href('home')}>
-            Leave game
+            Back to home
           </a>
         </aside>
       </div>
