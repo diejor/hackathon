@@ -1,11 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { MessageCircle, ShieldCheck, Sprout } from 'lucide-react'
+import { ASSISTANT } from './chat/copy'
 import { href, type Route } from '../router'
 import { useProgress } from '../lib/useProgress'
 import '../profile.css'
 
 const SIZES = ['normal', 'large', 'larger'] as const
 type Size = (typeof SIZES)[number]
+const SIZE_NAMES: Record<Size, string> = { normal: 'Normal', large: 'Large', larger: 'Larger' }
 
 function TextSizeButton() {
   const [size, setSize] = useState<Size>(() => {
@@ -29,7 +31,12 @@ function TextSizeButton() {
 
   return (
     <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`}>
-      <span className="aa">Aa</span> <span className="text-size-label">Text size</span>
+      <span className="aa" aria-hidden="true">
+        Aa
+      </span>{' '}
+      <span className="text-size-label" aria-hidden="true">
+        Text: {SIZE_NAMES[size]}
+      </span>
     </button>
   )
 }
@@ -62,7 +69,7 @@ function Header({ route }: { route: Route }) {
       <div className="container header-inner">
         {/* The logo is the way home on every page */}
         <a className="brand" href={href('home')} aria-label="SafeSense home">
-          <span className="brand-mark">
+          <span className="brand-mark" aria-hidden="true">
             <ShieldCheck size={22} strokeWidth={1.75} />
           </span>
           <span className="brand-name">SafeSense</span>
@@ -74,10 +81,11 @@ function Header({ route }: { route: Route }) {
             className="chat-link"
             href={href('chat')}
             aria-current={route === 'chat' ? 'page' : undefined}
-            aria-label="Chat with us"
+            aria-label="Ask SafeSense"
+            title={`Ask the ${ASSISTANT}`}
           >
-            <MessageCircle size={20} strokeWidth={1.75} />
-            <span className="chat-label">Chat with us</span>
+            <MessageCircle size={20} strokeWidth={1.75} aria-hidden="true" />
+            <span className="chat-label">Ask SafeSense</span>
           </a>
         </div>
       </div>
@@ -85,12 +93,47 @@ function Header({ route }: { route: Route }) {
   )
 }
 
-function Footer({ note }: { note?: string }) {
+/** "Forget me" sits at the bottom of the Ask SafeSense page: open that page, then bring the button into view. */
+function goToForgetMe(e: MouseEvent<HTMLAnchorElement>) {
+  e.preventDefault()
+  window.location.hash = href('chat')
+  window.setTimeout(() => {
+    const box = document.querySelector<HTMLElement>('.chat-forget')
+    if (!box) return
+    box.scrollIntoView({ block: 'center' })
+    box.querySelector<HTMLElement>('button')?.focus({ preventScroll: true })
+  }, 400)
+}
+
+/** What SafeSense is, who made it, and an honest note on where your data goes. */
+function Footer({ route }: { route: Route }) {
   return (
     <footer className="footer">
       <div className="container footer-inner">
-        <span>{note ?? 'Learn at your own pace.'}</span>
-        <span className="footer-tag">SafeSense · A little practice, more confidence.</span>
+        <div className="footer-about">
+          <p className="footer-brand">
+            <ShieldCheck size={18} strokeWidth={1.75} aria-hidden="true" /> SafeSense
+          </p>
+          <p>
+            Practice spotting scams, and ask the {ASSISTANT} (an AI) when a message worries you. Made by the
+            SafeSense team at HackUTD 2026.
+          </p>
+        </div>
+        <div className="footer-privacy">
+          <p className="footer-head">Your privacy</p>
+          <p>
+            Your chat and game progress are saved privately for you. An AI service (Google Gemini) reads your
+            messages to answer. Screenshots aren’t stored.
+          </p>
+        </div>
+        <nav className="footer-links" aria-label="About and privacy">
+          <a href={href('about')} aria-current={route === 'about' ? 'page' : undefined}>
+            About SafeSense
+          </a>
+          <a href={href('chat')} onClick={goToForgetMe}>
+            Delete my data (Forget me)
+          </a>
+        </nav>
       </div>
     </footer>
   )
@@ -103,7 +146,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
       <main>
         <div className="container">{children}</div>
       </main>
-      <Footer />
+      <Footer route={route} />
     </div>
   )
 }

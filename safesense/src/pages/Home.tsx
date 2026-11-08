@@ -1,7 +1,18 @@
-import { useState, type MouseEvent } from 'react'
-import { ArrowRight, HeartHandshake, MessagesSquare, ScanSearch, ShieldCheck, SpellCheck, Sprout } from 'lucide-react'
+import { useRef, useState, type MouseEvent } from 'react'
+import {
+  ArrowDown,
+  ArrowRight,
+  HeartHandshake,
+  MessageCircle,
+  MessagesSquare,
+  ScanSearch,
+  ShieldCheck,
+  SpellCheck,
+  Sprout,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
+import { ASSISTANT } from '../components/chat/copy'
 
 type Game = {
   route: Route
@@ -18,7 +29,7 @@ const GAMES: Game[] = [
     icon: SpellCheck,
     kind: 'Word game',
     title: 'Fraudle',
-    desc: 'Deduce the word. Any character length, six tries.',
+    desc: 'Guess the safety word from a clue, in six tries.',
     time: 'About 3 minutes',
   },
   {
@@ -27,7 +38,7 @@ const GAMES: Game[] = [
     kind: 'Spot the scam',
     title: 'Scam or Not?',
     desc: 'Read a message or profile. Make your guess: scam or not?',
-    time: 'About 5 minutes',
+    time: 'About 8 minutes',
   },
   {
     route: 'long-con',
@@ -60,7 +71,7 @@ function GameCard({ game }: { game: Game }) {
 
   return (
     <a className={`card game-card ${pressed ? 'is-pressed' : ''}`} href={href(route)} onClick={onClick}>
-      <span className="icon-tile">
+      <span className="icon-tile" aria-hidden="true">
         <Icon size={24} strokeWidth={1.4} />
       </span>
       <span className="kind">{kind}</span>
@@ -75,6 +86,17 @@ function GameCard({ game }: { game: Game }) {
 }
 
 export default function Home() {
+  const gamesRef = useRef<HTMLHeadingElement>(null)
+
+  // "Start practicing" brings the games into view. A hash link can't do it: the hash is the router.
+  const toGames = () => {
+    const h = gamesRef.current
+    if (!h) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    h.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+    h.focus({ preventScroll: true })
+  }
+
   return (
     <>
       <section className="home-hero">
@@ -82,18 +104,27 @@ export default function Home() {
           <div className="eyebrow">A little practice. More confidence.</div>
           <h1 className="page-title">Feel more sure. Stay more secure.</h1>
           <p className="lead">
-            Scams can fool anyone. Learn what to look for with friendly activities, one small step at a time.
+            Scams can fool anyone. Practice spotting them with three short games, and ask the {ASSISTANT} when
+            a real message worries you.
           </p>
+          <div className="hero-actions">
+            <button type="button" className="btn btn-primary" onClick={toGames}>
+              <ArrowDown size={20} aria-hidden="true" /> Start practicing
+            </button>
+            <a className="btn btn-secondary" href={href('chat')}>
+              <MessageCircle size={20} strokeWidth={1.75} aria-hidden="true" /> Check a message
+            </a>
+          </div>
           <p className="reassure">
-            <HeartHandshake size={22} strokeWidth={1.5} className="icon-muted" />
-            No scores to chase. No pressure to hurry.
+            <HeartHandshake size={22} strokeWidth={1.5} className="icon-muted" aria-hidden="true" />
+            <span>No pressure to hurry. Points just show how much you’ve practiced.</span>
           </p>
           <a className="see-progress" href={href('profile')}>
             <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
           </a>
         </div>
-        <aside className="panel">
-          <ShieldCheck size={30} strokeWidth={1.4} className="icon-muted" />
+        <aside className="panel motto-panel">
+          <ShieldCheck size={30} strokeWidth={1.4} className="icon-muted" aria-hidden="true" />
           <p className="motto">
             Pause. Check. <br className="desktop-break" />
             Then act.
@@ -102,7 +133,9 @@ export default function Home() {
         </aside>
       </section>
 
-      <h2 className="h2 games-title">Pick a game</h2>
+      <h2 className="h2 games-title" id="games" ref={gamesRef} tabIndex={-1}>
+        Pick a game
+      </h2>
       <div className="games">
         {GAMES.map((game) => (
           <GameCard key={game.route} game={game} />
@@ -110,15 +143,15 @@ export default function Home() {
       </div>
 
       <section className="panel help-banner">
-        <MessagesSquare size={36} strokeWidth={1.3} className="icon-muted" />
+        <MessagesSquare size={36} strokeWidth={1.3} className="icon-muted" aria-hidden="true" />
         <div className="body">
           <h2 className="h3" style={{ marginTop: 0 }}>
-            Something on your mind?
+            Got a message that worries you?
           </h2>
-          <p style={{ marginTop: 4 }}>Talk it through with us. Type, ask, or upload an image.</p>
+          <p style={{ marginTop: 4 }}>Ask SafeSense: type it, say it, or add a screenshot.</p>
         </div>
         <a className="btn btn-primary" href={href('chat')}>
-          <ArrowRight size={20} /> Chat with us
+          <ArrowRight size={20} aria-hidden="true" /> Ask SafeSense
         </a>
       </section>
     </>

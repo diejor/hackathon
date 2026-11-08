@@ -330,6 +330,19 @@
   .points-total {
     font-size: 1.6rem;
   }
+  /* Signs: phones show what you've caught plus a few still to find, then "Show all signs". */
+  .signs:not(.show-all) .sign-tile.is-extra {
+    display: none;
+  }
+}
+.signs-toggle {
+  display: none;
+  margin-top: 16px;
+}
+@media (max-width: 720px) {
+  .signs-toggle {
+    display: inline-flex;
+  }
 }
 /* Very narrow phones: the header keeps "Aa" (the button keeps its full label for screen readers),
    the points number moves to the profile page only, and the logo stops growing with the text size. */
@@ -339,6 +352,21 @@
   }
   .brand-name {
     font-size: 24px;
+  }
+  /* The header controls stop growing with the text size here, so "SafeSense" always fits. */
+  .header-actions {
+    gap: 6px;
+  }
+  .text-size {
+    font-size: 16px;
+    padding: 0 10px;
+  }
+  .progress-link {
+    padding: 0 8px;
+  }
+  .points-chip {
+    font-size: 13px;
+    padding: 0 6px;
   }
 }
 @media (max-width: 374px) {
