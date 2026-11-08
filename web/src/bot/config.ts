@@ -4,7 +4,7 @@
 export const BOT_IMESSAGE_ADDRESS = "";
 // The Discord app's install link (https://discord.com/oauth2/authorize?client_id=<application id>, printed by
 // scripts/discord-register.sh). Empty: "Link Discord" stays hidden.
-export const DISCORD_INSTALL_URL = "";
+export const DISCORD_INSTALL_URL = "https://discord.com/oauth2/authorize?client_id=1568814277098213547";
 
 /** Display names for ChatMessage.channel values other than "web". */
 export const CHANNEL_LABELS: Record<string, string> = {
