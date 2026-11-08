@@ -9,7 +9,7 @@ const CSS = `
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:#f8fafc;color:#0f172a;font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}
-.top{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.92);border-bottom:1px solid #e2e8f0}
+.top{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid #e2e8f0}
 .top-in{max-width:448px;margin:0 auto;height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between}
 .mark{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:17px;letter-spacing:-.01em;text-decoration:none}
 .badge{font-size:12px;font-weight:600;color:#4338ca;background:#eef2ff;border-radius:999px;padding:4px 10px}
@@ -60,12 +60,12 @@ export function debriefHtml(opts: { archetype: Archetype; plan: AttackPlan; mess
   const tactics = plan.tactics.map(t => TACTIC_LABELS[t].name.toLowerCase());
   const tacticLine = tactics.length ? `<p class="muted">It leaned on ${esc(tactics.join(' and '))}.</p>` : '';
 
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Safe Signal debrief</title><style>${CSS}</style></head><body>
-<header class="top"><div class="top-in"><a class="mark" href="/">${SHIELD}Safe Signal</a><span class="badge">${preview ? 'Preview' : 'Training drill'}</span></div></header>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>SafeSense debrief</title><style>${CSS}</style></head><body>
+<header class="top"><div class="top-in"><a class="mark" href="/">${SHIELD}SafeSense</a><span class="badge">${preview ? 'Preview' : 'Training drill'}</span></div></header>
 <main>
 ${preview ? '<p class="note"><strong>Debrief preview.</strong> This is what you will see after tapping the link in the drill. Opening it here does not use up your drill.</p>' : ''}
 <section>
-<p class="eyebrow">Safe Signal debrief</p>
+<p class="eyebrow">SafeSense debrief</p>
 <h1>${preview ? 'Here is how the drill works' : 'That was a practice scam. No harm done.'}</h1>
 <p class="lead">${preview ? 'The text below is built from your weak spots. Every brand in it is invented.' : 'Nothing was collected, and the link ends here. Here is what to look for next time.'}</p>
 </section>
@@ -101,6 +101,6 @@ ${tacticLine}
 <a class="btn btn-primary" href="/coach">Talk to your coach</a>
 <a class="btn btn-secondary" href="/campaign">Back to my profile</a>
 </section>
-<p class="small">Safe Signal drills use invented brands and only go to a phone you verified. Reply STOP to the drill line to end them.</p>
+<p class="small">SafeSense drills use invented brands and only go to a phone you verified. Reply STOP to the drill line to end them.</p>
 </main></body></html>`;
 }

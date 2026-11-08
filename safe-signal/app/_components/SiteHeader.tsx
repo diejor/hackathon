@@ -16,7 +16,7 @@ export function Wordmark({ className = '' }: { className?: string }) {
         <path d="M8.2 12.6a5.3 5.3 0 0 1 7.6 0M9.9 14.4a2.8 2.8 0 0 1 4.2 0" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" />
         <circle cx="12" cy="16.4" r="1.1" fill="#fff" />
       </svg>
-      Safe Signal
+      SafeSense
     </span>
   );
 }
@@ -26,7 +26,7 @@ export default function SiteHeader() {
   return (
     <header className="site-header sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-md items-center justify-between gap-2 px-4">
-        <Link href="/" aria-label="Safe Signal home" className="-ml-1 rounded-lg px-1 py-1">
+        <Link href="/" aria-label="SafeSense home" className="-ml-1 rounded-lg px-1 py-1">
           <Wordmark className="text-[17px]" />
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1">

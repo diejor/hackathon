@@ -3,7 +3,7 @@ import SiteHeader from './_components/SiteHeader';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Safe Signal',
+  title: 'SafeSense',
   description: 'Find the scam that would get you, practise against it safely on your own phone, and keep a coach that knows your weak spots.',
 };
 

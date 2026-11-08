@@ -44,7 +44,7 @@ export default function Home() {
       <section className="rounded-2xl bg-emerald-50 p-5 ring-1 ring-inset ring-emerald-200">
         <h2 className="text-sm font-semibold text-emerald-700">Works alongside T-Mobile Scam Shield</h2>
         <p className="mt-1 text-[15px] leading-relaxed text-emerald-900">
-          Scam Shield quietly blocks known scam calls and texts at the network. Safe Signal trains you for the ones that still get through.
+          Scam Shield quietly blocks known scam calls and texts at the network. SafeSense trains you for the ones that still get through.
         </p>
       </section>
 

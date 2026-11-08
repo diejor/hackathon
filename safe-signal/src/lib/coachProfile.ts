@@ -1,4 +1,4 @@
-// Tell the Help Bot coach about a freshly built Safe Signal profile, once, so /coach can talk about
+// Tell the Help Bot coach about a freshly built SafeSense profile, once, so /coach can talk about
 // the player's weak spots. Mirrors reportToBot in ./helpbot (log_activity, see spacetimedb/Activity.cs).
 // The bot's activity summary shows only the first ~160 chars of a round's details, so keep them short.
 import type { AttackPlan, ProfileVector } from '../contracts';
