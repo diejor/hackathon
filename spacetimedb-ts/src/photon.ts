@@ -17,11 +17,12 @@
 //  - AI turns are budgeted per sender (channel_ai_usage: 8 per rolling minute), not the web's 3 s cooldown.
 //  - channel_link / link_code / link_attempt / webhook_seen are private; players see only their own rows.
 //  - Outbound guards (photon-guards.ts): kill switch PHOTON_SENDING_ENABLED, STOP/START opt-out, a daily
-//    cap per sender; every outbound message goes through deliver(). The bot only ever replies to a text.
+//    cap per sender; every outbound message goes through deliver(). The bot only ever replies to a text,
+//    except practice texts (practice.ts), which the linked player asks for and go through deliverProactive().
 import { t, SenderError, SyncResponse, type Headers, type Request } from 'spacetimedb/server';
 import { Identity, Timestamp, TimeDuration } from 'spacetimedb';
-import spacetimedb, { tables, viewRow, type Db, type Env, type Handler } from './schema';
-import { errorMessage, loadAiConfig, trim, trimEndChar, type HttpClient } from './ai';
+import spacetimedb, { practiceJob, tables, viewRow, type Db, type Env, type Handler } from './schema';
+import { errorMessage, loadAiConfig, trim, trimEndChar, type HttpClient, type TxHost } from './ai';
 import { BotApology, MaxBotTextChars, forgetAll, runBotTurn, upsertFacts, type BotReply } from './bot';
 import { CodeAlphabet } from './lib';
 import {
@@ -38,9 +39,11 @@ import {
   killSwitchBlock,
   optIn,
   optOut,
+  proactiveTarget,
   reserveSend,
   saveReach,
 } from './photon-guards';
+import { PracticeQueuedReply, dropPracticeOfOwner, dropPracticeOfSender, gradePractice, queuePractice } from './practice';
 import { base64Decode, base64Encode, concat, fixedTimeEquals, fromUtf8, hmacSha256, sha256, toHex, utf8 } from './crypto';
 
 const DefaultPhotonBaseUrl = 'https://api.photon.codes';
@@ -101,6 +104,7 @@ export const unlinkChannels = spacetimedb.reducer(ctx => {
   for (const l of [...ctx.db.channelLink.owner.filter(ctx.sender)]) ctx.db.channelLink.senderKey.delete(l.senderKey);
   ctx.db.linkCode.owner.delete(ctx.sender);
   dropReachOfOwner(ctx.db, ctx.sender);
+  dropPracticeOfOwner(ctx.db, ctx.sender);
 });
 
 // The router (POST /photon, POST /discord) is declared in index.ts, after both handlers exist.
@@ -215,6 +219,70 @@ function deliver(ctx: Handler, msg: InboundMessage, reply: Reply, idempotencyKey
   return (sent ? 'sent' : 'send failed') + (gate === 'last' ? ' (last today)' : '') + (reply.optOutNotice ? ' (opt-out confirmation)' : '');
 }
 
+// The only way out for a practice text (not a reply): the proactive kill switch, opt-out and daily cap, then
+// Photon. The shared line still refuses it (403) unless that phone texted the line first.
+function deliverProactive(
+  ctx: TxHost,
+  target: { senderKey: string; spaceId: string; agentUserId: string },
+  text: string,
+  idempotencyKey: string
+): string {
+  const blocked = killSwitchBlock(ctx.env, 'proactive');
+  if (blocked) {
+    console.log(`Photon: not sending (${blocked})`);
+    return 'skipped (sending disabled)';
+  }
+  const gate = ctx.withTx(tx => {
+    if (isOptedOut(tx.db, target.senderKey)) return 'opted out';
+    return reserveSend(tx.db, target.senderKey, tx.timestamp).ok ? 'ok' : 'daily cap reached';
+  });
+  if (gate !== 'ok') {
+    console.log(`Photon: not sending (${gate})`);
+    return `skipped (${gate})`;
+  }
+  const to = { spaceId: target.spaceId, agentUserId: target.agentUserId, projectId: '' };
+  return sendChannelReply(ctx.http, ctx.env, to, text, idempotencyKey) ? 'sent' : 'send failed';
+}
+
+// Scheduled only (practice_job, ~60-120 s after the request): send one practice text, then mark it
+// "pending" (waiting for their reply) or "failed" (not sent; doesn't count toward the limits).
+export const practiceRunJob = spacetimedb.procedure(
+  { onSchedule: practiceJob },
+  { job: practiceJob.rowType },
+  t.unit(),
+  (ctx, { job }) => {
+    if (!ctx.withTx(tx => tx.senderAuth.isInternal)) throw new SenderError('Not allowed');
+    const setStatus = (status: string) =>
+      ctx.withTx(tx => {
+        const row = tx.db.practiceSend.id.find(job.practiceId);
+        if (row && row.status === 'queued') tx.db.practiceSend.id.update({ ...row, status });
+      });
+    try {
+      const target = ctx.withTx(tx => {
+        const row = tx.db.practiceSend.id.find(job.practiceId);
+        if (!row || row.status !== 'queued') return 'gone';
+        const t = proactiveTarget(tx.db, tx.env, row.owner, tx.timestamp);
+        return typeof t === 'string' ? t : t.senderKey !== row.senderKey ? 'phone changed' : t;
+      });
+      if (target === 'gone') return {};
+      if (typeof target === 'string') {
+        console.log(`Practice: #${job.practiceId} not sent (${target})`);
+        setStatus('failed');
+        return {};
+      }
+      // The text is fictional template output (practice.ts), safe to log.
+      console.log(`Practice: sending #${job.practiceId}: ${job.text}`);
+      const outcome = deliverProactive(ctx, target, job.text, `practice-${job.practiceId}`);
+      console.log(`Practice: #${job.practiceId} ${outcome}`);
+      setStatus(outcome === 'sent' ? 'pending' : 'failed');
+    } catch (e) {
+      console.error(`Practice: job ${job.scheduledId} failed: ${errorName(e)}: ${errorMessage(e)}`);
+      setStatus('failed');
+    }
+    return {};
+  }
+);
+
 // Record a webhook / interaction id; false when it was already handled. Keeps at most MaxWebhookSeen ids.
 export function markSeen(db: Db, id: string, now: Timestamp): boolean {
   if (db.webhookSeen.id.find(id)) return false;
@@ -325,6 +393,7 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       if (!tx.db.channelLink.senderKey.find(senderKey)) return "This chat isn't linked to a Security Arcade account.";
       tx.db.channelLink.senderKey.delete(senderKey);
       dropReachOfSender(tx.db, senderKey);
+      dropPracticeOfSender(tx.db, senderKey);
       return "Unlinked. I'll keep chatting with you here, but separately from your Security Arcade account.";
     });
   if (command === 'FORGET ME' || command === 'FORGETME')
@@ -335,8 +404,23 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       tx.db.channelLink.senderKey.delete(senderKey);
       dropReachOfSender(tx.db, senderKey);
       dropReachOfOwner(tx.db, owner);
+      dropPracticeOfSender(tx.db, senderKey);
+      dropPracticeOfOwner(tx.db, owner);
       return 'Done. I deleted our conversation and everything I remembered about you.';
     });
+  // "PRACTICE": ask for a practice text by text (same rules as the web's request_practice_text).
+  if (command === 'PRACTICE' || command === 'PRACTICE TEXT')
+    return ctx.withTx(tx => {
+      const linked = tx.db.channelLink.senderKey.find(senderKey);
+      if (!linked)
+        return 'Practice texts need a linked phone. In the SafeSense chat, select Link my phone, text LINK and the code, then text PRACTICE.';
+      return queuePractice(tx, linked.owner) ?? PracticeQueuedReply;
+    });
+  // A clear answer (REPORT, YES, ...) to a practice text from the last 2 h: grade it and debrief (no AI).
+  if (command.length > 0) {
+    const debrief = ctx.withTx(tx => gradePractice(tx.db, senderKey, tx.timestamp, text));
+    if (debrief) return debrief;
+  }
 
   if (!aiAllowed) return '';
   if (msg.hasVoice && text.length === 0 && msg.attachmentId.length === 0)
@@ -464,12 +548,14 @@ function photonBaseUrl(env: Env): string {
   return trimEndChar(env.PHOTON_BASE_URL || DefaultPhotonBaseUrl, '/');
 }
 
-function photonProject(env: Env, msg: InboundMessage): string {
+type SendTo = Pick<InboundMessage, 'spaceId' | 'agentUserId' | 'projectId'>;
+
+function photonProject(env: Env, msg: Pick<InboundMessage, 'projectId'>): string {
   return env.PHOTON_PROJECT_ID || msg.projectId;
 }
 
-// Call only through deliver() (guards). true = Photon accepted it.
-function sendChannelReply(http: HttpClient, env: Env, msg: InboundMessage, text: string, idempotencyKey: string): boolean {
+// Call only through deliver() / deliverProactive() (guards). true = Photon accepted it.
+function sendChannelReply(http: HttpClient, env: Env, msg: SendTo, text: string, idempotencyKey: string): boolean {
   const key = env.PHOTON_API_KEY;
   const project = photonProject(env, msg);
   if (!key || project.length === 0) {

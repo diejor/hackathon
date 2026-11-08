@@ -8,6 +8,7 @@
 //   bot.ts       Bot.cs       chat, memory, forget_me, bot_send
 //   discord.ts   Discord.cs   Discord interactions (+ Ed25519.cs via crypto.ts)
 //   photon.ts    Photon.cs    Photon messaging, channel links (+ Sha256.cs via crypto.ts)
+//   practice.ts  (new)        practice scam texts by iMessage (templates, limits, grading)
 //
 // Only values registered with SpacetimeDB are exported from this entry file; the export name is the
 // function's name (snake_cased for clients).
@@ -37,7 +38,8 @@ export { myActivity, logActivity, seedDemoActivity } from './activity';
 export { aiPing, aiAsk } from './ai';
 export { myMessages, myFacts, forgetMe, botSend } from './bot';
 export { discordInteractions, discordRunJob } from './discord';
-export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebhook } from './photon';
+export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebhook, practiceRunJob } from './photon';
+export { myPracticeTexts, requestPracticeText } from './practice';
 
 // Photon.cs Routes(): served at /v1/database/<db>/route/<path>.
 export const routes = spacetimedb.httpRouter(new Router().post('/photon', photonWebhook).post('/discord', discordInteractions));

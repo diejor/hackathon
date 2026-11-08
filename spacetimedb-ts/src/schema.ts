@@ -224,6 +224,39 @@ const channelReach = table(
   }
 );
 
+// ---------- Practice texts (practice.ts) ----------
+// New tables only, like the guards above: an existing database republishes without a wipe.
+
+// One practice scam text per row (limits: 1 a day, 3 in total per person). Private; each player sees
+// their own rows through my_practice_texts. status: "queued" (job not run yet) -> "pending" (sent, waiting
+// for their reply) -> "caught" | "fooled" | "expired" (no graded reply within 2 h); "failed" = not sent
+// (doesn't count toward the limits).
+const practiceSend = table(
+  { name: 'practice_send' },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    owner: t.identity().index('btree'),
+    senderKey: t.string().index('btree'), // the linked phone, "<platform>:<Photon user id>" (no phone number)
+    templateId: t.string(),
+    tactic: t.string(),
+    createdAt: t.timestamp(),
+    status: t.string(),
+  }
+);
+
+// Sends one queued practice text ~60-120 s after the request (practiceRunJob in photon.ts). Private;
+// deleted when it runs, or by UNLINK / FORGET ME.
+export const practiceJob = table(
+  { name: 'practice_job' },
+  {
+    scheduledId: t.u64().primaryKey().autoInc(),
+    scheduledAt: t.scheduleAt(),
+    practiceId: t.u64().index('btree'),
+    owner: t.identity().index('btree'),
+    text: t.string(), // rendered from a template in practice.ts (never by the AI)
+  }
+);
+
 // ---------- Schema + environment ----------
 
 // Secrets live in the database environment (supplied at publish time from the gitignored .env,
@@ -247,6 +280,8 @@ const spacetimedb = schema(
     channelOptout,
     channelSendDaily,
     channelReach,
+    practiceSend,
+    practiceJob,
   },
   {
     env: {
@@ -286,6 +321,7 @@ export type ActivityEvent = Infer<typeof activityEvent.rowType>;
 export type ChatMessage = Infer<typeof chatMessage.rowType>;
 export type MemoryFact = Infer<typeof memoryFact.rowType>;
 export type DiscordJob = Infer<typeof discordJob.rowType>;
+export type PracticeSend = Infer<typeof practiceSend.rowType>;
 export type AiResultT = Infer<typeof AiResult>;
 
 // Views return table rows WITHOUT a primary key, like the C# module (a table's rowType would carry its
@@ -305,4 +341,4 @@ export function viewRow<T extends { row: Record<string, any> }>(rowType: T): T {
   return copy;
 }
 
-export const tables = { room, roomMember, activityEvent, chatMessage, memoryFact, channelLink, linkCode };
+export const tables = { room, roomMember, activityEvent, chatMessage, memoryFact, channelLink, linkCode, practiceSend };
