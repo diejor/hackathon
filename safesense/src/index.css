@@ -240,6 +240,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin-top: -10px; /* first link lines up with the column headings (links keep 44px tap height) */
 }
 .footer-links a {
   display: inline-flex;
@@ -270,6 +271,7 @@ main {
   text-decoration: underline;
 }
 .page-title {
+  text-wrap: balance; /* no one-word last line ("act.") at big text sizes */
   font-family: var(--font-serif);
   font-weight: 400;
   font-size: 2.6rem;
@@ -287,6 +289,7 @@ main {
   margin-bottom: 32px;
 }
 .h2 {
+  text-wrap: balance;
   font-size: 1.6rem;
   font-weight: 600;
   color: var(--green-900);
@@ -294,6 +297,7 @@ main {
   line-height: 1.3;
 }
 .h3 {
+  text-wrap: balance;
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--green-900);
@@ -471,7 +475,7 @@ main {
 }
 .reassure {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   margin-top: 24px;
   color: var(--text-muted);
@@ -479,8 +483,10 @@ main {
 }
 .reassure svg {
   flex-shrink: 0;
+  margin-top: 0.15em; /* sits on the first line when the sentence wraps */
 }
 .motto {
+  text-wrap: balance;
   font-family: var(--font-serif);
   font-size: 1.6rem;
   color: var(--green-900);
@@ -1470,6 +1476,9 @@ main {
     padding-top: 24px;
     padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
+  .footer-links {
+    margin-top: 0;
+  }
   .card {
     padding: 20px 16px;
   }
@@ -1540,6 +1549,7 @@ main {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
+    padding: 20px;
   }
   .help-banner .btn {
     width: 100%;
