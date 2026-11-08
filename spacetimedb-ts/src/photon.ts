@@ -444,12 +444,12 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
     });
   if (command === 'UNLINK')
     return ctx.withTx(tx => {
-      if (!tx.db.channelLink.senderKey.find(senderKey)) return "This chat isn't linked to a Security Arcade account.";
+      if (!tx.db.channelLink.senderKey.find(senderKey)) return "This chat isn't linked to SafeSense on the web.";
       tx.db.channelLink.senderKey.delete(senderKey);
       dropReachOfSender(tx.db, senderKey);
       dropPracticeOfSender(tx.db, senderKey);
       dropVoiceOfSender(tx.db, senderKey);
-      return "Unlinked. I'll keep chatting with you here, but separately from your Security Arcade account.";
+      return "Unlinked. I'll keep chatting with you here, but separately from your SafeSense progress on the web.";
     });
   if (command === 'FORGET ME' || command === 'FORGETME')
     return ctx.withTx(tx => {
@@ -563,7 +563,7 @@ export function linkSender(
     else db.linkAttempt.insert({ senderKey, failures: 1, windowStart: now });
     return (
       "That code didn't work. Codes are 6 characters and expire after 10 minutes. " +
-      `In the Security Arcade app, open Help Bot → ⋯ → ${discord ? 'Link Discord' : 'Link iMessage'} for a new one.`
+      'For a new one, open SafeSense on the web: Ask SafeSense → Text SafeSense → Link my phone.'
     );
   }
 
@@ -583,7 +583,7 @@ export function linkSender(
     now
   );
   return (
-    'Linked! Your chats here now share your Security Arcade history and game progress, and show up in the app. ' +
+    'Linked! Your chats here now share your SafeSense progress, and show up in the chat on the web. ' +
     (discord ? 'Run /unlink to undo.' : 'Text UNLINK to undo.')
   );
 }

@@ -123,10 +123,10 @@ function handleInteraction(ctx: Handler, root: unknown): SyncResponse {
   if (name === 'unlink')
     return discordReply(
       ctx.withTx(tx => {
-        if (!tx.db.channelLink.senderKey.find(senderKey)) return "Your Discord isn't linked to a Security Arcade account.";
+        if (!tx.db.channelLink.senderKey.find(senderKey)) return "Your Discord isn't linked to SafeSense on the web.";
         tx.db.channelLink.senderKey.delete(senderKey);
         dropVoiceOfSender(tx.db, senderKey);
-        return "Unlinked. I'll keep checking messages for you here, but separately from your Security Arcade account.";
+        return "Unlinked. I'll keep checking messages for you here, but separately from your SafeSense progress on the web.";
       })
     );
 
