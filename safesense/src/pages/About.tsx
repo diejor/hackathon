@@ -1,4 +1,4 @@
-import { ArrowRight, Gamepad2, HeartHandshake, LockKeyhole, MessageCircle, Phone, Users } from 'lucide-react'
+import { Gamepad2, HeartHandshake, LockKeyhole, MessageCircle, Phone, Users } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
 import { ASK_LABEL, ASSISTANT, THE_ASSISTANT } from '../components/chat/copy'
 import { href } from '../router'
@@ -96,7 +96,7 @@ export default function About() {
             </p>
           </div>
           <a className="btn btn-primary btn-block" href={href('chat')}>
-            <ArrowRight size={20} aria-hidden="true" /> {ASK_LABEL}
+            <MessageCircle size={20} aria-hidden="true" /> {ASK_LABEL}
           </a>
           <a className="btn btn-secondary btn-block" href={href('home')}>
             <Gamepad2 size={20} strokeWidth={1.5} aria-hidden="true" /> Practice with a game

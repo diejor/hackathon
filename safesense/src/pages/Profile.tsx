@@ -1,44 +1,13 @@
-import { ArrowRight, MessagesSquare, ScanSearch, SpellCheck, Sprout } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
 import { SignsGrid } from '../components/profile/SignsGrid'
 import { WorthPracticing } from '../components/profile/WorthPracticing'
 import { NicknamePanel } from '../components/profile/NicknamePanel'
 import { RecoveryKey } from '../components/profile/RecoveryKey'
-import { href, type Route } from '../router'
+import { href } from '../router'
 import { useProgress } from '../lib/useProgress'
 import { useNickname } from '../lib/profileStore'
 import type { Progress } from '../lib/progress'
 import { UPCOMING, pointsToGo } from '../content/upcoming'
-
-const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
-  { route: 'scam-or-not', icon: ScanSearch, label: 'Try Scam or Not?' },
-  { route: 'fraudle', icon: SpellCheck, label: 'Try Fraudle' },
-  { route: 'role-reversal', icon: MessagesSquare, label: 'Try Role Reversal' },
-]
-
-function Empty() {
-  return (
-    <section className="card profile-section profile-empty" aria-labelledby="empty-title">
-      <Sprout size={32} strokeWidth={1.4} className="icon-muted" aria-hidden="true" />
-      <h2 id="empty-title" className="h2">
-        Your progress will grow here
-      </h2>
-      <p className="muted">
-        Play any game, at your own pace. The signs you learn to spot will collect on this page, along with a
-        few gentle tips on what is worth another look.
-      </p>
-      <NextUnlock points={0} />
-      <div className="stack profile-empty-actions">
-        {GAMES.map(({ route, icon: Icon, label }, i) => (
-          <a key={route} className={`btn btn-block ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} href={href(route)}>
-            <Icon size={20} /> {label}
-          </a>
-        ))}
-      </div>
-    </section>
-  )
-}
 
 function Summary({ p }: { p: Progress }) {
   const { messages, wordsSolved, stories, days } = p.counts
@@ -141,7 +110,8 @@ export default function Profile() {
               </p>
             </section>
           )}
-          {status === 'ready' && progress.events === 0 && <Empty />}
+          {/* Nothing played yet: "Keep your progress" moves up from the bottom into the main column. */}
+          {status === 'ready' && progress.events === 0 && <RecoveryKey />}
           {status === 'ready' && progress.events > 0 && (
             <>
               <Summary p={progress} />
@@ -153,16 +123,14 @@ export default function Profile() {
         </div>
         <aside className="stack profile-aside">
           <NicknamePanel />
-          {status === 'ready' && progress.events > 0 && (
-            <a className="btn btn-secondary btn-block" href={href('home')}>
-              <ArrowRight size={20} /> Pick a game
-            </a>
-          )}
+          <BackHome />
         </aside>
       </div>
-      <div className="profile-bottom">
-        <RecoveryKey />
-      </div>
+      {!(status === 'ready' && progress.events === 0) && (
+        <div className="profile-bottom">
+          <RecoveryKey />
+        </div>
+      )}
     </>
   )
 }

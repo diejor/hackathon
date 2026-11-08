@@ -1,16 +1,8 @@
-import { HeartHandshake, LockKeyhole, MessagesSquare, PhoneCall as PhoneIcon, ScanSearch, Sparkles, SpellCheck } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
+import { HeartHandshake, LockKeyhole, PhoneCall as PhoneIcon, Sparkles } from 'lucide-react'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
 import { UnlockProgress } from '../components/LockedGame'
 import { UPCOMING, pointsToGo } from '../content/upcoming'
 import { useProgress } from '../lib/useProgress'
-import { href, type Route } from '../router'
-
-const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
-  { route: 'scam-or-not', icon: ScanSearch, label: 'Play Scam or Not?' },
-  { route: 'fraudle', icon: SpellCheck, label: 'Play Fraudle' },
-  { route: 'role-reversal', icon: MessagesSquare, label: 'Play Role Reversal' },
-]
 
 /** The coming-soon page for the locked game. Nothing here is playable yet. */
 export default function PhoneCall() {
@@ -73,11 +65,7 @@ export default function PhoneCall() {
             </p>
             <UnlockProgress id="pc-have" />
           </div>
-          {GAMES.map(({ route, icon: Icon, label }, i) => (
-            <a key={route} className={`btn btn-block ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} href={href(route)}>
-              <Icon size={20} aria-hidden="true" /> {label}
-            </a>
-          ))}
+          <BackHome />
         </aside>
       </div>
     </>

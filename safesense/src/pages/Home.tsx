@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react'
-import { ArrowRight, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
+import { ArrowRight, Lightbulb, MessageCircle, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
 import { KEYS, load, save, session, usePoints } from '../storage'
@@ -8,6 +8,7 @@ import { LockedGameCard } from '../components/LockedGame'
 import { NameDialog } from '../components/NameDialog'
 import { Mascot, stageMeta, stageFor, nextMilestone } from '../components/Mascot'
 import { useNickname } from '../lib/profileStore'
+import { useTapHighlight } from '../components/useTapHighlight'
 
 type Game = {
   route: Route
@@ -45,23 +46,17 @@ const GAMES: Game[] = [
   },
 ]
 
-/** How long a tapped card stays highlighted on touch screens before the game opens. */
-const TAP_HIGHLIGHT_MS = 220
-
 function GameCard({ game }: { game: Game }) {
   const { route, icon: Icon, kind, title, desc, time } = game
-  const [pressed, setPressed] = useState(false)
+  const [pressed, tap] = useTapHighlight()
 
-  // Desktop shows the highlight on hover. On touch screens there is no hover, so a tap shows the
-  // highlight briefly before opening the game. A click event only fires for a real tap — not while
-  // the page is being scrolled — so scrolling past the cards never highlights them.
+  // On hover screens the link opens as usual; on touch screens the highlight shows first (useTapHighlight).
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (window.matchMedia('(hover: hover)').matches) return
     e.preventDefault()
-    setPressed(true)
-    window.setTimeout(() => {
+    tap(() => {
       window.location.hash = href(route)
-    }, TAP_HIGHLIGHT_MS)
+    })
   }
 
   return (
@@ -172,6 +167,10 @@ export default function Home() {
           <p className="lead dash-intro">
             Scams can fool anyone. Learn what to look for with friendly activities, one small step at a time.
           </p>
+          <p className="dash-tip">
+            When a message feels urgent, that’s your cue to slow down. It’s always okay to pause, hang up, or ask
+            someone you trust. A real bank, company or loved one will wait while you check.
+          </p>
 
         </div>
 
@@ -201,7 +200,7 @@ export default function Home() {
               How can I improve?
             </p>
             <button className="btn btn-secondary btn-sm" onClick={askForSuggestions}>
-              {ASK_LABEL} <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
+              <MessageCircle size={18} strokeWidth={1.75} aria-hidden="true" /> {ASK_LABEL}
             </button>
           </div>
         </aside>
@@ -228,7 +227,7 @@ export default function Home() {
           </p>
         </div>
         <a className="btn btn-primary" href={href('chat')}>
-          <ArrowRight size={20} aria-hidden="true" /> {ASK_LABEL}
+          <MessageCircle size={20} aria-hidden="true" /> {ASK_LABEL}
         </a>
       </section>
     </>

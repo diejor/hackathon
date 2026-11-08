@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowLeftRight, ArrowRight, Check, Delete, Eye, Lightbulb, Minus, RotateCcw, Shuffle, Sprout } from 'lucide-react'
 import { BackHome, Crumb, PageHead } from '../components/Layout'
+import { useCoverReveal } from '../components/useCoverReveal'
 import { EndOverlay } from '../points'
 import { href } from '../router'
 import { logActivity } from '../lib/stdb'
@@ -151,19 +152,7 @@ function Board({
     }),
   )
 
-  // Clue reveal (design01): 'hidden' → 'pressed' (button feedback) → 'fading' (cover fades out) → 'shown'
-  const [clue, setClue] = useState<'hidden' | 'pressed' | 'fading' | 'shown'>('hidden')
-  const clueTimer = useRef<number>(undefined)
-  const revealClue = () => {
-    if (clue !== 'hidden') return
-    if (reducedMotion()) return setClue('shown')
-    setClue('pressed')
-    clueTimer.current = window.setTimeout(() => {
-      setClue('fading')
-      clueTimer.current = window.setTimeout(() => setClue('shown'), 260)
-    }, 320)
-  }
-  useEffect(() => () => window.clearTimeout(clueTimer.current), [])
+  const [clue, revealClue] = useCoverReveal()
 
   // Briefly highlight a key when it is pressed, by tap, click or physical keyboard (design01).
   const [flash, setFlash] = useState<string | null>(null)
@@ -524,7 +513,6 @@ export default function Fraudle() {
             )}
           </button>
           <BackHome />
-          <p className="fraudle-credit">Inspired by Scam Wordle by Krishna (SafeSense team).</p>
         </div>
       </div>
     </div>

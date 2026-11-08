@@ -75,7 +75,7 @@ export function Debrief({
 
       <div className="stack con-actions">
         <a className="btn btn-primary btn-block" href={href('chat')}>
-          <MessageCircle size={20} /> Ask SafeSense about a message
+          <MessageCircle size={20} /> Chat with us about a message
         </a>
         <button className="btn btn-secondary btn-block" onClick={onAgain}>
           <RotateCcw size={20} /> Play this story again

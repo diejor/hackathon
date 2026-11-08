@@ -58,16 +58,6 @@
 .profile-section .h3 + .profile-intro {
   margin-top: 6px;
 }
-.profile-empty .h2 {
-  margin-top: 12px;
-}
-.profile-empty > .muted {
-  margin-top: 8px;
-}
-.profile-empty-actions {
-  margin-top: 24px;
-  gap: 12px;
-}
 
 .points-row {
   display: flex;
@@ -201,14 +191,6 @@
 .practice-genuine {
   margin-top: 16px;
 }
-.practice-calm {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  font-family: var(--font-serif);
-  color: var(--green-900);
-}
 
 .word-chips {
   list-style: none;
@@ -261,7 +243,7 @@
 }
 .nickname-panel > .btn {
   margin-top: 16px;
-  /* "Ask SafeSense about my progress" is long for the side column: a tighter button keeps it on one line. */
+  /* "Chat with us about your progress" is long for the side column: a tighter button keeps it on one line. */
   gap: 8px;
   padding-left: 12px;
   padding-right: 12px;
@@ -269,6 +251,16 @@
 }
 .nickname-panel > .btn svg {
   flex-shrink: 0;
+}
+/* "Chat with us about your progress": dark green on hover, like the game cards. */
+.nickname-panel > .btn {
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.nickname-panel > .btn:hover,
+.nickname-panel > .btn:focus-visible {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
 }
 .nickname-panel > .btn span {
   text-align: left; /* if it still wraps (narrow phones, big text), the lines sit beside the icon */

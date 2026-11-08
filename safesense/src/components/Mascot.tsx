@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- stage helpers live beside the mascot they describe */
 // SafeSense Mascot: a little cyborg companion that evolves with the player's points.
-// Five stages, from a dormant seed pod to a full Sentinel, in the SafeSense green palette.
+// Five stages, from an unplanted seed packet to a full Sentinel, in the SafeSense green palette.
 // Sits on a light "badge" disc so the green cyborg reads on any background (incl. the green card).
 // Idle: gentle float + blink. Evolution: ring burst + sparkles + spring morph when the stage changes.
 import { useEffect, useRef, useState } from 'react'
@@ -10,7 +10,7 @@ import './Mascot.css'
 export type MascotStage = 0 | 1 | 2 | 3 | 4
 
 export const MASCOT_STAGES = [
-  { stage: 0 as MascotStage, name: 'Seed Pod', min: 0, max: 0 },
+  { stage: 0 as MascotStage, name: 'Seed Packet', min: 0, max: 0 },
   { stage: 1 as MascotStage, name: 'Sprout Bot', min: 1, max: 4 },
   { stage: 2 as MascotStage, name: 'Rookie', min: 5, max: 9 },
   { stage: 3 as MascotStage, name: 'Guardian', min: 10, max: 19 },
@@ -78,33 +78,42 @@ function Backdrop() {
   )
 }
 
-/** Stage 0: Seed pod. A dormant chrysalis with a dim pulse — nothing hatched yet. */
-function SeedPod() {
+// Crimped top edge of the seed packet: a zigzag from x=34 to x=86.
+const CRIMP_TEETH = 8
+const CRIMP = (() => {
+  const step = 52 / CRIMP_TEETH
+  const pts = ['34,30', '34,21']
+  for (let i = 0; i < CRIMP_TEETH; i++) pts.push(`${34 + step * (i + 0.5)},16`, `${34 + step * (i + 1)},21`)
+  pts.push('86,30')
+  return pts.join(' ')
+})()
+
+/** Stage 0: Seed Packet. Nothing planted yet: a packet with a simple picture of the mascot's face on the label. */
+function SeedPacket() {
   return (
     <g>
-      <ellipse cx={60} cy={95} rx={28} ry={4} fill={COLORS.shadow} />
+      <ellipse cx={60} cy={104} rx={26} ry={3.5} fill={COLORS.shadow} />
       <motion.g
-        animate={{ scale: [1, 1.015, 1] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ transformOrigin: '60px 60px' }}
+        animate={{ rotate: [-2, 2, -2] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformOrigin: '60px 100px' }}
       >
-        <path
-          d="M60 20 C78 20 88 36 88 60 C88 80 76 92 60 92 C44 92 32 80 32 60 C32 36 42 20 60 20 Z"
-          fill={COLORS.shell}
-        />
-        <path d="M60 22 L60 90" stroke={COLORS.deep} strokeWidth={1.5} strokeLinecap="round" />
-        <motion.ellipse
-          cx={60}
-          cy={58}
-          rx={9}
-          ry={6}
-          fill={COLORS.glow}
-          opacity={0.35}
-          animate={{ opacity: [0.25, 0.55, 0.25] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <path d="M44 40 Q60 34 76 40" stroke={COLORS.deep} strokeWidth={1.2} fill="none" />
-        <path d="M44 72 Q60 78 76 72" stroke={COLORS.deep} strokeWidth={1.2} fill="none" />
+        {/* Packet body and crimped top */}
+        <rect x={34} y={24} width={52} height={76} rx={4} fill={COLORS.shellLight} />
+        <polygon points={CRIMP} fill={COLORS.deep} />
+        {/* Label with the face icon: head, visor, two glowing eyes, smile, a tiny antenna */}
+        <rect x={40} y={36} width={40} height={42} rx={6} fill={COLORS.plate} />
+        <line x1={60} y1={47} x2={60} y2={42.5} stroke={COLORS.shell} strokeWidth={1.6} strokeLinecap="round" />
+        <circle cx={60} cy={41.5} r={2} fill={COLORS.glow} />
+        <ellipse cx={60} cy={60} rx={14} ry={13} fill={COLORS.shell} />
+        <ellipse cx={60} cy={57} rx={11} ry={7} fill={COLORS.deep} />
+        <Eye cx={55.5} cy={57} rx={2.4} ry={2.4} />
+        <Eye cx={64.5} cy={57} rx={2.4} ry={2.4} delay={0.08} />
+        <path d="M56.5 66 Q60 68.5 63.5 66" stroke={COLORS.plate} strokeWidth={1.3} fill="none" strokeLinecap="round" />
+        {/* Seeds along the bottom of the packet */}
+        <ellipse cx={50} cy={89} rx={2.2} ry={3} fill={COLORS.plate} opacity={0.85} />
+        <ellipse cx={60} cy={89} rx={2.2} ry={3} fill={COLORS.plate} opacity={0.85} />
+        <ellipse cx={70} cy={89} rx={2.2} ry={3} fill={COLORS.plate} opacity={0.85} />
       </motion.g>
     </g>
   )
@@ -340,7 +349,7 @@ function Sentinel() {
 function Body({ stage }: { stage: MascotStage }) {
   switch (stage) {
     case 0:
-      return <SeedPod />
+      return <SeedPacket />
     case 1:
       return <SproutBot />
     case 2:

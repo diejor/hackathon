@@ -83,7 +83,7 @@ root** (commits `9026833` design00, `44dd158` design01). For a new zip:
 ## Conventions
 
 - **US English** everywhere: Mom, $, US 555-01xx numbers, "color". The AI is "the SafeSense assistant";
-  buttons and links that open the chat say "Ask SafeSense". No "we/us" that suggests people behind the app.
+  buttons and links that open the chat say "Chat with us".
 - **Fictional brands only** (Parcelo, Lakeshore Bank, BrightLine…) and `.example` web addresses.
 - **No copied code** (no GPL or tutorial code); credit ideas on the page.
 - **Never commit** `node_modules/` (it may be a symlink in a worktree) or `.env`. Run `git status` before

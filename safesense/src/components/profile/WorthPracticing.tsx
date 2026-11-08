@@ -1,4 +1,4 @@
-import { ArrowRight, Info, Sprout } from 'lucide-react'
+import { ArrowRight, Info } from 'lucide-react'
 import { href, type Route } from '../../router'
 import type { PracticeItem } from '../../lib/progress'
 import { GENUINE_SIGN, signFor } from '../../content/signs'
@@ -57,12 +57,6 @@ export function WorthPracticing({ items, genuineMissed }: { items: PracticeItem[
           </p>
           <p>You were extra careful with a genuine message — that’s okay. {GENUINE_SIGN.tell}</p>
         </div>
-      )}
-
-      {items.length === 0 && genuineMissed === 0 && (
-        <p className="practice-calm">
-          <Sprout size={20} strokeWidth={1.5} className="icon-muted" aria-hidden="true" /> Pause. Check. Then act.
-        </p>
       )}
     </section>
   )
