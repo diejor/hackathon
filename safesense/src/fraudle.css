@@ -465,3 +465,8 @@
     scroll-margin-bottom: calc(var(--dock-h, 320px) + 12px);
   }
 }
+
+/* Breathing room between the tries dots and the clue (they touched). */
+.fraudle-card .game-top {
+  margin-bottom: 14px;
+}

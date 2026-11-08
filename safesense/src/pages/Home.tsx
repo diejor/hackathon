@@ -1,5 +1,5 @@
-import { useState, type MouseEvent } from 'react'
-import { ArrowRight, KeyRound, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
+import { useEffect, useState, type MouseEvent } from 'react'
+import { ArrowRight, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
 import { KEYS, load, save, session, usePoints } from '../storage'
@@ -84,18 +84,22 @@ function GameCard({ game }: { game: Game }) {
 const IMPROVE_PROMPT =
   'Please look at my progress so far: my points and the games I have played. What are some suggestions for how I can get better at spotting scams?'
 
-/**
- * The recovery key lives on the profile page (components/profile/RecoveryKey). These buttons open it there:
- * 0 = show my key, 1 = I have a key.
- */
-function openRecovery(which: 0 | 1) {
-  window.location.hash = href('profile')
-  window.setTimeout(() => {
-    const box = document.querySelector<HTMLElement>('.recovery')
-    if (!box) return
-    box.scrollIntoView({ block: 'start' })
-    document.querySelectorAll<HTMLButtonElement>('.recovery-body > .btn-block')[which]?.click()
-  }, 400)
+/** Ask a first-time visitor for a name once (optional; "Not now" is fine). Remembered on this device. */
+const PROMPTED_KEY = 'safesense.namePrompted'
+function shouldPromptName(name: string): boolean {
+  if (name) return false
+  try {
+    return !localStorage.getItem(PROMPTED_KEY)
+  } catch {
+    return false
+  }
+}
+function markNamePrompted() {
+  try {
+    localStorage.setItem(PROMPTED_KEY, '1')
+  } catch {
+    /* private mode: we may ask again next visit, which is fine */
+  }
 }
 
 const pointsLabel = (points: number | null) =>
@@ -130,7 +134,10 @@ function MascotProgress({ points }: { points: number | null }) {
 
 export default function Home() {
   const name = useNickname()
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(() => shouldPromptName(name))
+  useEffect(() => {
+    if (editing) markNamePrompted()
+  }, [editing])
   const points = usePoints()
   const shown = points === null ? '–' : points.toLocaleString()
   const lastRoute = load(KEYS.lastPlayed) as Route
@@ -166,21 +173,6 @@ export default function Home() {
             Scams can fool anyone. Learn what to look for with friendly activities, one small step at a time.
           </p>
 
-          <div className="keep-progress">
-            <h2 className="keep-title">Keep your progress</h2>
-            <p className="muted">
-              There’s no account to remember. If you change phones or clear this browser, a recovery key brings
-              your progress back.
-            </p>
-            <div className="keep-actions">
-              <button className="btn btn-primary btn-sm" onClick={() => openRecovery(0)}>
-                <KeyRound size={18} strokeWidth={1.75} aria-hidden="true" /> Show my recovery key
-              </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => openRecovery(1)}>
-                I have a recovery key
-              </button>
-            </div>
-          </div>
         </div>
 
         <aside className="dash-side">
@@ -215,7 +207,7 @@ export default function Home() {
         </aside>
       </section>
 
-      {editing && <NameDialog current={name} onClose={() => setEditing(false)} />}
+      {editing && <NameDialog current={name} onClose={() => setEditing(false)} skipLabel={name ? undefined : 'Not now'} />}
 
       <h2 className="h2 games-title">Pick a game</h2>
       <div className="games">

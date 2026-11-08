@@ -5,7 +5,7 @@ import { MAX_NICKNAME, setNickname } from '../lib/profileStore'
  * The designer's popup for changing the display name (from design01's Home). Used on the dashboard and on
  * the profile page; both read and write the same name (lib/profileStore.ts).
  */
-export function NameDialog({ current, onClose }: { current: string; onClose: () => void }) {
+export function NameDialog({ current, onClose, skipLabel = 'Cancel' }: { current: string; onClose: () => void; skipLabel?: string }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [value, setValue] = useState(current)
 
@@ -40,7 +40,7 @@ export function NameDialog({ current, onClose }: { current: string; onClose: () 
         />
         <div className="dialog-actions">
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-            Cancel
+            {skipLabel}
           </button>
           <button type="submit" className="btn btn-primary btn-sm">
             Save name

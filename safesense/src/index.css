@@ -2509,3 +2509,11 @@ a.points-badge:hover {
     font-size: clamp(1.9rem, 9vw, 2.3rem);
   }
 }
+
+/* Without the recovery box the greeting column is short: center it against the points column on wide
+   screens instead of leaving a gap under it. */
+@media (min-width: 961px) {
+  .dashboard {
+    align-items: center;
+  }
+}
