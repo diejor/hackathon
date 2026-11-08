@@ -247,3 +247,61 @@
 .sender-name.is-number {
   white-space: nowrap;
 }
+
+/* After answering, the buttons scroll to the top of the screen (when the answer would not fit). */
+.son-page .verdicts {
+  scroll-margin-top: 16px;
+}
+
+/* ---------- Laptops and desktops: a tighter round ----------
+   At 1366x768 the sender card (88px avatar), the message and "Check it" pushed the Scam / Not a
+   scam buttons well below the fold. A slimmer sender card and tighter gaps bring them up. */
+@media (min-width: 721px) {
+  .son-page .page-head {
+    margin-bottom: 20px;
+  }
+  .son-page .section-top {
+    padding-top: 14px;
+  }
+  .son-page .section.play {
+    padding: 14px 24px 20px;
+    gap: 12px;
+  }
+  .son-page .sender-card {
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+  }
+  .son-page .sender-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    font-size: 1.4rem;
+  }
+  .son-page .sender-avatar svg {
+    width: 28px;
+    height: 28px;
+  }
+  .son-page .sender-name {
+    font-size: 1.35rem;
+  }
+  .son-page .tags {
+    margin-top: 6px;
+  }
+  .son-page .message-meta {
+    margin-bottom: 8px;
+  }
+  .son-page .son-inspect {
+    padding: 12px 16px 14px;
+  }
+  .son-page .son-checks {
+    margin-top: 10px;
+  }
+  .son-page .son-check {
+    min-height: 46px;
+    padding: 8px 14px;
+  }
+  .son-page .verdict {
+    min-height: 60px;
+  }
+}
