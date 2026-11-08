@@ -2,92 +2,80 @@
 
 **Pause. Check. Then act.** A calm place to practice spotting scams, and to ask when something doesn't feel right.
 
-**Live:** https://diejor.github.io/hackathon/ (works on a phone; no sign-up).
-The team's earlier prototype, the Security Arcade, is still up at https://diejor.github.io/hackathon/arcade/.
+**Live:** https://diejor.github.io/hackathon/ (works on a phone; no sign-up). HackUTD 2026.
 
-## What it is
+## What it does
 
-SafeSense is for people who feel unsure about scams, often older adults. It has no scores to chase,
-no timers and no pressure, and it has a text-size control.
+SafeSense is for people who feel unsure about scams, often older adults. No timers, no pressure, a text-size
+control, and plain language throughout.
 
-- **Three short games.** *Fraudle* (guess the scam word, with a one-line lesson each time), *Scam or Not?*
-  (real-looking texts: decide, then see why) and *Role Reversal*, where **you play the scammer** and see how a
-  careful person spots each move (game design adapted from teammate Krishna's BadScam). The people and
-  companies in the games are made up.
-- **The SafeSense assistant** is an AI. Type a message that worries you, say it, or add a screenshot. It
-  replies with a verdict, the signs to notice and what to do next. It remembers what you struggle with in
-  the games and coaches you on it. It gives guidance, not guarantees.
-- **Your progress.** Every finished game earns 1 point (a 4th game, *The Phone Call*, shows as locked until
-  10 points; it's a "coming soon" placeholder). There are no accounts: a recovery key carries your progress to
-  another device.
-- **SafeSense by text.** Forward a suspicious text over iMessage (via Photon) and get the same calm verdict
-  back. Reply `PRACTICE` for a clearly labeled fake scam text to practice on (opt-in, 1 a day, `REPORT` to
-  answer, then a debrief). Honest limit: on Photon's free shared line only **one registered sender** can reach it, so for the
-  demo that's a teammate's iPhone; judges can't text it themselves. A dedicated line removes the limit.
+| Part | What you do |
+|---|---|
+| **Fraudle** | Guess the scam word from a clue in six tries; every word comes with a one-line lesson. |
+| **Scam or Not?** | Realistic texts from made-up companies: decide, then see the signs. Some are genuine, so it also teaches not to panic. |
+| **Role Reversal** | *You* play the scammer. Pick tactics, watch a careful person take them apart, then a debrief turns each trick into a defense. |
+| **The Phone Call** | Unlocks at 2 points. SafeSense rings your phone with a practice scam call (Retell voice agent). Private beta: invited numbers only. |
+| **Chat with us** | The SafeSense assistant (Google Gemini) checks a message you type, say or screenshot: a verdict, the signs, what to do next. It remembers what you miss in the games. It's an AI and says so: guidance, not guarantees. |
+| **Text SafeSense** | Forward a suspicious text over iMessage (Photon) to **+1 (628) 316-6196** and get the same verdict back. Text `PRACTICE` for a labeled fake scam to practice on; reply `REPORT` if you spot it. |
 
-SafeSense is meant as a companion to T-Mobile's Scam Shield: Scam Shield blocks quietly at the network
-level, and SafeSense teaches people and covers what reaches them anyway (screenshots from any app,
-iMessage). It is not affiliated with or endorsed by T-Mobile.
+**Points:** every finished game is +1. A practice text or call is the real test: catch it for +1, get fooled
+and lose 1 (never below 0). Once a game unlocks it stays unlocked. No accounts: a recovery key on the progress
+page carries your progress to another device, and `LINK <code>` connects your phone's texts to the same memory.
 
-## Hackathon tracks (HackUTD 2026)
+SafeSense is meant as a companion to T-Mobile's Scam Shield: Scam Shield blocks at the network; SafeSense
+teaches people and covers what reaches them anyway. Not affiliated with or endorsed by T-Mobile.
+
+## Hackathon tracks
 
 | Track | How SafeSense addresses it |
 | --- | --- |
-| **T-Mobile Safe Signal** | Teaches people to recognize scams through practice instead of fear, and gives a second opinion on anything that slips past network filtering. Positioned as a Scam Shield companion. |
-| **Best Use of Photon API** | "SafeSense by text": Photon 2.0 signed webhooks are verified (HMAC-SHA256, Standard Webhooks) and handled inside the database, replies go out through Photon's REST API, and `LINK <code>` joins a phone to the same memory as the web chat. |
-| **MLH Best Use of Gemini API** | Gemini (`gemini-3.5-flash`, through the OpenAI-compatible API) reads text and screenshots (vision), answers in a strict JSON schema (verdict, signs, next steps, memory facts), uses each person's game history to coach them, treats pasted content as data with prompt-injection rules, and falls back to `gemini-3.5-flash-lite` when the main model is overloaded. |
+| **T-Mobile Safe Signal** | Practice instead of fear, plus a second opinion on anything that slips past network filtering. |
+| **Best Use of Photon API** | Signed Photon 2.0 webhooks handled *inside the database*, replies in ~3 s, `LINK` codes, opt-in practice texts graded by reply (`REPORT` = caught), STOP/START, caps and a kill switch. |
+| **MLH Best Use of Gemini API** | Gemini reads text and screenshots, answers in a strict JSON schema, coaches from each person's game history, treats pasted content as data (prompt-injection rules), and falls back from flash to flash-lite. |
 
 ## Architecture
 
 ```
- Phone or laptop browser                         iPhone (Messages)
- safesense/ React app on GitHub Pages                  │ text SafeSense
-   games ── log_activity ──┐                           ▼
-   assistant ── bot_send ──┤ WebSocket      Photon 2.0 ── signed webhook ──┐
-                           ▼                                               ▼
+ Phone or laptop browser                               iPhone (Messages)            Phone (voice)
+ safesense/ (React 19 + Vite, GitHub Pages)                  │ text SafeSense              ▲ practice call
+   games ── log_activity ──┐                                 ▼                             │
+   chat ──── bot_send ─────┤ WebSocket          Photon 2.0 ── signed webhook ──┐     Retell AI agent
+   Call me ─ start_challenge_demo ┐                                           ▼          ▲      │ signed result
+                           ▼      ▼                                                      │      ▼
         SpacetimeDB on Maincloud, db safesense-1aa18263 (TypeScript module, spacetimedb-ts/)
-          private tables + per-user views · procedures (AI calls) · HTTP route /photon
-                           │ outbound HTTPS
+          private tables + per-user views · procedures with outbound HTTPS · scheduled jobs
+          HTTP routes: /photon · /challenge-response · /voice/context · /voice/result
+                           │
                            ▼
-              Google Gemini API            Photon REST API (replies)
+              Google Gemini API · Photon REST API · Retell API
 ```
 
-There is no other server: the database is the backend. Identity is the SpacetimeDB identity whose token
-is kept in the browser (that token is the recovery key).
+There is no other server: the database is the backend. Identity is the SpacetimeDB identity whose token is
+kept in the browser (that token is the recovery key).
 
 | Folder | What's in it |
 | --- | --- |
-| `safesense/` | The product's frontend: React 19 + Vite, hash router. Designer's files plus our additions in `src/lib`, `src/components`, `src/content` |
-| `spacetimedb-ts/` | The TypeScript SpacetimeDB module: `bot.ts` (assistant, memory, Forget me), `ai.ts` (Gemini client, fallback, rate limits), `activity.ts` (game history, coaching summary), `photon.ts` (iMessage), `crypto.ts` (HMAC/Ed25519 via `@noble`), `schema.ts` (all tables) |
-| `web/src/bot/` | Assistant data layer (connection, subscriptions, voice) that SafeSense uses through `safesense/src/lib/stdb.ts` |
-| `docs/` | [`PLAN.md`](docs/PLAN.md) (product, decisions, roadmap), [`PHOTON.md`](docs/PHOTON.md) (iMessage setup), `content/messages.json` (scam message bank, fictional brands), `research/` |
-| `tools/` | `phone.mjs` (headless phone tester), `photon-sim.mjs` (simulated Photon webhooks) |
-| `scripts/` | Publish, key and deploy scripts (below) |
-| Legacy | `spacetimedb/` (C# module the TS one was ported from), `web/` (Security Arcade UI), `client/` (Unity client). See [`docs/LEGACY.md`](docs/LEGACY.md) |
+| `safesense/` | The app: React 19 + Vite, hash router. Emily's design; our wiring in `src/lib`, `src/components`, `src/content` |
+| `spacetimedb-ts/` | The backend module: `bot.ts` (assistant, memory, Forget me), `ai.ts` (Gemini), `activity.ts` (game history), `photon.ts` + `practice.ts` (iMessage, practice texts), `challenge.ts` + `voice.ts` (practice calls), `crypto.ts`, `schema.ts` |
+| `web/src/bot/` | Assistant data layer (connection, subscriptions, voice input) used through `safesense/src/lib/stdb.ts` |
+| `docs/` | [`PLAN.md`](docs/PLAN.md), [`PHOTON.md`](docs/PHOTON.md) (iMessage), [`VOICE.md`](docs/VOICE.md) (calls), [`PITCH.md`](docs/PITCH.md), [`DEVPOST.md`](docs/DEVPOST.md), [`HANDOFF.md`](docs/HANDOFF.md) |
+| `tools/` | `phone.mjs` (headless phone tester), `photon-sim.mjs`, `voice-sim.mjs`, `call-sim.mjs` (signed-webhook simulators for local testing) |
 
-| Branch | Role |
-| --- | --- |
-| `safesense` | The product; all current work |
-| `design-vendor` | The designer's files as delivered, merged into `safesense/` |
-| `combined`, `main` | Archives (Krishna's earlier Next.js app; the Security Arcade) |
+## Safety invariants
 
-## Privacy and safety
+The texts and calls reach real phones, so these are enforced in the backend, not just promised:
 
-- **What's stored:** chat messages, what the assistant remembers about you, and your game history, in
-  **private tables**. Each person sees only their own rows through per-user views (`my_messages`,
-  `my_facts`, `my_activity`). Identity comes only from the server (`ctx.sender`).
-- **Gemini reads your messages** in order to answer. Screenshots are sent to the model and **never stored**;
-  only a short note of what they said is kept.
-- **Forget me** deletes your chat, the assistant's memory, your game history and any linked phone.
-- **Prompt injection:** pasted text and screenshots are wrapped in delimiters and treated as data. Text
-  that tries to instruct an AI is flagged to you as suspicious; an ordinary scam is still judged as a scam.
-  Memory facts are filtered so secrets aren't saved.
-- **Limits:** one AI call per person every 3 seconds on the web, 8 per minute per texting sender. Photon
-  and Discord webhooks are signature-checked, deduplicated and rejected after 5 minutes.
-- **Games use fictional brands**, `.example` domains and 555 numbers. No messages or money are ever sent.
-- **Practice texts** (a fake scam text to your own linked phone) are opt-in, use fictional brands and no links,
-  are limited to 1 a day and 3 in total, and STOP/START are honored. A kill switch (`PHOTON_SENDING_ENABLED`)
-  turns off everything except replies.
+| # | Rule | Where it lives |
+|---|---|---|
+| 1 | Calls only go to invited numbers (`CHALLENGE_ALLOWED_NUMBERS`), max 10 a day overall and 3 per number | `challenge.ts` `startChallengeDemo` |
+| 2 | Practice texts only go to a phone that texted the line first, max 1 a day (3 a day before linking) | `practice.ts` |
+| 3 | Kill switch: nothing proactive goes out unless `PHOTON_SENDING_ENABLED=true` | `photon-guards.ts` |
+| 4 | STOP / START honored with one confirmation, 30 replies per phone per day | `photon-guards.ts` |
+| 5 | Fictional brands, `.example` domains, 555 numbers, no links; every practice text ends with a "SafeSense practice" label | `practice.ts` templates |
+| 6 | No free AI text on the send path: practice texts come from fixed templates | `practice.ts` `renderPractice` |
+| 7 | Every webhook is signed and checked (Photon HMAC, Retell signature), deduplicated, and rejected after 5 minutes | `photon.ts`, `challenge.ts`, `voice.ts` |
+| 8 | No phone numbers stored at rest (only salted hashes); API keys only in the database environment, never in the website | `voice.ts`, `challenge.ts`, `schema.ts` |
+| 9 | Private tables; each person sees only their own rows; screenshots are never stored; Forget me deletes everything | `schema.ts`, `bot.ts` |
 
 ## Run it locally
 
@@ -143,16 +131,12 @@ same way with `scripts/set-key.sh NAME`. Never commit or print secrets.
 
 ## Roadmap
 
-For now, points are computed in the browser from the activity stored in SpacetimeDB, and there are no
-unlockable games yet. Next, in order:
-
-1. **Server-side profile:** a `player_profile` table and `my_profile` view, with points awarded on the server
-   in `log_activity` so the web and iMessage count the same.
-2. **Optional sign-in with SpacetimeAuth** (email, Google), with "bring my progress" from the anonymous identity.
-3. **Unlockable games:** a catalog with point costs and more games.
-4. **Partner insights:** anonymous aggregates only (which tricks still work, whether practice lowers the miss
-   rate), with groups under 5 hidden.
-5. **Practice texts over Photon** (Krishna's drill idea), opt-in only, plus a dedicated line so anyone can text SafeSense.
+1. **Verify-your-number for calls:** text a code to the number before SafeSense may call it, so The Phone Call can open beyond invited numbers.
+2. **Personalized calls:** the voice agent already can fetch the tricks a person misses (`/voice/context`); wire it into the agent's prompt.
+3. **Server-side points** awarded in `log_activity`, so the web, iMessage and calls count the same, and history trimming never drops points.
+4. **Optional sign-in** (SpacetimeAuth), with "bring my progress" from the anonymous key.
+5. **A dedicated Photon line,** so anyone can text SafeSense, not one registered phone.
+6. **Partner insights:** anonymous aggregates (which tricks still work), groups under 5 hidden.
 
 ## Team and credits
 
@@ -160,7 +144,7 @@ unlockable games yet. Next, in order:
 Made by the SafeSense team at HackUTD 2026:
 
 - **Diego Rodrigues**: project lead; assistant and backend.
-- **Krishanth Sentil**: game design (BadScam, now Role Reversal), scam research, Photon practice texts.
+- **Krishanth Sentil**: game design (BadScam, now Role Reversal), scam research, practice texts and the Retell practice call (The Phone Call), the mascot.
 - **Emily Yuan**: product design and UI (the SafeSense design).
 
 Built with [Claude Code](https://claude.com/claude-code). Powered by [SpacetimeDB](https://spacetimedb.com),
