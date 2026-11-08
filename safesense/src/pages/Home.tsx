@@ -12,7 +12,8 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
-import { ASSISTANT } from '../components/chat/copy'
+import { ASK_LABEL, THE_ASSISTANT } from '../components/chat/copy'
+import { LockedGameCard } from '../components/LockedGame'
 
 type Game = {
   route: Route
@@ -104,7 +105,7 @@ export default function Home() {
           <div className="eyebrow">A little practice. More confidence.</div>
           <h1 className="page-title">Feel more sure. Stay more secure.</h1>
           <p className="lead">
-            Scams can fool anyone. Practice spotting them with three short games, and ask the {ASSISTANT} when
+            Scams can fool anyone. Practice spotting them with three short games, and ask {THE_ASSISTANT} when
             a real message worries you.
           </p>
           <div className="hero-actions">
@@ -112,7 +113,7 @@ export default function Home() {
               <ArrowDown size={20} aria-hidden="true" /> Start practicing
             </button>
             <a className="btn btn-secondary" href={href('chat')}>
-              <MessageCircle size={20} strokeWidth={1.75} aria-hidden="true" /> Check a message
+              <MessageCircle size={20} strokeWidth={1.75} aria-hidden="true" /> {ASK_LABEL}
             </a>
           </div>
           <p className="reassure">
@@ -140,6 +141,7 @@ export default function Home() {
         {GAMES.map((game) => (
           <GameCard key={game.route} game={game} />
         ))}
+        <LockedGameCard />
       </div>
 
       <section className="panel help-banner">
@@ -148,10 +150,10 @@ export default function Home() {
           <h2 className="h3" style={{ marginTop: 0 }}>
             Got a message that worries you?
           </h2>
-          <p style={{ marginTop: 4 }}>Ask SafeSense: type it, say it, or add a screenshot.</p>
+          <p style={{ marginTop: 4 }}>Ask {THE_ASSISTANT}: type it, say it, or add a screenshot or photo.</p>
         </div>
         <a className="btn btn-primary" href={href('chat')}>
-          <ArrowRight size={20} aria-hidden="true" /> Ask SafeSense
+          <ArrowRight size={20} aria-hidden="true" /> {ASK_LABEL}
         </a>
       </section>
     </>

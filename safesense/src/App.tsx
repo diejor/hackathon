@@ -7,6 +7,7 @@ import LongCon from './pages/LongCon'
 import Chat from './pages/Chat'
 import Profile from './pages/Profile'
 import About from './pages/About'
+import PhoneCall from './pages/PhoneCall'
 
 const PAGES = {
   home: Home,
@@ -16,6 +17,7 @@ const PAGES = {
   chat: Chat,
   profile: Profile,
   about: About,
+  'phone-call': PhoneCall,
 }
 
 export default function App() {

@@ -598,6 +598,146 @@ main {
 .game-card:focus-visible .go {
   color: #fff;
 }
+/* The next game, locked: muted, full width under the three games, never the green hover of a playable card. */
+.locked-card {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) minmax(0, 18rem);
+  grid-template-areas:
+    'icon kind foot'
+    'icon title foot'
+    'icon desc foot';
+  column-gap: 20px;
+  align-items: center;
+  background: var(--neutral-100);
+  border-style: dashed;
+  color: var(--text-body);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s, background 0.18s;
+}
+.locked-card .icon-tile {
+  grid-area: icon;
+  align-self: start;
+  background: var(--neutral-200);
+  color: var(--text-muted);
+}
+.locked-card .kind {
+  grid-area: kind;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.locked-card .h3 {
+  grid-area: title;
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+.locked-card .desc {
+  grid-area: desc;
+  margin-top: 8px;
+  font-size: 1.05rem;
+}
+.locked-foot {
+  grid-area: foot;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.locked-status {
+  font-weight: 600;
+  color: var(--text);
+}
+.locked-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-700);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.locked-card:focus-visible,
+.locked-card.is-unlocked {
+  border-color: var(--green-600);
+}
+.locked-card.is-unlocked {
+  border-style: solid;
+  background: var(--green-50);
+}
+.locked-card.is-unlocked .icon-tile {
+  background: var(--green-100);
+  color: var(--green-700);
+}
+@media (hover: hover) {
+  .locked-card:hover {
+    border-color: var(--green-600);
+  }
+  .locked-card:hover .locked-more {
+    text-decoration: underline;
+  }
+}
+.unlock-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--neutral-200);
+  overflow: hidden;
+}
+.unlock-bar > span {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: var(--green-600);
+}
+.unlock-have {
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+.pc-text + .pc-text {
+  margin-top: 12px;
+}
+.pc-unlock .unlock-progress {
+  margin-top: 12px;
+}
+.pc-unlock .unlock-bar {
+  background: var(--surface);
+}
+.profile-next-unlock {
+  margin-top: 12px;
+}
+.profile-next-unlock a {
+  color: var(--green-700);
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .locked-card {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-areas:
+      'icon kind'
+      'icon title'
+      'desc desc'
+      'foot foot';
+    column-gap: 14px;
+  }
+  .locked-card .icon-tile {
+    width: 48px;
+    height: 48px;
+    align-self: center;
+  }
+  .locked-card .h3 {
+    margin-top: 0;
+  }
+  .locked-card .desc {
+    margin-top: 12px;
+  }
+  .locked-foot {
+    margin-top: 12px;
+  }
+}
 .help-banner {
   margin-top: 32px;
   display: flex;

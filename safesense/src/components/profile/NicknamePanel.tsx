@@ -3,7 +3,7 @@ import { MessageCircle, UserRound } from 'lucide-react'
 import { href } from '../../router'
 import { MAX_NICKNAME, setNickname, useNickname } from '../../lib/profileStore'
 
-/** Optional nickname (kept on this device) and the "saved here, no account" note. */
+/** Optional nickname (kept on this device) and the "saved privately, no account" note. */
 export function NicknamePanel() {
   const name = useNickname()
   const [editing, setEditing] = useState(false)
@@ -24,7 +24,7 @@ export function NicknamePanel() {
       {showForm && (
         <form onSubmit={save} className="nickname-form">
           <label htmlFor="nickname" className="h3 nickname-label">
-            What should we call you?
+            What should SafeSense call you?
           </label>
           <p className="muted small">Optional. Only shown here, on this device.</p>
           <input
@@ -60,9 +60,9 @@ export function NicknamePanel() {
           Change name
         </button>
       )}
-      <p>Your progress is saved on this device. No account needed.</p>
+      <p>Your progress is saved privately on SafeSense’s server, linked to this browser. No account needed.</p>
       <a className="btn btn-secondary btn-block" href={href('chat')}>
-        <MessageCircle size={20} /> Ask the assistant about my progress
+        <MessageCircle size={20} /> Ask SafeSense about my progress
       </a>
     </div>
   )
