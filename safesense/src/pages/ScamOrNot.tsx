@@ -9,6 +9,7 @@ import {
   Info,
   Lightbulb,
   Mail,
+  MessageCircle,
   MessageSquare,
   RotateCcw,
   ShieldAlert,
@@ -18,125 +19,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
 import { href } from '../router'
-
-type Guess = 'scam' | 'safe'
-type Kind = 'text' | 'email' | 'social' | 'app'
-
-type Scenario = {
-  kind: Kind
-  /** Who the message appears to come from — shown in the sender profile card. */
-  name: string
-  /** Avatar initials; left out for unknown senders, who get a generic icon. */
-  initials?: string
-  /** One short line about the sender, when the format has one (e.g. a social media bio). */
-  bio?: string
-  /** Whatever the player could see about the sender, shown as small tags. */
-  details: string[]
-  /** Shown at the top of the message: a number, email address or app name. */
-  from: string
-  time: string
-  subject?: string
-  body: string
-  link?: string
-  answer: Guess
-  why: string
-  clues: string[]
-}
-
-const SCENARIOS: Scenario[] = [
-  {
-    kind: 'text',
-    name: '+44 7700 900123',
-    details: ['Not in your contacts', 'Mobile number'],
-    from: '+44 7700 900123',
-    time: 'Today 9:41',
-    body: 'Your parcel could not be delivered. A £1.99 redelivery fee is due. Pay within 24 hours or it will be returned:',
-    link: 'parcel-redeliver.example/pay',
-    answer: 'scam',
-    why: 'Delivery companies rarely ask for small fees by text. The tiny amount is a way to collect your card details.',
-    clues: ['A small fee with a deadline', 'A link to pay', 'A personal mobile number, not a company'],
-  },
-  {
-    kind: 'email',
-    name: 'Bank Support',
-    initials: 'BS',
-    details: ['security@account-review.example', 'First email from this address'],
-    from: 'security@account-review.example',
-    time: 'Today 8:15',
-    subject: 'Your account needs attention',
-    body: 'We have noticed unusual activity. Your account will be locked in 30 minutes unless you confirm your bank details using the link below.',
-    link: 'Confirm my details →',
-    answer: 'scam',
-    why: 'A short deadline can pressure you to act. Your bank will not ask you to confirm details through a link. Contact them using the number on your card.',
-    clues: ['A 30-minute deadline', 'An address that is not your bank', 'A link asking for bank details'],
-  },
-  {
-    kind: 'social',
-    name: 'Capt. James Miller',
-    initials: 'JM',
-    bio: 'Army officer on overseas deployment. Widower. Looking for honest love.',
-    details: ['@james.miller.officer8841', 'Joined 2 weeks ago', '9 followers', 'No mutual friends'],
-    from: 'Direct message',
-    time: 'Yesterday 22:03',
-    body: 'Hello dear, your kind smile caught my eye. I am on a peacekeeping mission and feel very lonely. Can we talk privately on another app? I feel we have a special connection.',
-    answer: 'scam',
-    why: 'This is a common romance scam. A brand-new profile with no shared friends moves fast with affection, then asks to move somewhere more private, where asking for money comes next.',
-    clues: [
-      'A new profile with few followers and no mutual friends',
-      'Strong feelings very quickly',
-      'Asks to talk on another app',
-    ],
-  },
-  {
-    kind: 'email',
-    name: 'Riverside Surgery',
-    initials: 'RS',
-    details: ['appointments@riverside-surgery.example', 'Your GP surgery'],
-    from: 'appointments@riverside-surgery.example',
-    time: 'Monday 14:20',
-    subject: 'Appointment reminder',
-    body: 'This is a reminder of your appointment with Dr Patel on Tuesday at 10:30. If you cannot attend, please call the surgery on the number you usually use.',
-    answer: 'safe',
-    why: 'This message gives information but asks for nothing: no link, no payment, no personal details. It even tells you to use the number you already have.',
-    clues: ['No link or payment', 'No pressure to act quickly', 'Points you to a number you already know'],
-  },
-  {
-    kind: 'text',
-    name: '+44 7700 900456',
-    details: ['Not in your contacts', 'New number'],
-    from: '+44 7700 900456',
-    time: 'Today 11:52',
-    body: 'Hi Grandma, it’s me. I lost my phone so this is my new number. Can you help with £400 for rent today? I’ll pay you back. Please don’t tell Mum.',
-    answer: 'scam',
-    why: 'A new number, an urgent request for money and a request for secrecy are classic signs. Call your grandchild on the number you already have.',
-    clues: ['A new, unknown number', 'Money needed today', 'Asked to keep it secret'],
-  },
-  {
-    kind: 'social',
-    name: 'Margaret Lewis',
-    initials: 'ML',
-    bio: 'Retired teacher. Gardening, grandchildren and the Riverside book club.',
-    details: ['@maggie.lewis', 'Joined 2014', '214 friends', '18 mutual friends'],
-    from: 'Direct message',
-    time: 'Friday 16:40',
-    body: 'Lovely to see you at book club on Thursday! I’ll bring the next book on Monday. Say hello to Tom for me.',
-    answer: 'safe',
-    why: 'This is a long-standing profile with many shared friends, and the message mentions something you did together. It asks for nothing: no money, no link and no details.',
-    clues: ['An older profile with mutual friends', 'Mentions a real, shared event', 'Asks for nothing'],
-  },
-  {
-    kind: 'app',
-    name: 'Your bank',
-    initials: 'YB',
-    details: ['Your banking app'],
-    from: 'Banking app',
-    time: 'Today 13:05',
-    body: 'You paid £32.40 to Greenway Grocers. If this wasn’t you, open your banking app or call the number on the back of your card. We will never ask for your PIN.',
-    answer: 'safe',
-    why: 'This matches a real purchase, has no link, and sends you to your own app or card. It also reminds you they will never ask for your PIN.',
-    clues: ['No link to click', 'Points you to your own app or card', 'Never asks for your PIN'],
-  },
-]
+import { logActivity } from '../lib/stdb'
+import { REMEMBER, REMEMBER_DEFAULT, SCENARIOS, type Guess, type Kind, type Scenario } from '../content/scamOrNot'
 
 const FORMAT: Record<Kind, { label: string; icon: LucideIcon }> = {
   text: { label: 'Text message', icon: MessageSquare },
@@ -208,18 +92,80 @@ function MessageCard({ s }: { s: Scenario }) {
   )
 }
 
+/** Pick the one sign to remember: the first scam the player missed, else the first safe one, else a default. */
+function signToRemember(missed: Scenario[]): string {
+  const scam = missed.find((m) => m.answer === 'scam')
+  if (scam) return REMEMBER[scam.tactic] ?? REMEMBER_DEFAULT
+  if (missed.length) return REMEMBER.legit
+  return REMEMBER_DEFAULT
+}
+
+function WrapUp({ missed, onAgain }: { missed: Scenario[]; onAgain: () => void }) {
+  return (
+    <section className="game-shell wrap-up" aria-labelledby="wrap-title">
+      <div className="section">
+        <ShieldCheck size={32} strokeWidth={1.4} className="icon-muted" />
+        <h2 id="wrap-title" className="h2 wrap-title">
+          You looked at {SCENARIOS.length} messages.
+        </h2>
+        <p className="wrap-lead">
+          Taking the time to look closely is the most important habit of all. Thank you for practicing.
+        </p>
+        <div className="feedback">
+          <p className="feedback-title">
+            <Lightbulb size={20} strokeWidth={1.5} /> One sign worth remembering
+          </p>
+          <p>{signToRemember(missed)}</p>
+        </div>
+      </div>
+      <div className="section wrap-actions">
+        <button className="btn btn-primary btn-block" onClick={onAgain}>
+          <RotateCcw size={20} /> Play again
+        </button>
+        <a className="btn btn-secondary btn-block" href={href('chat')}>
+          <MessageCircle size={20} /> Talk it through with us
+        </a>
+      </div>
+    </section>
+  )
+}
+
 export default function ScamOrNot() {
   const [round, setRound] = useState(0)
   const [guess, setGuess] = useState<Guess | null>(null)
+  const [missed, setMissed] = useState<Scenario[]>([])
+  const [done, setDone] = useState(false)
 
   const s = SCENARIOS[round]
   const revealed = guess !== null
   const correct = guess === s.answer
   const last = round === SCENARIOS.length - 1
 
+  const answer = (g: Guess) => {
+    if (revealed) return
+    setGuess(g)
+    const right = g === s.answer
+    if (!right) setMissed((m) => [...m, s])
+    void logActivity('scam-or-not', right ? 'answer_correct' : 'answer_wrong', {
+      item: s.id,
+      said: g,
+      tactic: s.tactic,
+    })
+  }
+
   const next = () => {
-    setRound(last ? 0 : round + 1)
+    if (last) setDone(true)
+    else setRound(round + 1)
     setGuess(null)
+    window.scrollTo(0, 0)
+  }
+
+  const again = () => {
+    setRound(0)
+    setGuess(null)
+    setMissed([])
+    setDone(false)
+    window.scrollTo(0, 0)
   }
 
   return (
@@ -230,6 +176,9 @@ export default function ScamOrNot() {
         lead="Look closely at each message, then decide: is it a scam or not?"
       />
       <div className="page-grid">
+        {done ? (
+          <WrapUp missed={missed} onAgain={again} />
+        ) : (
         <section className="game-shell" aria-label="Game">
           <div className="game-top section-top">
             <div
@@ -257,7 +206,7 @@ export default function ScamOrNot() {
                     role="radio"
                     aria-checked={guess === g}
                     className={`verdict ${g} ${state}`}
-                    onClick={() => !revealed && setGuess(g)}
+                    onClick={() => answer(g)}
                     disabled={revealed && guess !== g}
                   >
                     <Icon size={24} strokeWidth={2} />
@@ -289,18 +238,19 @@ export default function ScamOrNot() {
 
           <div className="section">
             <button className="btn btn-primary btn-block" onClick={next} disabled={!revealed}>
-              {last ? <RotateCcw size={20} /> : <ArrowRight size={20} />} {last ? 'Play again' : 'Next round'}
+              <ArrowRight size={20} /> {last ? 'Finish' : 'Next message'}
             </button>
           </div>
         </section>
+        )}
 
         <aside className="stack" style={{ gap: 16 }}>
           <div className="panel">
             <Lightbulb size={26} strokeWidth={1.4} className="icon-muted" />
             <h2 className="h3">Signs to look for</h2>
             <p>
-              Scams often rush you, ask for money or personal details, or come from someone you cannot check. A
-              real company will not mind if you hang up and contact them using details you already trust.
+              Scams often rush you, ask for money or personal details, or come from someone you can’t check. A
+              real company won’t mind if you hang up and contact them using details you already trust.
             </p>
           </div>
           <a className="btn btn-secondary btn-block" href={href('home')}>
