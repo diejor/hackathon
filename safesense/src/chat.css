@@ -486,10 +486,19 @@
   font-size: 1rem;
   margin-top: 4px;
 }
-/* One heading line: the title says it; the "A safe place to ask" eyebrow is dropped here. */
+/* No visible heading on the chat page (Diego): the eyebrow is dropped and the title stays for screen readers
+   only, so the one-line intro leads straight into the conversation. */
 .chat-page .page-head .eyebrow {
   display: none;
 }
-.chat-page .page-title {
+.chat-page .page-head .page-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.chat-page .page-head .lead {
   margin-top: 0;
 }
