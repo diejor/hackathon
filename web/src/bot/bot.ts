@@ -26,10 +26,6 @@ export const state = {
 
 const listeners = new Set<() => void>();
 let queued = false;
-// In-memory only: ids of user messages sent with a screenshot in this session (the server keeps no
-// "had image" flag; after a reload we fall back to imageNote).
-const imageIds = new Set<bigint>();
-let pendingImage = false;
 let insertedWhileSending = false;
 
 /** Subscribe to any change (messages, facts, sending, error, connection). Returns an unsubscribe. */
@@ -47,10 +43,7 @@ function bump() {
 L.onChange(bump);
 L.onConnection((c: DbConnection) => {
   c.db.myMessages.onInsert((_ctx, m) => {
-    if (m.role.tag === "User" && state.sending) {
-      insertedWhileSending = true;
-      if (pendingImage) { imageIds.add(m.id); pendingImage = false; }
-    }
+    if (m.role.tag === "User" && state.sending) insertedWhileSending = true;
     bump();
   });
   c.db.myMessages.onDelete(bump);
@@ -80,9 +73,8 @@ export function facts(): MemoryFact[] {
   return [...c.db.myFacts.iter()].sort(byTime);
 }
 
-/** Whether a user message came with a screenshot (as far as this client can tell). */
-export const hasScreenshot = (m: ChatMessage) =>
-  m.role.tag === "User" && (imageIds.has(m.id) || m.imageNote !== "" || m.text === "");
+/** Whether a user message came with a screenshot (the server's HadImage flag). */
+export const hasScreenshot = (m: ChatMessage) => m.role.tag === "User" && m.hadImage;
 
 /**
  * Send a message and/or screenshot. Resolves true if the server accepted it (the message is in the
@@ -101,15 +93,16 @@ export async function send(text: string, image?: Blob): Promise<boolean> {
   bump();
   try {
     const imageDataUrl = image ? await toJpegDataUrl(image) : "";
-    pendingImage = !!image;
     const res = await c.procedures.botSend({ text, imageDataUrl });
-    if (!res.ok && !insertedWhileSending) return fail(res.text || "The bot couldn't take that message.");
-    return true;
+    if (res.ok) return true;
+    // Always surface the server's reason (cooldown, quota, validation...). If the message was already
+    // stored (the AI call failed afterwards), it stays in the chat, so the draft isn't given back.
+    fail(res.text || "The bot couldn't take that message.");
+    return insertedWhileSending;
   } catch (e) {
     return insertedWhileSending ? true : fail(e);
   } finally {
     state.sending = false;
-    pendingImage = false;
     bump();
   }
 }
@@ -120,7 +113,6 @@ export async function forgetMe(): Promise<boolean> {
   if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
   try {
     await c.reducers.forgetMe({});
-    imageIds.clear();
     state.error = null;
     bump();
     return true;
@@ -128,6 +120,9 @@ export async function forgetMe(): Promise<boolean> {
     return fail(e);
   }
 }
+
+/** Show a short message in the composer's error line (e.g. a voice-input problem). */
+export function showError(message: string) { fail(message); }
 
 export function clearError() { if (state.error) { state.error = null; bump(); } }
 

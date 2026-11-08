@@ -7,7 +7,7 @@
 //          release  wheel:<x>,<y>,<deltaY>,<count>  cmds:<file>  (poll a file for more steps; "quit" ends)
 //          tapsel:<css selector>  (tap the center of the first match)  type:<text>  (insert into the focused field)
 //          key:<Enter|Shift+Enter|Backspace|...>  file:<css selector>,<path>  (set an <input type=file>)
-//          reload
+//          reload  eval:<js>  (print the JSON result)  initjs:<js>  (run before page scripts on every later load)
 //   env:   W, H (viewport, default 390x844), DPR (default 2), DESKTOP=1 (no mobile emulation)
 //   Use a fresh <profileDir> per simulated player (each gets its own SpacetimeDB identity).
 // Example (phone, local server):
@@ -124,6 +124,12 @@ try {
       await sleep(80);
       await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
       console.log("tapsel:", arg, Math.round(x), Math.round(y));
+    } else if (kind === "eval") {
+      const { result, exceptionDetails } = await send("Runtime.evaluate", { expression: arg, returnByValue: true, awaitPromise: true }, sessionId);
+      console.log("eval:", exceptionDetails ? `error ${exceptionDetails.text}` : JSON.stringify(result.value));
+    } else if (kind === "initjs") {
+      await send("Page.addScriptToEvaluateOnNewDocument", { source: arg }, sessionId);
+      console.log("initjs:", arg.slice(0, 60));
     } else if (step === "reload") {
       await send("Page.reload", {}, sessionId);
       console.log("reload");

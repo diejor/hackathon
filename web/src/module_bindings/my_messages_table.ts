@@ -28,4 +28,5 @@ export default __t.row({
   isError: __t.bool().name("is_error"),
   channel: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
+  hadImage: __t.bool().name("had_image"),
 });

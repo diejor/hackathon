@@ -258,9 +258,16 @@ body.bot-open .header, body.bot-open .game-host { display: none; }
 .bot-send { padding: 0 16px; background: var(--magenta); color: #fff; }
 .bot-attach:disabled, .bot-send:disabled { opacity: 0.4; cursor: default; }
 .bot-mic-slot:empty { display: none; }
+.bot-mic-slot { flex: none; display: flex; }
+.bot-mic {
+  width: 44px; height: 44px; border: 0; border-radius: 14px; cursor: pointer; font-size: 18px;
+  background: var(--surface-2); color: var(--text);
+}
+.bot-mic:disabled { opacity: 0.4; cursor: default; }
+.bot-mic-on { background: var(--danger); color: #fff; animation: bot-pulse 1.2s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
   .btn, .key { transition: none; }
-  .bot-thinking { animation: none; }
+  .bot-thinking, .bot-mic-on { animation: none; }
 }

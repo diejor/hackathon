@@ -4,6 +4,7 @@
 // nodes): model output and pasted scam texts are untrusted, and URLs are deliberately not linkified.
 import { h } from "../ui";
 import * as Bot from "./bot";
+import { createDictation, voiceSupported } from "./voice";
 
 const VERDICTS: Record<string, string> = { scam: "Scam", suspicious: "Suspicious", likely_safe: "Likely safe" };
 
@@ -42,7 +43,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   // ---------- Composer ----------
   const status = h("div", { class: "bot-status", role: "status" });
   const textarea = h("textarea", {
-    class: "bot-input", rows: 1, placeholder: "Ask, or paste a message…",
+    class: "bot-input", rows: 1, placeholder: "Ask or paste…",
     enterkeyhint: "send", "aria-label": "Message", maxlength: 4000,
     onkeydown: (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); void submit(); }
@@ -62,7 +63,17 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   }) as HTMLInputElement;
   const attachBtn = h("button", { class: "bot-attach", "aria-label": "Attach screenshot", title: "Attach screenshot", onclick: () => fileInput.click() }, "📷");
   const sendBtn = h("button", { class: "bot-send", "aria-label": "Send", onclick: () => void submit() }, "Send");
-  const micSlot = h("span", { class: "bot-mic-slot" }); // reserved for a voice button later
+  const micSlot = h("span", { class: "bot-mic-slot" }); // empty (hidden) when voice isn't supported
+  const dictation = createDictation(textarea, {
+    onText: () => { autosize(); textarea.scrollTop = textarea.scrollHeight; },
+    onState: () => update(),
+    onError: (msg) => Bot.showError(msg),
+  });
+  const micBtn = voiceSupported()
+    ? h("button", { class: "bot-mic", type: "button", "aria-label": "Speak your message", title: "Speak your message",
+      "aria-pressed": "false", onclick: () => { Bot.clearError(); dictation.toggle(); } }, "🎤")
+    : null;
+  if (micBtn) micSlot.append(micBtn);
   const previewImg = h("img", { class: "bot-preview-img", alt: "Screenshot to send" }) as HTMLImageElement;
   const preview = h("div", { class: "bot-preview" },
     previewImg,
@@ -84,13 +95,16 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   }
 
   function autosize() {
+    const stick = list.scrollHeight - list.scrollTop - list.clientHeight < 80; // a taller composer shrinks the list
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
     textarea.style.overflowY = textarea.scrollHeight > 140 ? "auto" : "hidden";
+    if (stick) list.scrollTop = list.scrollHeight;
   }
 
   async function submit(text = textarea.value) {
     if (Bot.state.sending || (!text.trim() && !image)) return;
+    dictation.cancel(); // don't let late speech results land in the cleared box
     const img = image;
     const draft = textarea.value;
     textarea.value = "";
@@ -131,6 +145,13 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
         EXAMPLES.map((ex) => h("button", { class: "bot-example", disabled: !Bot.ready(), onclick: () => void submit(ex.text) }, ex.label))));
   }
 
+  // Scroll to the newest message now and again once layout settles (the view may not be attached
+  // yet on first render, and the visual viewport can resize right after).
+  function toBottom() {
+    list.scrollTop = list.scrollHeight;
+    requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });
+  }
+
   function update() {
     const msgs = Bot.messages();
     const ready = Bot.ready();
@@ -142,7 +163,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     if (!ready) items.push(h("div", { class: "bot-note" }, "Connecting…"));
     if (thinking) items.push(h("div", { class: "bot-msg bot-msg-bot bot-thinking" }, "thinking…"));
     list.replaceChildren(...items);
-    if (nearBottom || msgs.length !== lastCount || thinking) list.scrollTop = list.scrollHeight;
+    if (nearBottom || msgs.length !== lastCount || thinking) toBottom();
     lastCount = msgs.length;
 
     status.textContent = Bot.state.error ?? "";
@@ -152,6 +173,16 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     sendBtn.toggleAttribute("disabled", busy);
     attachBtn.toggleAttribute("disabled", busy);
     sendBtn.textContent = Bot.state.sending ? "…" : "Send";
+    if (micBtn) {
+      const on = dictation.active;
+      micBtn.classList.toggle("bot-mic-on", on);
+      micBtn.setAttribute("aria-pressed", String(on));
+      micBtn.setAttribute("aria-label", on ? "Stop listening" : "Speak your message");
+      micBtn.title = on ? "Stop listening" : "Speak your message";
+      micBtn.textContent = on ? "■" : "🎤";
+      micBtn.toggleAttribute("disabled", !ready);
+      textarea.placeholder = on ? "Listening…" : "Ask or paste…";
+    }
 
     confirmBox.hidden = !confirming;
     forgetBtn.toggleAttribute("disabled", !ready || confirming);
@@ -174,11 +205,12 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
 
   const off = Bot.onChange(update);
   update();
-  requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; }); // once attached to the page
+  toBottom(); // once attached to the page (rAF runs after main.ts inserts el)
   return {
     el,
     destroy() {
       off();
+      dictation.cancel();
       vv?.removeEventListener("resize", fit);
       vv?.removeEventListener("scroll", fit);
       setImage(null);

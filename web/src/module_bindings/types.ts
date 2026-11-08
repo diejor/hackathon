@@ -39,6 +39,7 @@ export const ChatMessage = __t.object("ChatMessage", {
   isError: __t.bool(),
   channel: __t.string(),
   createdAt: __t.timestamp(),
+  hadImage: __t.bool(),
 });
 export type ChatMessage = __Infer<typeof ChatMessage>;
 
