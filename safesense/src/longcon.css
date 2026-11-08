@@ -647,8 +647,10 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
   }
-  .con-row {
-    scroll-margin-top: 120px;
+  /* Clear the sticky bar, which grows with the text size */
+  .con-row,
+  .con-ending {
+    scroll-margin-top: calc(6rem + 24px);
   }
   .con-post,
   .con-sent {
