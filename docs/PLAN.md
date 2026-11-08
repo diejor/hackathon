@@ -192,6 +192,28 @@ Each band runs as a subagent in its own git worktree and branch, and owns only i
 - Rewrite the Devpost draft and the 2-minute demo script around SafeSense (problem → practise → ask → text SafeSense → Scam Shield companion → privacy).
 - Record from known-good runs plus a backup take; submit by 10:45.
 
+### B9 — Partner insights dashboard (STRETCH; start only after B6 is deployed)
+
+- **Decided (Diego, ~02:20):**
+  - It's for partners and judges: a "For partners" page at `#/insights`, linked quietly from the footer. It's the business-model moment in the video.
+  - **Aggregates only:** groups smaller than 5 are hidden, and individual profiles stay with the user. Say so on the page and in the pitch.
+- **Framing:** measured risk signals, never "we know when you'll be scammed".
+  - Which tricks still work.
+  - Who is at risk from what: Krishna's 8 traits from `combined:safe-signal/src/lib/profiler.ts` and `src/contracts.ts`.
+  - Whether practice lowers the miss rate.
+  - Which scams people report in the wild (checks from chat, iMessage and Discord), as an early warning for carriers.
+- **Panels:**
+  1. KPI tiles.
+  2. Tactics by miss rate.
+  3. Trait and risk spread.
+  4. Miss rate by round number.
+  5. Reported scam types per day.
+  6. Privacy line.
+- **Data:** a synthetic cohort clearly labelled "Demo data", with a toggle to real data.
+  - Real data needs a public aggregate table maintained in `log_activity` and `bot_send`, because views can't scan whole tables.
+  - It can't expose individual rows.
+- **Iteration:** v1 front end with synthetic data → Diego reviews screenshots → v2 wires real aggregates after B1 merges. About 1.5 h + 1 h.
+
 ## 7. Schedule and gates (CST)
 
 | Time | What | Gate |
@@ -209,11 +231,12 @@ Each band runs as a subagent in its own git worktree and branch, and owns only i
 
 ## 8. Cut line (first to cut → last)
 
-1. Practice texts (B4 stretch).
-2. Discord re-pointing: keep it on the old db, or leave it out of the demo.
-3. Extra Scam or Not rounds: keep the designer's 7, localized.
-4. **The TypeScript port: if it slips past ~03:30, ship on the C# module** (additive prompt change, publish to a new or the existing db).
-5. "Text SafeSense" live on an iPhone: show simulated webhooks plus a screen recording if the real line isn't ready.
+1. Partner insights dashboard (B9, stretch).
+2. Practice texts (B4 stretch).
+3. Discord re-pointing: keep it on the old db, or leave it out of the demo.
+4. Extra Scam or Not rounds: keep the designer's 7, localized.
+5. **The TypeScript port: if it slips past ~03:30, ship on the C# module** (additive prompt change, publish to a new or the existing db).
+6. "Text SafeSense" live on an iPhone: show simulated webhooks plus a screen recording if the real line isn't ready.
 
 Never cut: the three games working with explanations, the chat with screenshots, the calm tone, and honesty.
 
