@@ -49,6 +49,30 @@ function score(guess: string, answer: string): Mark[] {
   return marks
 }
 
+// One line after a wrong guess, counting both kinds of near miss.
+function guessFeedback(marks: Mark[]): string {
+  const right = marks.filter((m) => m === 'correct').length
+  const moved = marks.filter((m) => m === 'present').length
+  const rightText = `${right} letter${right === 1 ? ' is' : 's are'} in the right place`
+  if (!moved) return `${rightText}. Try again.`
+  const movedText = `${moved} ${right ? '' : `letter${moved === 1 ? ' ' : 's '}`}${moved === 1 ? 'is' : 'are'} in the word, in a different place`
+  return `${rightText}, and ${movedText}. Try again.`
+}
+
+// A fresh random order of every word (Fisher-Yates). `avoidFirst` keeps the word just played from
+// coming straight back when a new round of words starts.
+function shuffledOrder(avoidFirst?: number): number[] {
+  const order = PUZZLES.map((_, i) => i)
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[order[i], order[j]] = [order[j], order[i]]
+  }
+  if (avoidFirst !== undefined && order.length > 1 && order[0] === avoidFirst) {
+    ;[order[0], order[1]] = [order[1], order[0]]
+  }
+  return order
+}
+
 const RANK: Record<Mark, number> = { absent: 0, present: 1, correct: 2 }
 
 function MarkIcon({ mark }: { mark?: Mark }) {
@@ -156,7 +180,7 @@ function Board({
     let text: string
     if (guess === answer) {
       result = true
-      text = `Well spotted — the word was ${answer}.`
+      text = `Nice catch — the word was ${answer}.`
       void logActivity('fraudle', 'word_solved', {
         word: answer,
         tries: next.length,
@@ -169,8 +193,7 @@ function Board({
         tries: next.length,
       })
     } else {
-      const right = score(guess, answer).filter((m) => m === 'correct').length
-      text = `${right} letter${right === 1 ? ' is' : 's are'} in the right place. Try again.`
+      text = guessFeedback(score(guess, answer))
     }
 
     const settle = () => {
@@ -330,13 +353,13 @@ function Board({
             <p>{puzzle.lesson}</p>
             {won && (
               <p className="fraudle-session-note">
-                Words solved today: {session.solved}
+                Words solved this visit: {session.solved}
                 {steadyNote(session.streak) && <> · {steadyNote(session.streak)}</>}
               </p>
             )}
             {isLast && (
               <p className="fraudle-all-done">
-                That was the last of the {PUZZLES.length} words. You can start again from the first one.
+                That was the last of the {PUZZLES.length} words. Start again to play them all in a new order.
               </p>
             )}
             <button className="btn btn-primary btn-block" onClick={onNext}>
@@ -391,15 +414,20 @@ function Board({
 }
 
 export default function Fraudle() {
-  const [index, setIndex] = useState(0)
-  const puzzle = PUZZLES[index]
-  const isLast = index === PUZZLES.length - 1
+  // Words come in a random order with no repeats; once all have been played, a new order starts.
+  const [order, setOrder] = useState(() => shuffledOrder())
+  const [pos, setPos] = useState(0)
+  const puzzle = PUZZLES[order[pos]]
+  const isLast = pos === order.length - 1
   // Per visit only: nothing is stored, and a missed word just starts a new run.
   const [session, setSession] = useState<Session>({ solved: 0, streak: 0 })
   const onResult = (solved: boolean) =>
     setSession((s) => (solved ? { solved: s.solved + 1, streak: s.streak + 1 } : { ...s, streak: 0 }))
   const nextWord = () => {
-    setIndex((i) => (i + 1) % PUZZLES.length)
+    if (isLast) {
+      setOrder(shuffledOrder(order[pos]))
+      setPos(0)
+    } else setPos(pos + 1)
     window.scrollTo(0, 0)
   }
 
@@ -439,7 +467,7 @@ export default function Fraudle() {
           </section>
           <section className="card fraudle-today" aria-label="This visit">
             <p className="fraudle-today-count">
-              Words solved today: <strong>{session.solved}</strong>
+              Words solved this visit: <strong>{session.solved}</strong>
             </p>
             <p className="fraudle-today-note">
               {steadyNote(session.streak) || 'No rush. Every word is a small habit worth keeping.'}
@@ -449,7 +477,7 @@ export default function Fraudle() {
           <button className="btn btn-secondary btn-block" onClick={nextWord}>
             {isLast ? (
               <>
-                <RotateCcw size={18} strokeWidth={1.75} aria-hidden="true" /> Start again from the first word
+                <RotateCcw size={18} strokeWidth={1.75} aria-hidden="true" /> Start again in a new order
               </>
             ) : (
               <>

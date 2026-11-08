@@ -231,3 +231,19 @@
     transition: none;
   }
 }
+
+/* After answering, the unchosen verdict stays readable: dark text on a pale fill, not faded white. */
+.verdicts .verdict.faded {
+  opacity: 1;
+  background: var(--neutral-100);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* Keep the external-link icon on the same line as the last word, and phone numbers in one piece. */
+.son-source-end {
+  white-space: nowrap;
+}
+.sender-name.is-number {
+  white-space: nowrap;
+}
