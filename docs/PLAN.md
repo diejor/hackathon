@@ -297,3 +297,17 @@ Never cut: the three games working with explanations, the chat with screenshots,
 - Secrets live only in gitignored env files, set with `scripts/set-key.sh NAME`. Never paste, print or commit them.
 - Don't text real phones except Diego's or Krishna's own verified numbers.
 - Give every test an explicit AI-call budget.
+
+## 12. Roadmap after the hackathon (for Devpost "What's next")
+
+Profiles and unlocks are **demo placeholders tonight**:
+- points are computed in the browser from activity stored in SpacetimeDB;
+- the teammate's "unlock games" UI is a visual placeholder ("Coming soon");
+- there are no other games and no backend unlock tables.
+
+Next steps, in order:
+1. **Server-side profile:** a `player_profile` table (nickname, points, last active) with a `my_profile` view; points awarded on the server inside `log_activity`, so web and iMessage count the same.
+2. **Sign-in with SpacetimeAuth** (email, Google): optional; plus "bring my progress" from the anonymous identity, reusing the LINK-code mechanism.
+3. **Unlockable games:** a catalog with point costs, an `unlock_game` reducer and more games.
+4. **Partner insights (B9):** anonymous aggregates maintained in `log_activity`; groups under 5 hidden.
+5. **Practice texts over Photon** (Krishna's drill idea), opt-in only, plus a dedicated line so anyone can text SafeSense.
