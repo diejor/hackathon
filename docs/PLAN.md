@@ -90,9 +90,11 @@ Never claim certainty: the coach gives guidance with reasons. Never imply that s
   | `scam-or-not` | `answer_correct`, `answer_wrong` | `{item, said, tactic, checked}`, using the bank's tactic slugs (`fake-delivery`, `bank-impersonation`, …); `checked` = number of "Check it" clues opened |
   | `scam-or-not` | `run_done` (since design01; one per completed run, earns the run's point) | `{correct, total}` |
   | `long-con` | `round_done` | `{scenario, tactics, fooled}` |
+  | `practice-text` | `answer_correct`, `answer_wrong` (server-side, graded reply to a practice text; +1 point) | `{template, tactic}` |
+  | `practice-call` | `answer_correct` (caught), `answer_wrong` (fooled) (server-side, from `POST /voice/result`, once per call id; +1 point) | `{call, tactic, outcome}`; `tactic` may be `""` |
 
 - **Server/db selection:** `?server=&db=` in the URL, otherwise `VITE_STDB_SERVER`/`VITE_STDB_DB` at build time, otherwise Maincloud `hackathon-1aa18263`. After the switch, the default becomes the new db.
-- **Module env (secrets are set with `scripts/set-key.sh NAME`, never printed or committed):** `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`, `AI_VISION_MODEL`, `AI_FALLBACK_MODEL`, `DISCORD_PUBLIC_KEY`, `DISCORD_APPLICATION_ID`, `DISCORD_API_BASE`, `PHOTON_WEBHOOK_SECRET`, `PHOTON_API_KEY`, `PHOTON_PROJECT_ID`, `PHOTON_BASE_URL`.
+- **Module env (secrets are set with `scripts/set-key.sh NAME`, never printed or committed):** `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`, `AI_VISION_MODEL`, `AI_FALLBACK_MODEL`, `DISCORD_PUBLIC_KEY`, `DISCORD_APPLICATION_ID`, `DISCORD_API_BASE`, `PHOTON_WEBHOOK_SECRET`, `PHOTON_API_KEY`, `PHOTON_PROJECT_ID`, `PHOTON_BASE_URL`, `RETELL_API_KEY`, `VOICE_WEBHOOK_SECRET` (practice calls, docs/VOICE.md).
 - **Local dev:** SpacetimeDB on `127.0.0.1:3001` (the `local` nickname); C# db `hackathon-local`, TS db `safesense-local`. Publish only with the scripts. Never `-c` on Maincloud.
 
 ## 6. Bands

@@ -165,3 +165,32 @@ function ago(now: Timestamp, at: Timestamp): string {
   const h = (now.microsSinceUnixEpoch - at.microsSinceUnixEpoch) / 3_600_000_000n;
   return h < 1n ? 'just now' : h < 24n ? `${h}h ago` : `${h / 24n}d ago`;
 }
+
+// Insert one event for `owner` and keep their log capped (for server-side sources such as voice.ts).
+export function recordActivity(db: Db, owner: Identity, game: string, kind: string, details: string, at: Timestamp) {
+  insertActivity(db, owner, game, kind, details, at);
+  capActivity(db, owner, MaxActivityPerUser);
+}
+
+// The scam tactics this player misses most (answer_wrong rows with a tactic; genuine "legit"/"none" left
+// out), most missed first, at most `max`. Slugs, e.g. ["fake-delivery", "urgency"].
+export function missedTactics(events: ActivityEvent[], max: number): string[] {
+  const tactics = events
+    .filter(e => e.kind.includes('wrong'))
+    .map(e => detailString(e.details, 'tactic'))
+    .filter(t => /^[a-z0-9_-]{1,32}$/.test(t) && t !== 'legit' && t !== 'none');
+  return groupByCount(tactics, t => t)
+    .slice(0, max)
+    .map(([t]) => t);
+}
+
+// Finished games, counted like the web's points (safesense/src/lib/progress.ts pointsFor): words, runs,
+// stories and graded practice texts / calls.
+export function finishedGames(events: ActivityEvent[]): number {
+  let n = 0;
+  for (const e of events) {
+    if (e.kind === 'run_done' || e.kind === 'round_done' || e.kind === 'word_solved' || e.kind === 'word_missed') n++;
+    else if ((e.game === 'practice-text' || e.game === 'practice-call') && e.kind.startsWith('answer_')) n++;
+  }
+  return n;
+}

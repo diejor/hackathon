@@ -24,6 +24,7 @@ import spacetimedb, { discordJob, type DiscordJob, type Env, type Handler } from
 import { errorMessage, loadAiConfig, trim, trimEndChar, type HttpClient } from './ai';
 import { BotApology, MaxBotTextChars, runBotTurn, type BotReply } from './bot';
 import { base64Encode, concat, ed25519Verify, fromHex, fromUtf8, utf8 } from './crypto';
+import { dropVoiceOfSender } from './voice';
 import {
   ChannelBusyReply,
   MaxAttachmentBytes,
@@ -124,6 +125,7 @@ function handleInteraction(ctx: Handler, root: unknown): SyncResponse {
       ctx.withTx(tx => {
         if (!tx.db.channelLink.senderKey.find(senderKey)) return "Your Discord isn't linked to a Security Arcade account.";
         tx.db.channelLink.senderKey.delete(senderKey);
+        dropVoiceOfSender(tx.db, senderKey);
         return "Unlinked. I'll keep checking messages for you here, but separately from your Security Arcade account.";
       })
     );

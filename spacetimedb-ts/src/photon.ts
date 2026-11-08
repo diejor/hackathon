@@ -45,6 +45,7 @@ import {
 } from './photon-guards';
 import { PracticeQueuedReply, dropPracticeOfOwner, dropPracticeOfSender, gradePractice, queuePractice } from './practice';
 import { base64Decode, base64Encode, concat, fixedTimeEquals, fromUtf8, hmacSha256, sha256, toHex, utf8 } from './crypto';
+import { dropVoiceOfOwner, dropVoiceOfSender, saveVoiceLink } from './voice';
 
 const DefaultPhotonBaseUrl = 'https://api.photon.codes';
 const WebhookToleranceSeconds = 5n * 60n;
@@ -104,6 +105,7 @@ export const unlinkChannels = spacetimedb.reducer(ctx => {
   for (const l of [...ctx.db.channelLink.owner.filter(ctx.sender)]) ctx.db.channelLink.senderKey.delete(l.senderKey);
   ctx.db.linkCode.owner.delete(ctx.sender);
   dropReachOfOwner(ctx.db, ctx.sender);
+  dropVoiceOfOwner(ctx.db, ctx.sender);
   dropPracticeOfOwner(ctx.db, ctx.sender);
 });
 
@@ -386,6 +388,8 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       // Linked: keep where a future proactive send (practice text) would go. No phone number.
       const linked = tx.db.channelLink.senderKey.find(senderKey);
       if (linked) saveReach(tx.db, senderKey, linked.owner, msg.platform, msg.spaceId, msg.agentUserId, tx.timestamp);
+      // ...and which player a practice call to this number is for (voice.ts; only a salted hash of the number).
+      if (linked) saveVoiceLink(tx.db, senderKey, linked.owner, msg.senderHandle, tx.timestamp);
       return reply;
     });
   if (command === 'UNLINK')
@@ -394,6 +398,7 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       tx.db.channelLink.senderKey.delete(senderKey);
       dropReachOfSender(tx.db, senderKey);
       dropPracticeOfSender(tx.db, senderKey);
+      dropVoiceOfSender(tx.db, senderKey);
       return "Unlinked. I'll keep chatting with you here, but separately from your Security Arcade account.";
     });
   if (command === 'FORGET ME' || command === 'FORGETME')
@@ -406,6 +411,8 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       dropReachOfOwner(tx.db, owner);
       dropPracticeOfSender(tx.db, senderKey);
       dropPracticeOfOwner(tx.db, owner);
+      dropVoiceOfSender(tx.db, senderKey);
+      dropVoiceOfOwner(tx.db, owner);
       return 'Done. I deleted our conversation and everything I remembered about you.';
     });
   // "PRACTICE": ask for a practice text by text (same rules as the web's request_practice_text).
