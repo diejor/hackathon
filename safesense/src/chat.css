@@ -389,6 +389,13 @@
   background: var(--scam-dark);
 }
 
+/* The text box grows with what's typed (where the browser can), so a pasted message isn't clipped to
+   three lines; it stops growing well before it pushes Send off the screen. */
+.chat-page .composer textarea {
+  field-sizing: content;
+  max-height: min(40vh, 320px);
+}
+
 /* The empty greeting is short: never give it an inner scrollbar (bigger text sizes included). */
 .chat-scroll.chat-scroll-empty {
   max-height: none;
@@ -434,6 +441,9 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+}
+.text-safesense-link > p:first-child {
+  margin-top: 0; /* the divider's padding is the gap; no extra paragraph margin under it */
 }
 .text-safesense-link .btn {
   margin-top: 12px;
