@@ -7,7 +7,7 @@ Paste each section into the matching Devpost field. Things to fill in are marked
 - **Tracks:** T-Mobile Safe Signal · Best Use of Photon API · MLH Best Use of Gemini API
 - **Links:**
   - Live: https://diejor.github.io/hackathon/
-  - Code: https://github.com/diejor/hackathon (branch `safesense`)
+  - Code: https://github.com/diejor/hackathon
   - Video: **TODO**
 - **Team:**
   - Diego Rodrigues (lead, backend and integration)
