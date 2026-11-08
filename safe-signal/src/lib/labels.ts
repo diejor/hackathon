@@ -143,3 +143,37 @@ export const OUTCOME_LABELS: Record<string, string> = {
   ignored: 'You ignored it. Safe, but reporting helps protect others too.',
   engaged: 'You tapped the link. No harm done here, and the debrief shows what to watch for.',
 };
+
+export interface MessageSegment { text: string; flag?: RedFlag }
+
+// Phrases in the catalog templates that carry each red flag (data/scam-archetypes.json).
+const FLAG_PATTERNS: [RedFlag, RegExp][] = [
+  ['sender_identity', /^(?:Hey, it's [^.]+\.|[^:\n]{2,40}:)/g],
+  ['url_domain', /https?:\/\/\S+/g],
+  ['reply_bait', /Reply YES[^:]*/g],
+  ['urgency_clause', /Late fees apply after \d+h|Pay now|do it now\?|Enforcement action begins [^.:]+|Claim within [^:]+|will lock in \d+ minutes/g],
+  ['plausibility_bait', /\$\d[\d,]*(?:\.\d\d)?|You won an? [^!.]+?(?= in the)/g],
+  ['payment_rail', /\d+ \w+ gift cards|gift cards|Settle|Resolve/g],
+  ['authority_claim', /Stuck in a meeting|back taxes|Unusual sign-in|We detected/g],
+  ['personalization_overreach', /I'll reimburse\./g],
+];
+
+/** Split a rendered drill message into plain and red-flag segments (only flags the scam carries). */
+export function flagSegments(message: string, flags: RedFlag[]): MessageSegment[] {
+  const hits: { start: number; end: number; flag: RedFlag }[] = [];
+  for (const [flag, pattern] of FLAG_PATTERNS) {
+    if (!flags.includes(flag)) continue;
+    for (const m of message.matchAll(pattern)) hits.push({ start: m.index!, end: m.index! + m[0].length, flag });
+  }
+  hits.sort((a, b) => a.start - b.start || b.end - a.end);
+  const out: MessageSegment[] = [];
+  let at = 0;
+  for (const hit of hits) {
+    if (hit.start < at) continue;
+    if (hit.start > at) out.push({ text: message.slice(at, hit.start) });
+    out.push({ text: message.slice(hit.start, hit.end), flag: hit.flag });
+    at = hit.end;
+  }
+  if (at < message.length) out.push({ text: message.slice(at) });
+  return out;
+}

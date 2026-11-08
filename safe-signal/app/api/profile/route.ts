@@ -5,9 +5,9 @@ import { sessionPlayer } from '../../../src/lib/session';
 export const runtime = 'nodejs';
 export async function POST() {
  const player = await sessionPlayer();
- if (!player) return Response.json({error:'Start a session first.'},{status:401});
+ if (!player) return Response.json({error:'Play the three training games first.'},{status:401});
  const events = getGameEvents(player.id);
- if (new Set(events.map(e=>e.game)).size < 3) return Response.json({error:'Complete all three games first.'},{status:409});
+ if (new Set(events.map(e=>e.game)).size < 3) return Response.json({error:'Finish all three training games first, then come back for your profile.'},{status:409});
  const profile = buildProfile(events);
  const plan = selectAttackPlan(profile,library,1);
  validatePlan(plan);
