@@ -79,7 +79,11 @@ export function pointsFor(e: ProgressEvent): number {
   return 0
 }
 
-export const totalPoints = (events: ProgressEvent[]) => events.reduce((sum, e) => sum + pointsFor(e), 0)
+export function totalPoints(events: ProgressEvent[]): number {
+  const cutoff = events.reduce((latest, e) =>
+    e.game === 'challenge-line' && e.kind === 'link_opened' ? Math.max(latest, e.at) : latest, -Infinity)
+  return events.reduce((sum, e) => sum + (e.at > cutoff ? pointsFor(e) : 0), 0)
+}
 
 /** Local calendar day (YYYY-MM-DD) for a timestamp; `offsetMin` is minutes ahead of UTC (tests pass 0). */
 export function dayKey(at: number, offsetMin = -new Date(at).getTimezoneOffset()): string {

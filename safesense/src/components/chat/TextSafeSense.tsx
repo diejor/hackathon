@@ -96,7 +96,9 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
             <p>
               Text <strong className="text-safesense-code">LINK {live.code}</strong> to {number} within 10 minutes.
             </p>
-            <p className="small muted">This page will show “Linked” when it works.</p>
+            <p className="small muted">Send the whole line, including LINK, as one iMessage from your iPhone. This page will show “Linked” when it works.</p>
+            <button type="button" className="btn btn-secondary btn-block" disabled={!ready || busy}
+              onClick={() => mod && run(() => mod.createLinkCode())}>Get a new code</button>
           </>
         ) : (
           <>
@@ -112,6 +114,18 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
           </>
         )}
       </div>
+
+      {import.meta.env.VITE_CHALLENGE_NUMBER && (
+        <section aria-label="Phone challenges">
+          <h3>Phone challenges</h3>
+          <p>After you finish a game, this second number can send a practice scam based on your missed clues.
+            Opening its training scenario resets your points. Text STOP to end texts and calls.</p>
+          {live ? <p>From your own phone, text <strong>JOIN BOTH {live.code}</strong> to {import.meta.env.VITE_CHALLENGE_NUMBER}.
+            For texts only use JOIN TEXT, or for calls only use JOIN CALL, followed by the same code.</p>
+            : <button type="button" disabled={!ready || busy} onClick={() => mod && run(() => mod.createLinkCode())}>
+              Get challenge enrollment code</button>}
+        </section>
+      )}
 
       <p className="small muted">Demo: this line answers one registered iPhone. Text STOP anytime to stop messages.</p>
     </section>

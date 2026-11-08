@@ -1,11 +1,12 @@
 import { useState, type MouseEvent } from 'react'
-import { ArrowRight, KeyRound, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck, Sprout } from 'lucide-react'
+import { ArrowRight, KeyRound, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
 import { KEYS, load, save, session, usePoints } from '../storage'
 import { ASK_LABEL, THE_ASSISTANT } from '../components/chat/copy'
 import { LockedGameCard } from '../components/LockedGame'
 import { NameDialog } from '../components/NameDialog'
+import { Mascot, stageMeta, stageFor, nextMilestone } from '../components/Mascot'
 import { useNickname } from '../lib/profileStore'
 
 type Game = {
@@ -100,6 +101,33 @@ function openRecovery(which: 0 | 1) {
 const pointsLabel = (points: number | null) =>
   points === null ? 'Points loading' : `${points} ${points === 1 ? 'point' : 'points'}`
 
+/** Progress toward the next evolution, shown under the mascot on the dashboard card. */
+function MascotProgress({ points }: { points: number | null }) {
+  const stage = stageFor(points)
+  const meta = stageMeta(stage)
+  const next = nextMilestone(stage)
+  const p = points ?? 0
+  const pct = next ? Math.min(100, Math.round(((p - meta.min) / (next.at - meta.min)) * 100)) : 100
+
+  return (
+    <div className="mascot-progress">
+      <span className="mascot-progress-name">{meta.name}</span>
+      {next ? (
+        <>
+          <span className="mascot-progress-bar" aria-hidden="true">
+            <span className="mascot-progress-fill" style={{ width: `${pct}%` }} />
+          </span>
+          <span className="mascot-progress-hint">
+            {next.at - p} more to {next.name}
+          </span>
+        </>
+      ) : (
+        <span className="mascot-progress-hint">Fully evolved</span>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const name = useNickname()
   const [editing, setEditing] = useState(false)
@@ -130,7 +158,7 @@ export default function Home() {
             {/* Compact points shown beside the name when the dashboard stacks (smaller screens) */}
             <a className="points-badge" href={href('profile')} aria-label={`Your progress: ${pointsLabel(points)}`}>
               <span className="points-badge-value">{shown}</span>
-              <Sprout size={22} strokeWidth={1.5} aria-hidden="true" />
+              <Mascot points={points} size={26} compact className="badge-mascot" />
             </a>
           </div>
           <div className="eyebrow dash-welcome">Welcome to your dashboard</div>
@@ -160,8 +188,10 @@ export default function Home() {
             <div>
               <p className="points-value">{shown}</p>
               <p className="points-label">{points === 1 ? 'point' : 'points'}</p>
+              <MascotProgress points={points} />
             </div>
-            <Sprout size={60} strokeWidth={1.3} className="points-icon" aria-hidden="true" />
+            {/* The mascot grows as points climb; it replaces the old static sprout icon. */}
+            <Mascot points={points} size={96} className="points-mascot" />
           </a>
 
           {lastGame ? (
