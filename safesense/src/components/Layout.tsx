@@ -1,13 +1,12 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { MessageCircle, ShieldCheck, Sprout } from 'lucide-react'
+import { MessageCircle, ShieldCheck, Sprout, type LucideIcon } from 'lucide-react'
 import { ASK_LABEL, THE_ASSISTANT } from './chat/copy'
 import { href, type Route } from '../router'
-import { useProgress } from '../lib/useProgress'
+import { usePoints } from '../storage'
 import '../profile.css'
 
 const SIZES = ['normal', 'large', 'larger'] as const
 type Size = (typeof SIZES)[number]
-const SIZE_NAMES: Record<Size, string> = { normal: 'Normal', large: 'Large', larger: 'Larger' }
 
 function TextSizeButton() {
   const [size, setSize] = useState<Size>(() => {
@@ -30,35 +29,30 @@ function TextSizeButton() {
   const next = () => setSize(SIZES[(SIZES.indexOf(size) + 1) % SIZES.length])
 
   return (
-    <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`}>
-      <span className="aa" aria-hidden="true">
-        Aa
-      </span>{' '}
-      <span className="text-size-label" aria-hidden="true">
-        Text: {SIZE_NAMES[size]}
-      </span>
+    <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`} title="Text size">
+      <span className="aa">Aa</span>
     </button>
   )
 }
 
-/** "Your progress", with a quiet points chip once the player has some. */
-function ProgressLink({ route }: { route: Route }) {
-  const { status, progress } = useProgress()
-  const points = status === 'ready' && progress.points > 0 ? progress.points : null
+/**
+ * Point total in the header: just the number and a sprout (the designer's badge). It links to the
+ * progress page. The total comes from the rounds saved in SpacetimeDB (see storage.ts usePoints).
+ */
+function HeaderPoints({ route }: { route: Route }) {
+  const points = usePoints()
+  const label = points === null ? 'Your progress' : `Your progress: ${points} ${points === 1 ? 'point' : 'points'}`
   return (
     <a
-      className="progress-link"
+      key={points ?? -1}
+      className="header-points"
       href={href('profile')}
       aria-current={route === 'profile' ? 'page' : undefined}
-      aria-label={points === null ? 'Your progress' : `Your progress, ${points} points`}
+      aria-label={label}
+      title="Your progress"
     >
-      <Sprout size={20} strokeWidth={1.75} aria-hidden="true" />
-      <span className="progress-label">Your progress</span>
-      {points !== null && (
-        <span className="points-chip" aria-hidden="true">
-          {points}
-        </span>
-      )}
+      {points === null ? '–' : points.toLocaleString()}
+      <Sprout size={24} strokeWidth={1.5} aria-hidden="true" />
     </a>
   )
 }
@@ -75,8 +69,8 @@ function Header({ route }: { route: Route }) {
           <span className="brand-name">SafeSense</span>
         </a>
         <div className="header-actions">
+          <HeaderPoints route={route} />
           <TextSizeButton />
-          <ProgressLink route={route} />
           <a
             className="chat-link"
             href={href('chat')}
@@ -165,6 +159,25 @@ export function PageHead({
       <div className="eyebrow">{crumb}</div>
       <h1 className="page-title">{title}</h1>
       <p className="lead">{lead}</p>
+    </div>
+  )
+}
+
+/** Dark green "Back to home" button at the bottom of every minigame's side panel. */
+export function BackHome() {
+  return (
+    <a className="btn btn-primary btn-block" href={href('home')}>
+      Back to home
+    </a>
+  )
+}
+
+/** Icon and heading on a single line, used at the top of tip/advice boxes. */
+export function TipHead({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <div className="tip-head">
+      <Icon size={24} strokeWidth={1.5} className="icon-muted" aria-hidden="true" />
+      <h2 className="h3">{children}</h2>
     </div>
   )
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, Info, ShieldCheck } from 'lucide-react'
 import { LOW_CRED, type Campaign, type Reaction } from '../../content/longCon'
-import { Dial } from './Dial'
 import { prefersReducedMotion } from './useCampaign'
 
 /** Counts the shown number up (or down) to `target`, like BadScam's tally; instant with reduced motion. */
@@ -24,6 +23,25 @@ function useCountUp(target: number) {
     return () => cancelAnimationFrame(raf)
   }, [target])
   return shown
+}
+
+function credWord(cred: number) {
+  if (cred < LOW_CRED) return 'Doubtful'
+  if (cred < 45) return 'Shaky'
+  if (cred < 70) return 'Believable'
+  return 'Convincing'
+}
+
+/** "How believable it looks", drawn as the designer's trust meter (design01's progress bar). */
+function TrustMeter({ cred }: { cred: number }) {
+  return (
+    <span className={`rr-trust${cred < LOW_CRED ? ' is-low' : ''}`}>
+      <span className="msg-bar" aria-hidden="true">
+        <span style={{ width: `${Math.max(2, cred)}%` }} />
+      </span>
+      <span className="rr-trust-word">{credWord(cred)}</span>
+    </span>
+  )
 }
 
 const STATUS: Record<Reaction | 'none', string> = {
@@ -74,7 +92,7 @@ export function Hud({
             <span className="con-long">How believable it looks</span>
             <span className="con-short">Believability</span>
           </span>
-          <Dial cred={cred} />
+          <TrustMeter cred={cred} />
         </div>
       </div>
       <p className="sr-only" aria-live="polite">

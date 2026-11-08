@@ -25,11 +25,14 @@ export function Composer({
   draft,
   setDraft,
   textareaRef,
+  autoFocus = false,
 }: {
   bot: BotSnapshot
   draft: string
   setDraft: Dispatch<SetStateAction<string>>
   textareaRef: RefObject<HTMLTextAreaElement | null>
+  /** Focus the box on load (when a prompt was handed over, ready to send). */
+  autoFocus?: boolean
 }) {
   // The image is converted to the exact JPEG that will be sent as soon as it's picked, so problems
   // (HEIC photos, files a phone won't let us read) show up right away, not on Send.
@@ -105,40 +108,15 @@ export function Composer({
       ? 'Speaking isn’t available in this browser. You can type your question instead.'
       : 'The microphone only works on a secure (https) page. You can type your question instead.'
   else if (!ready && !listening) micHint = `The microphone will be ready once ${THE_ASSISTANT} connects.`
-  else if (listening) micHint = 'Microphone is on. Speak when you are ready, then select Stop.'
-  else micHint = 'Select Speak and talk. Your words will appear in the box.'
+  else if (listening) micHint = 'Microphone is on. Speak when you are ready. Select the microphone again to stop.'
+  else micHint = 'Select the microphone and talk. Your words will appear in the box.'
 
+  // The designer's composer (design01): one row with the text box and three square buttons (speak, add a
+  // picture, send). The picture preview sits above the row; alerts and the microphone note below it.
+  const sendLabel = bot.pending ? 'Waiting for an answer…' : 'Send message'
+  const micLabel = !voice.ok ? 'Microphone not available' : listening ? 'Stop the microphone' : 'Speak your question'
   return (
     <div className="composer">
-      <label htmlFor="question">Your question</label>
-      <textarea
-        id="question"
-        ref={textareaRef}
-        placeholder={listening ? 'Listening…' : 'What would you like help with?'}
-        value={draft}
-        maxLength={MAX_CHARS}
-        enterKeyHint="send"
-        onChange={(e) => {
-          setDraft(e.target.value)
-          if (bot.error) botActions.clearError()
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault()
-            void submit()
-          }
-        }}
-        onPaste={(e) => {
-          const item = [...e.clipboardData.items].find(
-            (i) => i.kind === 'file' && (!i.type || i.type.startsWith('image/')),
-          )
-          const file = item?.getAsFile()
-          if (!file) return
-          void attach(file)
-          if (!e.clipboardData.getData('text/plain')) e.preventDefault()
-        }}
-      />
-
       {(image || preparing || imageFailed) && (
         <span className={`attachment chat-preview ${imageFailed ? 'chat-preview-failed' : ''}`}>
           {image && <img src={image} alt="Your picture, ready to send" />}
@@ -151,26 +129,39 @@ export function Composer({
         </span>
       )}
 
-      {(error || note) && (
-        <div className="chat-alert" role="alert">
-          <TriangleAlert size={20} strokeWidth={1.75} aria-hidden="true" />
-          <div>
-            {note && <p>{note}</p>}
-            {error && <p>{error}</p>}
-          </div>
-        </div>
-      )}
-
-      <button
-        type="button"
-        className="btn btn-primary btn-block chat-send"
-        onClick={() => void submit()}
-        disabled={!canSend}
-      >
-        <ArrowUp size={20} strokeWidth={1.75} /> {bot.pending ? 'Waiting for an answer…' : 'Send'}
-      </button>
-
-      <div className="chat-tools">
+      <div className="composer-row">
+        <label htmlFor="question" className="sr-only">
+          Your question
+        </label>
+        <textarea
+          id="question"
+          ref={textareaRef}
+          rows={1}
+          autoFocus={autoFocus}
+          placeholder={listening ? 'Listening…' : 'What would you like help with?'}
+          value={draft}
+          maxLength={MAX_CHARS}
+          enterKeyHint="send"
+          onChange={(e) => {
+            setDraft(e.target.value)
+            if (bot.error) botActions.clearError()
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              void submit()
+            }
+          }}
+          onPaste={(e) => {
+            const item = [...e.clipboardData.items].find(
+              (i) => i.kind === 'file' && (!i.type || i.type.startsWith('image/')),
+            )
+            const file = item?.getAsFile()
+            if (!file) return
+            void attach(file)
+            if (!e.clipboardData.getData('text/plain')) e.preventDefault()
+          }}
+        />
         <input
           ref={fileRef}
           type="file"
@@ -186,34 +177,59 @@ export function Composer({
         />
         <button
           type="button"
-          className={`btn btn-secondary ${listening ? 'chat-listening' : ''}`}
+          className={`icon-btn ${listening ? 'listening' : ''}`}
           onClick={() => {
             botActions.clearError()
             dictation.current?.toggle()
           }}
           aria-pressed={listening}
+          aria-label={micLabel}
           aria-describedby="mic-hint"
+          title={micLabel}
           disabled={!voice.ok || !ready}
         >
           {!voice.ok ? (
-            <MicOff size={20} strokeWidth={1.75} />
+            <MicOff size={22} strokeWidth={1.75} />
           ) : listening ? (
-            <Square size={18} strokeWidth={2} />
+            <Square size={20} strokeWidth={2} />
           ) : (
-            <Mic size={20} strokeWidth={1.75} />
+            <Mic size={22} strokeWidth={1.75} />
           )}
-          {!voice.ok ? 'No microphone' : listening ? 'Stop' : 'Speak'}
         </button>
         <button
           type="button"
-          className="btn btn-secondary"
+          className="icon-btn"
           onClick={() => fileRef.current?.click()}
           disabled={!ready || bot.pending}
+          aria-label="Add a screenshot or photo"
+          title="Add a screenshot or photo"
         >
-          <ImagePlus size={20} strokeWidth={1.5} /> Add a picture
+          <ImagePlus size={22} strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn primary chat-send"
+          onClick={() => void submit()}
+          disabled={!canSend}
+          aria-label={sendLabel}
+          title={sendLabel}
+        >
+          {bot.pending ? <Loader2 size={22} className="chat-spin" /> : <ArrowUp size={22} strokeWidth={2} />}
         </button>
       </div>
-      <p id="mic-hint" className="mic-hint" aria-live="polite">
+
+      {(error || note) && (
+        <div className="chat-alert" role="alert">
+          <TriangleAlert size={20} strokeWidth={1.75} aria-hidden="true" />
+          <div>
+            {note && <p>{note}</p>}
+            {error && <p>{error}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Shown while the microphone is on (or can't be used); always there for screen readers. */}
+      <p id="mic-hint" className={`mic-hint ${listening || !voice.ok ? '' : 'sr-only'}`} aria-live="polite">
         {micHint}
       </p>
     </div>

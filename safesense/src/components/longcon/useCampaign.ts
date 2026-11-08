@@ -1,10 +1,10 @@
-// The Long Con's campaign engine, adapted from BadScam's game.js (Krishna, SafeSense team): open a scene
+// Role Reversal's campaign engine (formerly The Long Con), adapted from BadScam's game.js (Krishna, SafeSense team): open a scene
 // (its narrator lines and posts go into the feed), pick an option (its results go into the feed with a
 // receipt, the count of people who believed it and the believability dial move, simulated people react),
 // then after a short beat the next scene opens. After the last scene the campaign is done.
 import { useCallback, useEffect, useReducer } from 'react'
 import { logActivity } from '../../lib/stdb'
-import { START_CRED, type Campaign, type Entry, type Option, type Reaction } from '../../content/longCon'
+import { START_CRED, type Campaign, type Entry, type Option, type Reaction, type TacticId } from '../../content/longCon'
 
 export type FeedItem = {
   key: number
@@ -13,6 +13,8 @@ export type FeedItem = {
   entry: Entry
   /** The change a choice made, shown under its last line. */
   receipt?: { reach: number; cred: number }
+  /** On the text you sent: the tactic the choice used, revealed once it's chosen (Role Reversal's bubbles). */
+  tactic?: TacticId
 }
 
 export type CampaignState = {
@@ -81,6 +83,8 @@ function reduce(s: CampaignState | null, a: Action): CampaignState | null {
     const feed = append(s, out, s.scene)
     const firstNew = s.feed.length ? s.feed[s.feed.length - 1].key + 1 : 0
     if ((reach || cred) && feed.length) feed[feed.length - 1] = { ...feed[feed.length - 1], receipt: { reach, cred } }
+    const sentAt = feed.findIndex((f) => f.key >= firstNew && f.entry.t === 'sent')
+    if (o.tactic && sentAt >= 0) feed[sentAt] = { ...feed[sentAt], tactic: o.tactic }
     return {
       ...s,
       feed,

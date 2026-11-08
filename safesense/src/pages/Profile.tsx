@@ -14,7 +14,7 @@ import { UPCOMING, pointsToGo } from '../content/upcoming'
 const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
   { route: 'scam-or-not', icon: ScanSearch, label: 'Try Scam or Not?' },
   { route: 'fraudle', icon: SpellCheck, label: 'Try Fraudle' },
-  { route: 'long-con', icon: MessagesSquare, label: 'Try The Long Con' },
+  { route: 'role-reversal', icon: MessagesSquare, label: 'Try Role Reversal' },
 ]
 
 function Empty() {
@@ -45,7 +45,7 @@ function Summary({ p }: { p: Progress }) {
   const items: [number, string, string][] = [
     [messages, messages === 1 ? 'message looked at' : 'messages looked at', 'Scam or Not?'],
     [wordsSolved, wordsSolved === 1 ? 'word solved' : 'words solved', 'Fraudle'],
-    [stories, stories === 1 ? 'Long Con story played' : 'Long Con stories played', 'The Long Con'],
+    [stories, stories === 1 ? 'Role Reversal story played' : 'Role Reversal stories played', 'Role Reversal'],
     [days, days === 1 ? 'day practiced' : 'days practiced', 'All games'],
   ]
   return (
@@ -57,7 +57,7 @@ function Summary({ p }: { p: Progress }) {
         <p className="points-total">
           {p.points} {p.points === 1 ? 'point' : 'points'}
         </p>
-        <p className="muted">Points show how much you’ve practiced — there’s no rush.</p>
+        <p className="muted">Every game you finish earns 1 point: a word in Fraudle, a run of Scam or Not?, a Role Reversal story or a practice text. There’s no rush.</p>
         {/* A level could appear here later (being designed separately). */}
       </div>
       <NextUnlock points={p.points} />

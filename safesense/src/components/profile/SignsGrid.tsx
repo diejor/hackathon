@@ -83,7 +83,7 @@ export function SignsGrid({ caught }: { caught: Map<string, Caught> }) {
       </ul>
 
       <h3 className="h3 sign-group-title">Scammer moves</h3>
-      <p className="muted small">From The Long Con, where you play the scammer.</p>
+      <p className="muted small">From Role Reversal, where you play the scammer.</p>
       <ul className="sign-grid">
         {moveTiles.map(([s, isExtra]) => (
           <Tile key={s.slug} sign={s} caught={caught.get(s.slug)} extra={isExtra} />

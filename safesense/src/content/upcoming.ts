@@ -6,8 +6,8 @@ export const UPCOMING = {
   kind: 'Coming next',
   /** One line on the Home card. */
   line: 'Is that really your bank calling? Practice spotting voice scams.',
-  /** Points needed to unlock it. */
-  unlockAt: 500,
+  /** Points needed to unlock it: every finished game is 1 point (lib/progress.ts pointsFor), so 10 games. */
+  unlockAt: 10,
   /** What the game will be, on the coming-soon page. */
   what: [
     'A pretend phone call from someone who says they’re your bank. Nobody really calls you, and nothing is dialed.',

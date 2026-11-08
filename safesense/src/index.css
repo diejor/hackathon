@@ -201,6 +201,22 @@ main {
 }
 .text-size {
   white-space: nowrap;
+  justify-content: center;
+  min-width: 48px;
+}
+.header-points {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--green-900);
+  white-space: nowrap;
+}
+.header-points svg {
+  color: var(--green-700);
 }
 .text-size .aa {
   font-weight: 500;
@@ -342,6 +358,55 @@ main {
   color: var(--green-700);
   opacity: 0.85;
 }
+/* Tip boxes: icon and heading share one line */
+.tip-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tip-head svg {
+  flex-shrink: 0;
+}
+.tip-head .h3,
+.panel .tip-head .h3,
+.plain .tip-head .h3 {
+  margin-top: 0;
+}
+
+/* Square icon buttons (chat & role reversal composers) */
+.icon-btn {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--green-700);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--green-700);
+}
+.icon-btn.primary {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
+}
+.icon-btn.primary:hover:not(:disabled) {
+  background: var(--green-900);
+  border-color: var(--green-900);
+}
+.icon-btn.listening {
+  background: #8b3a2b;
+  border-color: #8b3a2b;
+  color: #fff;
+}
+.icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -367,7 +432,8 @@ main {
   background: var(--green-700);
   color: #fff;
 }
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:active:not(:disabled) {
   background: var(--green-900);
 }
 .btn-secondary {
@@ -395,7 +461,7 @@ main {
   font-size: 0.95rem;
 }
 
-/* ---------- Message bubbles (shared by chat & long con) ---------- */
+/* ---------- Message bubbles (shared by chat & role reversal) ---------- */
 .messages {
   display: flex;
   flex-direction: column;
@@ -467,24 +533,208 @@ main {
 .home-hero .lead {
   max-width: 760px;
 }
-.hero-actions {
+/* Dashboard */
+.dashboard {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  padding: 36px 40px;
+  background: var(--green-100);
+  border-radius: var(--radius-lg);
+}
+.dash-greeting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-title {
+  margin-top: 0;
+  font-size: 3rem;
+  overflow-wrap: anywhere;
+}
+.name-edit {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--green-700);
+  transition: background 0.15s, border-color 0.15s;
+}
+.name-edit:hover,
+.name-edit:focus-visible {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.dash-welcome {
+  margin-top: 8px;
+}
+.last-played {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 1.05rem;
+  color: var(--green-900);
+  text-decoration: none;
+}
+.last-played svg {
+  color: var(--green-700);
+  transition: transform 0.15s;
+}
+a.last-played:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a.last-played:hover svg {
+  transform: translateX(3px);
+}
+.improve {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(36, 57, 47, 0.12);
+}
+.dash-side .last-played {
+  margin-top: 0;
+}
+.points-badge {
+  display: none;
+}
+/* Stacked dashboard: points move beside the name, and a line separates the two halves */
+@media (max-width: 960px) {
+  .points-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--green-700);
+    color: #fff;
+  }
+  .points-badge svg {
+    width: 34px;
+    height: 34px;
+  }
+  .points-badge-value {
+    font-family: var(--font-serif);
+    font-size: 1.8rem;
+    line-height: 1.1;
+  }
+  .dash-side .points-card {
+    display: none;
+  }
+  .dash-side {
+    padding-top: 20px;
+    border-top: 1px solid rgba(36, 57, 47, 0.12);
+  }
+}
+.improve-q {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--green-900);
+}
+
+/* Change-name popup */
+.name-dialog {
+  width: min(calc(100% - 32px), 420px);
+  padding: 28px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 48px rgba(36, 57, 47, 0.25);
+  color: var(--text-body);
+}
+.name-dialog::backdrop {
+  background: rgba(36, 57, 47, 0.35);
+}
+.name-dialog label {
+  display: block;
+  margin-top: 6px;
+}
+.text-input {
+  width: 100%;
+  margin-top: 14px;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--green-900);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  background: var(--surface);
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.dash-intro {
+  margin-top: 28px;
+  max-width: 520px;
+}
+.dash-side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+/* Outlined points box: number and label on the left, sprout on the right */
+.points-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 28px;
+  background: var(--green-700);
+  border-radius: var(--radius-lg);
+  color: #fff;
+  text-align: center;
+}
+.points-value {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  line-height: 1.05;
+}
+.points-label {
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
+.points-icon {
+  flex-shrink: 0;
+}
+.keep-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--green-900);
+}
+.keep-progress p {
+  margin-top: 4px;
+  font-size: 0.95rem;
+}
+.keep-progress {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(36, 57, 47, 0.12);
+  max-width: 560px;
+}
+.keep-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 10px;
+  margin-top: 14px;
 }
-.reassure {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 24px;
-  color: var(--text-muted);
-  font-size: 1.05rem;
+.btn-sm {
+  min-height: 44px;
+  padding: 0 16px;
+  gap: 8px;
+  font-size: 0.95rem;
 }
-.reassure svg {
-  flex-shrink: 0;
-  margin-top: 0.15em; /* sits on the first line when the sentence wraps */
-}
+/* The motto line (used in the Role Reversal debrief) */
 .motto {
   text-wrap: balance;
   font-family: var(--font-serif);
@@ -492,9 +742,6 @@ main {
   color: var(--green-900);
   margin-top: 16px !important;
   line-height: 1.3;
-}
-.desktop-break {
-  display: inline;
 }
 .games-title {
   margin: 36px 0 20px;
@@ -853,6 +1100,63 @@ main {
   background: var(--green-100);
   border-radius: var(--radius);
 }
+.clue-body {
+  flex: 1;
+  min-width: 0;
+}
+.clue-strip {
+  position: relative;
+}
+/* Frosted cover over the clue until the eye button is pressed */
+.clue-cover {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(230, 237, 227, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.26s ease-out;
+}
+.clue-cover.fading {
+  opacity: 0;
+}
+.clue-eye {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--green-700);
+  box-shadow: 0 4px 12px rgba(36, 57, 47, 0.12);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.clue-eye:hover {
+  border-color: var(--green-700);
+}
+/* Press feedback: same dark green as the home cards, with a small pop */
+.clue-eye.pressed,
+.clue-eye:active {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
+  transform: scale(1.12);
+  box-shadow: 0 8px 20px rgba(36, 57, 47, 0.25);
+}
+@media (prefers-reduced-motion: reduce) {
+  .clue-cover,
+  .clue-eye {
+    transition: none;
+  }
+  .clue-eye.pressed,
+  .clue-eye:active {
+    transform: none;
+  }
+}
 .clue-icon {
   width: 40px;
   height: 40px;
@@ -875,11 +1179,6 @@ main {
   font-weight: 600;
   color: var(--green-900);
   line-height: 1.4;
-}
-.clue-meta {
-  margin-top: 2px !important;
-  font-size: 0.9rem;
-  color: var(--text-muted);
 }
 /* Board adapts to word length (--n = 4..12): tiles cap at 56px wide and shrink to fit */
 .board {
@@ -999,9 +1298,71 @@ main {
 .key.absent {
   background: var(--neutral-200);
 }
+.key {
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.12s, box-shadow 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Pressed: same dark green as the hovered game cards on the home page */
+.key:active,
+.key.pressed {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 14px rgba(36, 57, 47, 0.22);
+}
+.key.correct:active,
+.key.correct.pressed {
+  background: var(--green-900);
+  border-color: var(--green-900);
+}
+@media (prefers-reduced-motion: reduce) {
+  .key:active,
+  .key.pressed {
+    transform: none;
+  }
+}
+
+/* Game-complete overlay */
+.board-card {
+  position: relative;
+}
+.result-box {
+  width: min(100%, 420px);
+  padding: 28px 28px 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(36, 57, 47, 0.25);
+  text-align: center;
+}
+.result-word {
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 2.2rem;
+  letter-spacing: 0.06em;
+  color: var(--green-900);
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.result-def {
+  margin: 12px 0 24px !important;
+  font-size: 1.1rem;
+  color: var(--text-body);
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-overlay {
+    animation: none;
+  }
+}
 .two-btns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 112px minmax(0, 1fr);
   gap: 12px;
 }
 .legend {
@@ -1029,6 +1390,23 @@ main {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  /* clip (unlike hidden) does not create a scroll container, so the docked controls can stick to the viewport */
+  overflow: clip;
+}
+/* Desktop: the dock wrapper is transparent to layout; order keeps verdicts → feedback → next */
+.scam-dock {
+  display: contents;
+}
+.scam-dock .verdicts {
+  order: 1;
+}
+.play > .feedback {
+  order: 2;
+  margin-top: 0;
+}
+.scam-dock .next-round {
+  order: 3;
+  margin-top: 4px;
 }
 .badge-ok {
   display: inline-flex;
@@ -1295,7 +1673,7 @@ main {
 .feedback p {
   margin-top: 6px;
 }
-/* ================= LONG CON ================= */
+/* ================= ROLE REVERSAL ================= */
 .scenario-top {
   display: flex;
   justify-content: space-between;
@@ -1309,15 +1687,100 @@ main {
   color: var(--text-muted);
   margin-bottom: 16px;
 }
-.respond {
-  margin-top: 36px;
+.rr-top {
+  margin-bottom: 20px;
 }
-.respond .muted {
-  margin: 10px 0 16px;
+.bubble.has-progress .meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.choice.picked {
-  border: 2px solid var(--green-700);
-  background: var(--green-100);
+.msg-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  margin-left: auto;
+}
+.msg-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--neutral-200);
+  overflow: hidden;
+}
+.msg-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green-700);
+  transition: width 0.4s ease-out;
+}
+.msg-change {
+  min-width: 2.4em;
+  text-align: right;
+  font-weight: 700;
+}
+.msg-change.up {
+  color: var(--green-700);
+}
+.msg-change.down {
+  color: var(--scam-dark);
+}
+.tactic {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--green-700);
+}
+.rr-dock {
+  margin-top: 28px;
+}
+.dock-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--green-900);
+  margin-bottom: 12px;
+}
+
+.restart-btn {
+  margin-top: 14px;
+}
+.choice:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.brief strong {
+  color: var(--green-900);
+}
+.brief {
+  margin-bottom: 20px !important;
+  padding: 12px 16px;
+  background: var(--green-50);
+  border-radius: var(--radius);
+  font-size: 1.05rem;
+}
+.empty-thread {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  text-align: center;
+}
+/* Center "What to watch for" evenly between the panels above and below */
+.plain.watch {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.plain.watch .h3 {
+  margin-top: 0;
 }
 .watch-list {
   list-style: none;
@@ -1338,6 +1801,26 @@ main {
 }
 
 /* ================= CHAT ================= */
+/* Desktop: card height follows the side panel (--chat-base, set from script), up to 1.5x; then messages scroll */
+@media (min-width: 961px) {
+  .chat-card {
+    display: flex;
+    flex-direction: column;
+    min-height: var(--chat-base, auto);
+    max-height: calc(var(--chat-base, 100vh) * 1.5);
+  }
+  .chat-card .messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  /* Empty state fills the conversation space, with its text centered */
+  .chat-card .empty-thread {
+    flex: 1;
+    justify-content: center;
+  }
+}
 .chat-head {
   display: flex;
   justify-content: space-between;
@@ -1362,18 +1845,20 @@ main {
   color: var(--text-muted);
   margin-top: 14px;
 }
-.composer label {
-  display: block;
-  font-weight: 600;
-  color: var(--green-900);
-  font-size: 1.1rem;
-  margin: 14px 0 12px;
+.composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
 }
 .composer textarea {
-  width: 100%;
-  min-height: 110px;
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  min-height: 56px;
+  max-height: 200px;
   resize: vertical;
-  padding: 16px;
+  padding: 14px 16px;
+  line-height: 1.4;
   border: 1px solid var(--green-900);
   border-radius: var(--radius-sm);
   font-size: 1.1rem;
@@ -1381,12 +1866,6 @@ main {
 }
 .composer textarea::placeholder {
   color: var(--text-muted);
-}
-.composer-actions {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  margin-top: 16px;
 }
 .attachment {
   display: inline-flex;
@@ -1455,6 +1934,11 @@ main {
   .brand-name {
     font-size: 1.5rem;
   }
+  .header-points {
+    padding: 0 2px;
+    font-size: 1.25rem;
+    gap: 4px;
+  }
   .text-size {
     font-size: 0.95rem;
     height: 46px;
@@ -1482,31 +1966,8 @@ main {
   .card {
     padding: 20px 16px;
   }
-  /* Home: the first screen says what SafeSense does and shows both actions; the motto becomes a slim band. */
   .home-hero {
     gap: 20px;
-  }
-  .hero-actions .btn {
-    flex: 1 1 100%;
-  }
-  .reassure {
-    margin-top: 18px;
-    font-size: 1rem;
-  }
-  .motto-panel {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 14px;
-    align-items: center;
-    padding: 18px 20px;
-  }
-  .motto-panel .motto {
-    margin-top: 0 !important;
-    font-size: 1.35rem;
-  }
-  .motto-panel p:last-child {
-    grid-column: 1 / -1;
-    margin-top: 8px;
   }
   .games-title {
     margin: 28px 0 16px;
@@ -1554,6 +2015,18 @@ main {
   .help-banner .btn {
     width: 100%;
   }
+  .keep-actions .btn {
+    width: 100%;
+  }
+  .dashboard {
+    padding: 24px 20px;
+  }
+  .points-value {
+    font-size: 2.2rem;
+  }
+  .dash-title {
+    font-size: 2.3rem;
+  }
   .bubble,
   .bubble.mine {
     max-width: 92%;
@@ -1598,9 +2071,6 @@ main {
     grid-row: 1;
     justify-self: start;
   }
-  .desktop-break {
-    display: none;
-  }
   .section-top {
     padding: 16px 16px 0;
   }
@@ -1617,8 +2087,103 @@ main {
     top: 8px;
     right: 8px;
   }
-  .composer-actions {
-    grid-template-columns: 1fr;
+  /* ---- Play areas go edge to edge: no side gutter or side borders ---- */
+  .board-card,
+  .rr-card,
+  .game-shell {
+    margin-left: -16px;
+    margin-right: -16px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  /* ---- Docked game controls: stay at the bottom of the screen while the game scrolls ---- */
+  .dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 0 -16px -20px;
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 20px rgba(36, 57, 47, 0.08);
+  }
+  .dock .keyboard {
+    margin: 8px 0 10px;
+    gap: 6px;
+  }
+  .dock .key {
+    height: 44px;
+  }
+  .dock .two-btns .btn {
+    min-height: 48px;
+  }
+  .scam-dock {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    order: 3;
+    margin: 0 -16px -18px;
+  }
+  .scam-dock .next-round {
+    margin-top: 0;
+    min-height: 48px;
+  }
+  .rr-dock {
+    margin-top: 24px;
+  }
+  /* Role reversal: compact stacked options so the dock stays short */
+  .rr-dock {
+    padding-top: 8px;
+  }
+  .rr-dock .dock-title {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+  .rr-dock .choices {
+    gap: 6px;
+  }
+  .rr-dock .restart-btn {
+    margin-top: 8px;
+    min-height: 44px;
+    font-size: 1rem;
+  }
+  .rr-dock .choice {
+    min-height: 0;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .rr-dock .choice .chev {
+    display: none;
+  }
+  /* A finished game's card can be taller than the screen, so the end overlay covers the screen instead */
+  .end-overlay {
+    position: fixed;
+    z-index: 50;
+    border-radius: 0;
+  }
+  .composer-row {
+    gap: 6px;
+  }
+  .icon-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .composer textarea {
+    height: 48px;
+    min-height: 48px;
+    padding: 10px 12px;
+  }
+  .result-box {
+    padding: 22px 18px 18px;
+  }
+  .result-word {
+    font-size: 1.7rem;
   }
 }
 
@@ -1748,3 +2313,171 @@ main {
   }
 }
 
+/* ================= END OF GAME ================= */
+/* Dims the play area and blocks input; shows the +1 award, then the end panel. Parent must be position: relative. */
+.board-card,
+.rr-card,
+.game-shell {
+  position: relative;
+}
+.end-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border-radius: inherit;
+  background: rgba(36, 57, 47, 0.45);
+  animation: fade-in 0.25s ease-out;
+}
+.end-panel {
+  width: min(100%, 420px);
+  animation: panel-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+.end-panel .result-box {
+  width: 100%;
+}
+.result-title {
+  margin-top: 6px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--green-900);
+  line-height: 1.25;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.92);
+  }
+}
+
+/* +1 point award */
+.award {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  animation: award-pop 1.9s ease-out forwards;
+}
+.award-disc {
+  fill: var(--green-700);
+  stroke: #fff;
+  stroke-width: 3;
+}
+.award-num {
+  fill: #fff;
+  font-family: var(--font-sans);
+  font-size: 30px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.award-rays line {
+  stroke: #fff;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.award-rays {
+  transform-origin: 60px 60px;
+  animation: award-rays 0.7s ease-out 0.15s both;
+}
+.award-label {
+  margin-top: -4px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--green-700);
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(36, 57, 47, 0.2);
+}
+@keyframes award-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  24% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.9);
+  }
+}
+@keyframes award-rays {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+/* Header total gives a small pop whenever it changes */
+.header-points {
+  animation: points-pop 0.5s ease-out;
+}
+@keyframes points-pop {
+  40% {
+    transform: scale(1.18);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .award {
+    animation: award-fade 1.9s linear forwards;
+  }
+  .award-rays {
+    display: none;
+  }
+  .end-panel {
+    animation: fade-in 0.2s ease-out both;
+  }
+  .header-points {
+    animation: none;
+  }
+  @keyframes award-fade {
+    0%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
+/* ================= MERGE (design01 + SafeSense wiring) ================= */
+/* The points badge, card and header total link to the progress page; they keep the designer's look. */
+a.header-points,
+a.points-card,
+a.points-badge {
+  text-decoration: none;
+}
+a.header-points {
+  min-height: 46px;
+  border-radius: var(--radius-sm);
+}
+a.header-points:hover,
+a.header-points[aria-current='page'] {
+  background: var(--green-100);
+}
+a.points-card:hover,
+a.points-badge:hover {
+  background: var(--green-900);
+}
+.name-dialog .text-input {
+  color: var(--text-body);
+}

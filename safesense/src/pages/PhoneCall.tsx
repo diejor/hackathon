@@ -9,7 +9,7 @@ import { href, type Route } from '../router'
 const GAMES: { route: Route; icon: LucideIcon; label: string }[] = [
   { route: 'scam-or-not', icon: ScanSearch, label: 'Play Scam or Not?' },
   { route: 'fraudle', icon: SpellCheck, label: 'Play Fraudle' },
-  { route: 'long-con', icon: MessagesSquare, label: 'Play The Long Con' },
+  { route: 'role-reversal', icon: MessagesSquare, label: 'Play Role Reversal' },
 ]
 
 /** The coming-soon page for the locked game. Nothing here is playable yet. */
@@ -68,8 +68,8 @@ export default function PhoneCall() {
               {unlocked
                 ? 'You’ve reached the points for it. The game is still being built, so it isn’t playable yet.'
                 : toGo === null
-                  ? `It unlocks at ${UPCOMING.unlockAt} points.`
-                  : `It unlocks at ${UPCOMING.unlockAt} points. ${toGo} to go.`}
+                  ? `It unlocks at ${UPCOMING.unlockAt} points. Every game you finish earns 1 point.`
+                  : `It unlocks at ${UPCOMING.unlockAt} points. Every game you finish earns 1 point, so ${toGo} more ${toGo === 1 ? 'game' : 'games'} to go.`}
             </p>
             <UnlockProgress id="pc-have" />
           </div>
