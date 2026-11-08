@@ -255,7 +255,12 @@ Diego played Krishna's mini-games (`web-app` `fddafcd`, `HackUTD/mini-games/`) a
 | Friend or Fraud's "Inspect" evidence button plus FTC source links | Scam or Not? | after the content band merges |
 | Tile-flip reveal plus solved/streak counter, rewritten from scratch (his CSS is copied from Ania Kubów's tutorial) | Fraudle | after the content band merges |
 
-Never ship his GPL or copied Wordle code, his OpenAI server, his Photon sender or "T-Life" branding. The designer's zips will need more careful merging in these three pages.
+Never ship his GPL or copied Wordle code, his OpenAI server, his Photon sender or "T-Life" branding.
+
+**Decided ~02:05 (Diego):**
+- **Keep the designer's style everywhere;** no "game skin" in Krishna's style. Krishna wanted his own style.
+- **We don't merge `web-app`.** His work is ported into `safesense`, credited.
+- **His role:** his iPhone's iMessage number for Photon, testing "Text SafeSense", and coding only from a branch off `safesense`. The designer's zips will need more careful merging in these three pages.
 
 ## 7. Schedule and gates (CST)
 
