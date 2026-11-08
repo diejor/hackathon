@@ -57,7 +57,7 @@ function Summary({ p }: { p: Progress }) {
         <p className="points-total">
           {p.points} {p.points === 1 ? 'point' : 'points'}
         </p>
-        <p className="muted">Every game you finish earns 1 point: a word in Fraudle, a run of Scam or Not?, a Role Reversal story or a practice text. There’s no rush.</p>
+        <p className="muted">Every game you finish earns 1 point: a word in Fraudle, a run of Scam or Not?, a Role Reversal story, a practice text or a practice call. There’s no rush.</p>
         {/* A level could appear here later (being designed separately). */}
       </div>
       <NextUnlock points={p.points} />
