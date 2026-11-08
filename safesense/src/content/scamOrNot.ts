@@ -1,6 +1,8 @@
 // Scam or Not? rounds. US English, fictional brands, `.example` domains and 555-01xx numbers only.
 // Items marked "bank:" are adapted from docs/content/messages.json (same id and tactic slug; brand names
 // swapped for fictional ones). `tactic` uses the bank's slugs and is what the coach sees on a wrong answer.
+// Items marked "Krishna" are rewritten from his Friend or Fraud? quiz (origin/web-app 8f415eb), rebranded to
+// the fictional carrier "BrightLine Mobile". 15 rounds, 9 of them scams.
 
 export type Guess = 'scam' | 'safe'
 export type Kind = 'text' | 'email' | 'social' | 'app'
@@ -46,21 +48,6 @@ export const SCENARIOS: Scenario[] = [
     clues: ['A small fee with a deadline', 'A link to pay', 'A random number, not a company you use'],
   },
   {
-    id: 'doctor-reminder-email',
-    tactic: 'legit',
-    kind: 'email',
-    name: 'Riverside Family Medicine',
-    initials: 'RF',
-    details: ['appointments@riverside-family.example', "Your doctor's office"],
-    from: 'appointments@riverside-family.example',
-    time: 'Monday 2:20 PM',
-    subject: 'Appointment reminder',
-    body: "This is a reminder of your appointment with Dr. Patel on Tuesday at 10:30 AM. If you can't make it, please call the office at the number you usually use.",
-    answer: 'safe',
-    why: 'This message gives information but asks for nothing: no link, no payment, no personal details. It even tells you to use the number you already have.',
-    clues: ['No link or payment', 'No pressure to act quickly', 'Points you to a number you already know'],
-  },
-  {
     id: 'bank-account-locked-email',
     tactic: 'bank-impersonation',
     kind: 'email',
@@ -76,6 +63,21 @@ export const SCENARIOS: Scenario[] = [
     why: 'A short deadline can pressure you to act. Your bank will not ask you to confirm details through a link. Contact them using the number on the back of your card.',
     clues: ['A 30-minute deadline', 'An address that is not your bank', 'A link asking for bank details'],
   },
+  // Krishna (8f415eb friend-or-fraud): a code you asked for yourself
+  {
+    id: 'login-code-you-requested',
+    tactic: 'legit',
+    kind: 'text',
+    name: 'BrightLine Mobile',
+    initials: 'BL',
+    details: ['You just tapped “Send code” in the BrightLine app', 'Arrived seconds later'],
+    from: 'BrightLine Mobile',
+    time: 'Today 2:08 PM',
+    body: 'BrightLine Mobile: 481029 is your sign-in code. Enter it only in the BrightLine app. We will never call or text to ask for it. Didn’t ask for a code? Ignore this message.',
+    answer: 'safe',
+    why: 'You asked for this code a moment ago, in the app you opened yourself, and it goes back into that same app. A code is only safe on the screen where you started signing in. Nobody is asking you to share it.',
+    clues: ['You asked for the code yourself, seconds ago', 'It goes into the app you opened yourself', 'It warns you never to share it'],
+  },
   {
     id: 'grandkid-new-number',
     tactic: 'family-emergency',
@@ -88,6 +90,25 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'A new number, an urgent request for money and a request for secrecy are classic signs. Call your grandchild on the number you already have.',
     clues: ['A new, unknown number', 'Money needed today', 'Asked to keep it secret'],
+  },
+  // Krishna (8f415eb friend-or-fraud): a lookalike web address
+  {
+    id: 'carrier-rewards-lookalike-host',
+    tactic: 'carrier-impersonation',
+    kind: 'text',
+    name: 'BRIGHTLINE',
+    details: ['A short-code text', 'You upgraded your phone yesterday'],
+    from: 'BRIGHTLINE',
+    time: 'Today 9:14 PM',
+    body: 'BrightLine Mobile: Your upgrade reward is ready! Choose a free accessory and confirm delivery on your reservation page. Reservation 7142:',
+    link: 'brightline-mobile.com.redeem.example/accessory',
+    answer: 'scam',
+    why: 'Read a web address from the right. The real site is the part just before the first single slash, and here it ends in redeem.example, not BrightLine’s own site. A reward that arrives the day after a real upgrade feels genuine, which is why it works. Check rewards in the carrier’s own app instead.',
+    clues: [
+      'Read from the right: the site is redeem.example',
+      'The carrier’s name is only at the start of the address',
+      'A reward timed to match something you really did',
+    ],
   },
   {
     id: 'book-club-friend',
@@ -120,20 +141,21 @@ export const SCENARIOS: Scenario[] = [
     why: 'A surprise bill makes you want to call right away. The “refund desk” then asks to connect to your computer or for your bank details. Check real charges in your own bank app.',
     clues: ['A bill for something you never bought', 'Wants you to call a number in the email', 'A 24-hour deadline'],
   },
-  // bank: cvs-prescription-ready
+  // Krishna (8f415eb friend-or-fraud): a refund smaller than you asked for
   {
-    id: 'cvs-prescription-ready',
+    id: 'partial-refund-notice',
     tactic: 'legit',
-    kind: 'text',
-    name: 'Main Street Pharmacy',
-    initials: 'MP',
-    details: ['Saved in your contacts', 'Texts you before every refill'],
-    from: 'Main Street Pharmacy',
-    time: 'Yesterday 3:10 PM',
-    body: 'Main Street Pharmacy: Your prescription is ready for pickup. It will be held for 7 days. Questions? Call your store. Reply STOP to end texts.',
+    kind: 'email',
+    name: 'BrightLine Mobile Billing',
+    initials: 'BL',
+    details: ['billing@brightline-mobile.example', 'You asked for a $28 refund last week'],
+    from: 'billing@brightline-mobile.example',
+    time: 'Today 11:50 AM',
+    subject: 'Your refund review is complete',
+    body: 'We reviewed your request. $24.18 will be returned to your original payment method within 5 business days. The rest of the request was not approved. No reply or action is needed. You can see the details any time under Billing in the BrightLine app.',
     answer: 'safe',
-    why: 'A pickup reminder only asks you to show up. There is no link, no payment and no request for details, and it points you to your own store.',
-    clues: ['No link and no payment', 'Sends you to your own store', 'Matches texts you already get'],
+    why: 'The amount is lower than you asked for because only part of the refund was approved. The email asks for nothing: no link, no card and no reply, and it sends you to the app you already use. If a follow-up ever asks for a different card, treat that as a new message to check.',
+    clues: ['Matches a request you really made', 'No link, no card and no reply needed', 'Points you to your own app to check'],
   },
   {
     id: 'romance-officer-dm',
@@ -169,6 +191,28 @@ export const SCENARIOS: Scenario[] = [
     why: 'You cannot win a contest you never entered. The small “shipping” fee is how they get your card number.',
     clues: ['You never entered a contest', 'A “free” prize that needs your card', 'A 30-minute countdown'],
   },
+  // Krishna (8f415eb friend-or-fraud): a real case number, the wrong kind of code
+  {
+    id: 'transfer-case-code-swap',
+    tactic: 'account-locked-otp',
+    kind: 'text',
+    name: '+1 (214) 555-0131',
+    details: [
+      'Not in your contacts',
+      'You did call about a number transfer this morning',
+      'Your newest text says “password reset code”',
+    ],
+    from: '+1 (214) 555-0131',
+    time: 'Today 3:21 PM',
+    body: 'BrightLine Support: Case 8194 is still open. To cancel the number transfer, reply with the 6 digits we just sent to your phone.',
+    answer: 'scam',
+    why: 'The case number matches your call, which makes this feel safe. But the code you were sent says it is for a password reset, not for cancelling a transfer. Sharing it would let someone else into your account. Keep codes private and call your carrier on the number on your bill.',
+    clues: [
+      'Asks you to send a code by text',
+      'The code is for a password reset, not what they say',
+      'Real support never asks you to read out a code',
+    ],
+  },
   {
     id: 'bank-app-purchase',
     tactic: 'legit',
@@ -182,6 +226,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'This matches a real purchase, has no link, and sends you to your own app or card. It also reminds you they will never ask for your PIN.',
     clues: ['No link to click', 'Points you to your own app or card', 'Never asks for your PIN'],
+  },
+  // Krishna (8f415eb friend-or-fraud): a receipt that asks for nothing
+  {
+    id: 'toll-receipt-no-action',
+    tactic: 'legit',
+    kind: 'text',
+    name: 'Prairie Tollway',
+    initials: 'PT',
+    details: ['New conversation', 'You drove a toll road yesterday', 'You turned on receipt texts'],
+    from: 'Prairie Tollway',
+    time: 'Today 6:03 PM',
+    body: 'Prairie Tollway: Payment posted. Your trip on Nov 7 was paid from your toll account (plate ending 4KD). This is a receipt. No action needed.',
+    answer: 'safe',
+    why: 'This is a receipt, not a bill. It asks for no payment and has no link, it matches a trip you took, and you turned these texts on yourself. If a toll text ever asks you to pay, check your account on the toll agency’s own website instead.',
+    clues: ['A receipt, not a demand to pay', 'No link and no payment', 'Matches a trip you took and texts you turned on'],
   },
   // bank: remote-task-job-text
   {
@@ -223,6 +282,9 @@ export const REMEMBER: Record<string, string> = {
   'prize-giveaway': 'If you have to pay to get a prize, it isn’t a prize.',
   romance: 'Someone you have never met who quickly asks to move to another app is a warning sign.',
   'job-offer': 'Real jobs don’t text you out of the blue with pay that sounds too good to be true.',
+  'carrier-impersonation':
+    'Read a web address from the right: the real site is the part just before the first single slash. Check offers in your carrier’s own app.',
+  'account-locked-otp': 'A code is only for the screen where you started. Never read one out to anyone who contacts you, even “support”.',
   legit: 'A message that asks for nothing — no link, no money, no code — is usually just information.',
 }
 
