@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useState, type FormEvent, type MouseEvent } from 'react'
 import { ArrowRight, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
@@ -7,7 +7,7 @@ import { ASK_LABEL, THE_ASSISTANT } from '../components/chat/copy'
 import { LockedGameCard } from '../components/LockedGame'
 import { NameDialog } from '../components/NameDialog'
 import { Mascot, stageMeta, stageFor, nextMilestone } from '../components/Mascot'
-import { useNickname } from '../lib/profileStore'
+import { MAX_NICKNAME, setNickname, useNickname } from '../lib/profileStore'
 
 type Game = {
   route: Route
@@ -84,7 +84,7 @@ function GameCard({ game }: { game: Game }) {
 const IMPROVE_PROMPT =
   'Please look at my progress so far: my points and the games I have played. What are some suggestions for how I can get better at spotting scams?'
 
-/** Ask a first-time visitor for a name once (optional; "Not now" is fine). Remembered on this device. */
+/** Ask a first-time visitor for a name, inline on the dashboard (optional; "Not now" hides it). Remembered on this device. */
 const PROMPTED_KEY = 'safesense.namePrompted'
 function shouldPromptName(name: string): boolean {
   if (name) return false
@@ -132,12 +132,44 @@ function MascotProgress({ points }: { points: number | null }) {
   )
 }
 
+/** The first-visit name question, as a small card on the dashboard instead of a popup (nothing is covered). */
+function AskName({ onDone }: { onDone: () => void }) {
+  const [value, setValue] = useState('')
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (value.trim()) setNickname(value)
+    onDone()
+  }
+  return (
+    <form className="ask-name" onSubmit={submit}>
+      <label htmlFor="ask-name-input" className="ask-name-label">
+        What should we call you? <span className="muted">(optional)</span>
+      </label>
+      <div className="ask-name-row">
+        <input
+          id="ask-name-input"
+          className="text-input"
+          value={value}
+          maxLength={MAX_NICKNAME}
+          autoComplete="given-name"
+          placeholder="A first name or nickname"
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <button type="submit" className="btn btn-primary btn-sm">
+          Save
+        </button>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={onDone}>
+          Not now
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export default function Home() {
   const name = useNickname()
-  const [editing, setEditing] = useState(() => shouldPromptName(name))
-  useEffect(() => {
-    if (editing) markNamePrompted()
-  }, [editing])
+  const [editing, setEditing] = useState(false)
+  const [askName, setAskName] = useState(() => shouldPromptName(name))
   const points = usePoints()
   const shown = points === null ? '–' : points.toLocaleString()
   const lastRoute = load(KEYS.lastPlayed) as Route
@@ -172,6 +204,14 @@ export default function Home() {
           <p className="lead dash-intro">
             Scams can fool anyone. Learn what to look for with friendly activities, one small step at a time.
           </p>
+          {askName && !name && (
+            <AskName
+              onDone={() => {
+                markNamePrompted()
+                setAskName(false)
+              }}
+            />
+          )}
 
         </div>
 
@@ -207,7 +247,7 @@ export default function Home() {
         </aside>
       </section>
 
-      {editing && <NameDialog current={name} onClose={() => setEditing(false)} skipLabel={name ? undefined : 'Not now'} />}
+      {editing && <NameDialog current={name} onClose={() => setEditing(false)} />}
 
       <h2 className="h2 games-title">Pick a game</h2>
       <div className="games">

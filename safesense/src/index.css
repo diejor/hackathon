@@ -2517,3 +2517,29 @@ a.points-badge:hover {
     align-items: center;
   }
 }
+
+/* First-visit name question on the dashboard (Home.tsx AskName) */
+.ask-name {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  max-width: 560px;
+}
+.ask-name-label {
+  display: block;
+  font-weight: 600;
+  color: var(--green-900);
+  margin-bottom: 8px;
+}
+.ask-name-label .muted {
+  font-weight: 400;
+}
+.ask-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ask-name-row .text-input {
+  flex: 1 1 200px;
+  width: auto;
+}
