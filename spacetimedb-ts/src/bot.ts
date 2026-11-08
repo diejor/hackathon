@@ -151,6 +151,9 @@ export function forgetAll(db: Db, owner: Identity) {
   for (const a of [...db.activityEvent.owner.filter(owner)]) db.activityEvent.id.delete(a.id);
   for (const l of [...db.channelLink.owner.filter(owner)]) db.channelLink.senderKey.delete(l.senderKey);
   db.linkCode.owner.delete(owner);
+  db.challengeEnrollment.owner.delete(owner);
+  for (const job of [...db.challengeJob.owner.filter(owner)]) db.challengeJob.scheduledId.delete(job.scheduledId);
+  for (const attempt of [...db.challengeAttempt.owner.filter(owner)]) db.challengeAttempt.token.delete(attempt.token);
   dropPracticeOfOwner(db, owner);
 }
 

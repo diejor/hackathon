@@ -17,3 +17,6 @@ client/Builds/
 # Secrets (API keys) — never commit
 .env
 .env.tmp
+
+.env
+.env.local

@@ -14,6 +14,8 @@
 // function's name (snake_cased for clients).
 import spacetimedb from './schema';
 import { Router } from 'spacetimedb/server';
+import { challengeLanding, challengeResponse, challengeClaim } from './challenge';
+export { challengeRunJob, demoCallRunJob, challengeLanding, challengeResponse, challengeClaim, startChallengeDemo, confirmChallengeEngaged } from './challenge';
 import { photonWebhook } from './photon';
 import { discordInteractions } from './discord';
 
@@ -42,4 +44,5 @@ export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebho
 export { myPracticeTexts, requestPracticeText } from './practice';
 
 // Photon.cs Routes(): served at /v1/database/<db>/route/<path>.
-export const routes = spacetimedb.httpRouter(new Router().post('/photon', photonWebhook).post('/discord', discordInteractions));
+export const routes = spacetimedb.httpRouter(new Router().post('/photon', photonWebhook).post('/discord', discordInteractions)
+  .post('/challenge-response', challengeResponse).get('/challenge', challengeLanding).post('/challenge', challengeClaim));

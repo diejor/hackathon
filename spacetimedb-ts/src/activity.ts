@@ -14,6 +14,8 @@ import { isControl, trim } from './ai';
 import { ContentEnd, ContentStart } from './bot';
 import { cmpBig } from './lib';
 
+import { queueAfterGame } from './challenge';
+
 const MaxActivityPerUser = 200;
 const MaxSlugChars = 32;
 const MaxDetailsChars = 500;
@@ -36,6 +38,8 @@ export const logActivity = spacetimedb.reducer(
     if (!isSlug(kind)) throw new SenderError(`kind must be a slug (a-z, 0-9, '-', '_'; 1-${MaxSlugChars} chars)`);
     if (details.length > MaxDetailsChars) throw new SenderError(`details too long (max ${MaxDetailsChars} characters)`);
     if ([...details].some(isControl)) throw new SenderError('details must be single-line JSON text');
+    if (game === 'challenge-line') throw new SenderError('Reserved activity');
+    queueAfterGame(ctx, game, kind);
     insertActivity(ctx.db, ctx.sender, game, kind, details, ctx.timestamp);
     capActivity(ctx.db, ctx.sender, MaxActivityPerUser);
   }

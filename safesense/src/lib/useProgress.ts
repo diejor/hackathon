@@ -31,6 +31,13 @@ function compute() {
       }))
     } else if (L.state.connectError) status = 'offline'
   }
+  // Hackathon demo: inject a challenge-line reset event from localStorage
+  try {
+    const resetAt = localStorage.getItem('safesense.challenge.resetAt')
+    if (resetAt) {
+      events.push({ game: 'challenge-line', kind: 'voice_response', details: '{}', at: Number(resetAt) })
+    }
+  } catch {}
   // Only publish a new snapshot when something visible changed (chat messages also trigger onChange).
   const key = `${status}|${events.length}|${events.length ? events[events.length - 1].at : 0}`
   if (key === lastKey) return

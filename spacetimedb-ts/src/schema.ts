@@ -257,6 +257,24 @@ export const practiceJob = table(
   }
 );
 
+const challengeEnrollment = table({ name: 'challenge_enrollment' }, {
+  owner: t.identity().primaryKey(), phone: t.string().unique(), senderKey: t.string(), spaceId: t.string(), agentUserId: t.string(), mode: t.string(), version: t.string(),
+});
+export const challengeJob = table({ name: 'challenge_job' }, {
+  scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt(),
+  owner: t.identity().index('btree'), version: t.string(),
+});
+// Demo-only button-triggered call (PhoneCall.tsx -> startChallengeDemo). Fires demoCallRunJob, which makes
+// the Retell outbound. Separate from challengeJob so it doesn't go through SMS enrollment / Groq gating.
+export const demoCallJob = table({ name: 'demo_call_job' }, {
+  scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt(),
+  owner: t.identity().index('btree'), phone: t.string(), token: t.string(),
+});
+const challengeAttempt = table({ name: 'challenge_attempt' }, {
+  token: t.string().primaryKey(), owner: t.identity().index('btree'), phoneHash: t.string().index('btree'),
+  createdAt: t.timestamp(), status: t.string(), lesson: t.string(),
+});
+
 // ---------- Schema + environment ----------
 
 // Secrets live in the database environment (supplied at publish time from the gitignored .env,
@@ -280,6 +298,7 @@ const spacetimedb = schema(
     channelOptout,
     channelSendDaily,
     channelReach,
+    challengeEnrollment, challengeJob, demoCallJob, challengeAttempt,
     practiceSend,
     practiceJob,
   },
@@ -300,6 +319,13 @@ const spacetimedb = schema(
       PHOTON_SENDING_ENABLED: t.option(t.string()),
       // Discord HTTP interactions (discord.ts); optional, the endpoint answers 503 without a public key.
       // The bot token is NOT declared here on purpose: only scripts/discord-register.sh uses it.
+      CHALLENGE_ENABLED: t.option(t.string()),
+      CHALLENGE_NUMBER: t.option(t.string()),
+      CHALLENGE_ROUTE_BASE: t.option(t.string()),
+      RETELL_AGENT_ID: t.option(t.string()),
+      RETELL_API_KEY: t.option(t.string()),
+      CHALLENGE_GROQ_KEY: t.option(t.string()),
+      CHALLENGE_GROQ_MODEL: t.option(t.string()),
       DISCORD_PUBLIC_KEY: t.option(t.string()), // app public key (hex), verifies X-Signature-Ed25519
       DISCORD_APPLICATION_ID: t.option(t.string()), // optional: reject interactions for other apps
       DISCORD_API_BASE: t.option(t.string()), // default https://discord.com/api/v10

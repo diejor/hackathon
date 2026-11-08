@@ -79,9 +79,22 @@ export function pointsFor(e: ProgressEvent): number {
   return 0
 }
 
+const isChallengeReset = (e: ProgressEvent) => e.game === 'challenge-line' &&
+  (e.kind === 'link_opened' || e.kind === 'voice_response')
+
+function latestReflection(events: ProgressEvent[]) {
+  const event = events.reduce<ProgressEvent | undefined>((last, e) =>
+    isChallengeReset(e) && (!last || e.at >= last.at) ? e : last, undefined)
+  if (!event) return null
+  const saved = events.find(e => e.game === 'reflection' && e.kind === 'challenge_review' &&
+    parseDetails(e.details).attemptAt === event.at)
+  return { at: event.at, voice: event.kind === 'voice_response', lesson: str(parseDetails(event.details).lesson),
+    answer: saved ? str(parseDetails(saved.details).answer) : '' }
+}
+
 export function totalPoints(events: ProgressEvent[]): number {
   const cutoff = events.reduce((latest, e) =>
-    e.game === 'challenge-line' && e.kind === 'link_opened' ? Math.max(latest, e.at) : latest, -Infinity)
+    isChallengeReset(e) ? Math.max(latest, e.at) : latest, -Infinity)
   return events.reduce((sum, e) => sum + (e.at > cutoff ? pointsFor(e) : 0), 0)
 }
 
@@ -199,12 +212,14 @@ export type Progress = {
   caught: Map<string, Caught>
   words: string[]
   practice: PracticeItem[]
+  reflection: ReturnType<typeof latestReflection>
   genuineMissed: number
 }
 
 /** Everything the profile shows, from the activity rows (oldest first). */
 export function deriveProgress(events: ProgressEvent[]): Progress {
   return {
+    reflection: latestReflection(events),
     events: events.length,
     points: totalPoints(events),
     counts: counts(events),

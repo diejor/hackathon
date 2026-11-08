@@ -119,7 +119,7 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
         <section aria-label="Phone challenges">
           <h3>Phone challenges</h3>
           <p>After you finish a game, this second number can send a practice scam based on your missed clues.
-            Opening its training scenario resets your points. Text STOP to end texts and calls.</p>
+            Responding to the practice caller or opening the training link resets your points and mascot. Listening alone keeps your points. Text STOP to end texts and calls.</p>
           {live ? <p>From your own phone, text <strong>JOIN BOTH {live.code}</strong> to {import.meta.env.VITE_CHALLENGE_NUMBER}.
             For texts only use JOIN TEXT, or for calls only use JOIN CALL, followed by the same code.</p>
             : <button type="button" disabled={!ready || busy} onClick={() => mod && run(() => mod.createLinkCode())}>
