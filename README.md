@@ -145,13 +145,13 @@ unlockable games yet. Next, in order:
 
 ## Team and credits
 
-<!-- TODO(Diego): confirm full names, spellings and roles before submitting; fill in the designer's name. -->
+<!-- TODO(Diego): Krishna's full name. -->
 
 Made by the SafeSense team at HackUTD 2026:
 
 - **Diego Rodrigues**: project lead; assistant and backend.
 - **Krishna** <!-- TODO(Diego): Krishna's full name -->: game design (BadScam, now Role Reversal), scam research, Photon practice texts.
-- **[designer name]** <!-- TODO(Diego): designer's name -->: SafeSense design.
+- **Emily Yuan**: product design and UI (the SafeSense design).
 
 Built with [Claude Code](https://claude.com/claude-code). Powered by [SpacetimeDB](https://spacetimedb.com),
 [Google Gemini](https://ai.google.dev) and [Photon](https://photon.codes). Icons: [Lucide](https://lucide.dev).

@@ -12,7 +12,7 @@ Paste each section into the matching Devpost field. Things to fill in are marked
 - **Team:**
   - Diego Rodrigues (lead, backend and integration)
   - Krishna **TODO full name** (Safe Signal research, Photon practice texts, game logic)
-  - **TODO designer's name** (product design and UI)
+  - Emily Yuan (product design and UI)
 
 ---
 
