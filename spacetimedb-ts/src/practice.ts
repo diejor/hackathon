@@ -16,17 +16,24 @@
 // Flow: request_practice_text (web) or the text command PRACTICE -> queuePractice() -> practice_job fires
 // 60-120 s later -> practiceRunJob (photon.ts) sends it -> the next inbound text from that phone within 2 h
 // is graded by gradePractice() before the normal bot turn.
+//
+// Trials: PRACTICE from a phone that hasn't linked gets the same replies, text and debrief (the wording never
+// says "trial"), but internally it's a trial (queueTrial -> practice_trial + practice_trial_job ->
+// practiceTrialRunJob) and nothing is written to anyone's activity or points. At most MaxTrialsPerDay per
+// sender per UTC day; the same kill switch, opt-out and daily cap apply.
 import { t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt, type Identity, type Timestamp } from 'spacetimedb';
-import spacetimedb, { tables, viewRow, type Ctx, type Db, type PracticeSend } from './schema';
-import { killSwitchBlock, proactiveTarget } from './photon-guards';
+import spacetimedb, { tables, viewRow, type Ctx, type Db, type PracticeSend, type PracticeTrial } from './schema';
+import { dailyCapReached, isOptedOut, killSwitchBlock, proactiveTarget } from './photon-guards';
 
 export const PracticeGame = 'practice-text';
 export const PracticeFooter = " (SafeSense practice — reply REPORT if you think it's a scam)";
 export const MaxPracticeChars = 320;
 export const MaxPracticePerDay = 1;
 export const MaxPracticeTotal = 3;
+export const MaxTrialsPerDay = 3; // unlinked phones, per sender per UTC day
 const PracticeDayMicros = 24n * 3_600_000_000n; // "1 a day": rolling 24 h
+const MicrosPerDay = 86_400_000_000n; // trials: per UTC day
 const PracticeAnswerMicros = 2n * 3_600_000_000n; // a reply counts within 2 h of the request
 const MinDelaySeconds = 60;
 const MaxDelaySeconds = 120;
@@ -249,11 +256,20 @@ export const PracticeDailyLimit = "You've had today's practice text. You can ask
 export const PracticeTotalLimit = `You've had all ${MaxPracticeTotal} practice texts. Scam or Not? has plenty more to practice with.`;
 export const PracticeQueuedReply = 'Got it. A practice text is on its way in a minute or two. Treat it like any other text.';
 
-/** Mark the owner's practice texts that went unanswered for 2 h as expired. */
-function expireStale(db: Db, rows: PracticeSend[], now: Timestamp) {
+/** Mark practice texts (or trials) that went unanswered for 2 h as expired. */
+function expireStale<R extends { status: string; createdAt: Timestamp }>(rows: R[], now: Timestamp, update: (r: R) => void) {
   for (const r of rows)
     if (r.status === 'pending' && now.microsSinceUnixEpoch - r.createdAt.microsSinceUnixEpoch > PracticeAnswerMicros)
-      db.practiceSend.id.update({ ...r, status: 'expired' });
+      update({ ...r, status: 'expired' });
+}
+const updateSend = (db: Db) => (r: PracticeSend) => db.practiceSend.id.update(r);
+const updateTrial = (db: Db) => (r: PracticeTrial) => db.practiceTrial.id.update(r);
+
+/** The newest text still waiting for an answer (sent, asked for within the last 2 h). */
+function latestOpen<R extends { status: string; createdAt: Timestamp }>(rows: R[], now: Timestamp): R | undefined {
+  return rows
+    .filter(r => r.status === 'pending' && now.microsSinceUnixEpoch - r.createdAt.microsSinceUnixEpoch <= PracticeAnswerMicros)
+    .sort((a, b) => (a.createdAt.microsSinceUnixEpoch < b.createdAt.microsSinceUnixEpoch ? 1 : -1))[0];
 }
 
 /** Queue one practice text for `owner`'s linked phone. null = queued; else a calm reason why not. */
@@ -265,7 +281,7 @@ export function queuePractice(ctx: Ctx, owner: Identity): string | null {
     return target === 'opted out' ? PracticeOptedOut : target === 'daily cap reached' ? PracticeBusyToday : target === 'no linked phone' ? PracticeNotLinked : PracticeOff;
 
   const rows = [...db.practiceSend.owner.filter(owner)];
-  expireStale(db, rows, now);
+  expireStale(rows, now, updateSend(db));
   const counted = rows.filter(r => r.status !== 'failed'); // a text that never went out doesn't count
   if (counted.length >= MaxPracticeTotal) return PracticeTotalLimit;
   const today = counted.filter(r => now.microsSinceUnixEpoch - r.createdAt.microsSinceUnixEpoch < PracticeDayMicros);
@@ -291,6 +307,36 @@ export function queuePractice(ctx: Ctx, owner: Identity): string | null {
     text,
   });
   console.log(`Practice: queued #${row.id} (${tp.id}) in ${delay / 1_000_000n} s`);
+  return null;
+}
+
+export type TrialTarget = { senderKey: string; projectId: string; spaceId: string; agentUserId: string };
+
+/**
+ * Queue one trial practice text for a phone that hasn't linked, into the chat it just texted from.
+ * null = queued; else a calm reason why not. Writes nothing to anyone's activity.
+ */
+export function queueTrial(ctx: Ctx, to: TrialTarget): string | null {
+  const { db, timestamp: now } = ctx;
+  if (killSwitchBlock(ctx.env, 'proactive')) return PracticeOff;
+  if (isOptedOut(db, to.senderKey)) return PracticeOptedOut;
+  if (dailyCapReached(db, to.senderKey, now)) return PracticeBusyToday;
+
+  const rows = [...db.practiceTrial.senderKey.filter(to.senderKey)];
+  expireStale(rows, now, updateTrial(db));
+  const day = now.microsSinceUnixEpoch / MicrosPerDay;
+  const today = rows.filter(r => r.status !== 'failed' && r.createdAt.microsSinceUnixEpoch / MicrosPerDay === day);
+  if (today.length >= MaxTrialsPerDay) return PracticeDailyLimit;
+
+  const had = new Set(rows.map(r => r.templateId));
+  const fresh = PRACTICE_TEMPLATES.filter(tp => !had.has(tp.id));
+  const pool = fresh.length > 0 ? fresh : PRACTICE_TEMPLATES;
+  const tp = pool[ctx.random.integerInRange(0, pool.length - 1)];
+  const text = renderPractice(tp, fillSlots(tp, ctx.random));
+  const row = db.practiceTrial.insert({ id: 0n, ...to, templateId: tp.id, tactic: tp.tactic, createdAt: now, status: 'queued' });
+  const delay = BigInt(ctx.random.integerInRange(MinDelaySeconds, MaxDelaySeconds)) * 1_000_000n;
+  db.practiceTrialJob.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(now.microsSinceUnixEpoch + delay), trialId: row.id, text });
+  console.log(`Practice trial: queued #${row.id} (${tp.id}) in ${delay / 1_000_000n} s`);
   return null;
 }
 
@@ -339,20 +385,26 @@ export function debrief(tp: PracticeTemplate | null, g: NonNullable<PracticeGrad
 }
 
 /**
- * Before the normal bot turn: if this phone has a practice text from the last 2 h waiting for an answer and
- * the reply is a clear REPORT / YES-style answer, grade it, log the activity and return the debrief.
- * null = not a practice answer (the practice stays pending and the bot answers as usual). The reply itself
- * is never stored.
+ * Before the normal bot turn: if this phone has a practice text (or trial) from the last 2 h waiting for an
+ * answer and the reply is a clear REPORT / YES-style answer, grade it and return the debrief. A linked
+ * practice text also logs the activity; a trial logs nothing. null = not a practice answer (it stays
+ * pending and the bot answers as usual). The reply itself is never stored.
  */
 export function gradePractice(db: Db, senderKey: string, now: Timestamp, text: string): string | null {
   const rows = [...db.practiceSend.senderKey.filter(senderKey)];
-  expireStale(db, rows, now);
-  const open = rows
-    .filter(r => r.status === 'pending' && now.microsSinceUnixEpoch - r.createdAt.microsSinceUnixEpoch <= PracticeAnswerMicros)
-    .sort((a, b) => (a.createdAt.microsSinceUnixEpoch < b.createdAt.microsSinceUnixEpoch ? 1 : -1))[0];
-  if (!open) return null;
+  expireStale(rows, now, updateSend(db));
+  const open = latestOpen(rows, now);
+  const trials = open ? [] : [...db.practiceTrial.senderKey.filter(senderKey)];
+  expireStale(trials, now, updateTrial(db));
+  const trial = latestOpen(trials, now);
+  if (!open && !trial) return null;
   const g = gradeReply(text);
   if (!g) return null;
+  if (!open) {
+    db.practiceTrial.id.update({ ...trial!, status: g.grade });
+    console.log(`Practice trial: #${trial!.id} graded ${g.grade} (not saved to progress)`);
+    return debrief(templateById(trial!.templateId), g);
+  }
   db.practiceSend.id.update({ ...open, status: g.grade });
   db.activityEvent.insert({
     id: 0n,
@@ -381,5 +433,13 @@ export function dropPracticeOfSender(db: Db, senderKey: string) {
   for (const r of [...db.practiceSend.senderKey.filter(senderKey)]) {
     dropJobsOf(db, r.id);
     db.practiceSend.id.delete(r.id);
+  }
+  dropTrialsOfSender(db, senderKey);
+}
+
+function dropTrialsOfSender(db: Db, senderKey: string) {
+  for (const r of [...db.practiceTrial.senderKey.filter(senderKey)]) {
+    for (const j of [...db.practiceTrialJob.trialId.filter(r.id)]) db.practiceTrialJob.scheduledId.delete(j.scheduledId);
+    db.practiceTrial.id.delete(r.id);
   }
 }

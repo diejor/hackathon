@@ -7,7 +7,10 @@
 //   node tools/photon-sim.mjs <db> --checks        # signature checks (signed / unsigned / tampered / stale / duplicate),
 //                                                  # then the guards: STOP (one confirmation, then silence), START,
 //                                                  # and the daily cap (30 replies, the last one says so, then silence),
-//                                                  # and PRACTICE from an unlinked phone (a reply, no practice text)
+//                                                  # and PRACTICE from an unlinked phone (queued like a linked one,
+//                                                  # internally a trial: 3 per phone per UTC day, then a calm
+//                                                  # limit reply; nothing after STOP). Needs the db published with
+//                                                  # PHOTON_SENDING_ENABLED=true, else these checks are skipped.
 //
 // The secret must be a FAKE test secret that you also published to the local db, e.g.:
 //   export PHOTON_WEBHOOK_SECRET=whsec_$(node -e "console.log(require('crypto').randomBytes(24).toString('base64'))")
@@ -53,9 +56,14 @@ async function send(name, body, { sign = true, tamper = false, id = 'msg_' + rnd
   const ok = !expect || expect.test(got)
   if (!ok) failures++
   if (!quiet || !ok) console.log(`${expect ? (ok ? 'PASS ' : 'FAIL ') : ''}${name}: ${got}`)
-  return id
+  return { id, got }
 }
 let failures = 0
+function report(name, got, expect) {
+  const ok = expect.test(got)
+  if (!ok) failures++
+  console.log(`${ok ? 'PASS ' : 'FAIL '}${name}: ${got}`)
+}
 
 // Shape of a Photon "message.received" event (as handled in photon.ts).
 const event = (text, sender = from) => ({
@@ -74,7 +82,7 @@ const event = (text, sender = from) => ({
 
 if (args.includes('--checks')) {
   const attempted = /^200 ok: (sent|send failed)/ // the module tried Photon (locally the send itself may fail)
-  const id = await send('signed UNLINK          (expect 200)', event('UNLINK'), { expect: attempted })
+  const { id } = await send('signed UNLINK          (expect 200)', event('UNLINK'), { expect: attempted })
   await send('same webhook-id again  (expect 200, skipped)', event('UNLINK'), { id, expect: /^200 duplicate$/ })
   await send('unsigned               (expect 401)', event('UNLINK'), { sign: false, expect: /^401/ })
   await send('tampered signature     (expect 401)', event('UNLINK'), { tamper: true, expect: /^401/ })
@@ -89,8 +97,21 @@ if (args.includes('--checks')) {
   await send('START                  (expect a reply)', event('start', p), { expect: attempted })
   await send('UNLINK after START     (expect a reply)', event('UNLINK', p), { expect: attempted })
 
-  // Practice texts: an unlinked phone asking for one gets a calm "link first" reply (no AI call)
-  await send('PRACTICE, not linked   (expect a reply)', event('PRACTICE', p), { expect: attempted })
+  // Practice texts from an unlinked phone: queued as a trial (same reply as a linked phone; no AI call).
+  // The 200 body's "(practice queued)" / "(practice limit)" / "(practice off)" comes from photon.ts ReplyTags.
+  const queued = /^200 ok: (sent|send failed) \(practice queued\)$/
+  const { got: first } = await send('', event('PRACTICE', p), { quiet: true })
+  if (/\(practice off\)$/.test(first)) {
+    console.log(`SKIP practice checks: ${first} (publish with PHOTON_SENDING_ENABLED=true to run them)`)
+  } else {
+    report('PRACTICE, not linked   (expect queued)', first, queued)
+    const q = '+1555' + String(Math.floor(Math.random() * 1e7)).padStart(7, '0')
+    for (let i = 1; i <= 3; i++) await send(`PRACTICE trial ${i}       (expect queued)`, event('PRACTICE', q), { expect: queued })
+    await send('PRACTICE trial 4       (expect the limit reply)', event('PRACTICE', q), { expect: /^200 ok: (sent|send failed) \(practice limit\)$/ })
+    const s = '+1555' + String(Math.floor(Math.random() * 1e7)).padStart(7, '0')
+    await send('STOP, new phone        (expect one confirmation)', event('STOP', s), { expect: /^200 ok: (sent|send failed) \(opt-out confirmation\)$/ })
+    await send('PRACTICE after STOP    (expect silence)', event('PRACTICE', s), { expect: /^200 ok: silent \(opted out\)$/ })
+  }
 
   // Daily cap: 30 replies per sender per UTC day, the 30th says so, then silence
   const c = '+1555' + String(Math.floor(Math.random() * 1e7)).padStart(7, '0')

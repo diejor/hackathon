@@ -257,6 +257,36 @@ export const practiceJob = table(
   }
 );
 
+// Trial practice texts for a phone that hasn't linked (PRACTICE before LINK): same templates and grading,
+// but no owner, no activity and no points. At most 3 per sender per UTC day. Private; FORGET ME (or UNLINK
+// after a later LINK) from that phone deletes them. status: same flow as practice_send. Where to send comes from the inbound
+// PRACTICE message (Photon chat id + our line's user id; no phone number).
+const practiceTrial = table(
+  { name: 'practice_trial' },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    senderKey: t.string().index('btree'), // "<platform>:<Photon user id>"
+    projectId: t.string(),
+    spaceId: t.string(),
+    agentUserId: t.string(),
+    templateId: t.string(),
+    tactic: t.string(),
+    createdAt: t.timestamp(),
+    status: t.string(),
+  }
+);
+
+// Sends one queued trial ~60-120 s after the request (practiceTrialRunJob in photon.ts). Private.
+export const practiceTrialJob = table(
+  { name: 'practice_trial_job' },
+  {
+    scheduledId: t.u64().primaryKey().autoInc(),
+    scheduledAt: t.scheduleAt(),
+    trialId: t.u64().index('btree'),
+    text: t.string(), // rendered from a template in practice.ts (never by the AI)
+  }
+);
+
 // ---------- Practice calls (voice.ts) ----------
 // New table only, like the guards above: an existing database republishes without a wipe.
 
@@ -299,6 +329,8 @@ const spacetimedb = schema(
     practiceSend,
     practiceJob,
     voiceLink,
+    practiceTrial,
+    practiceTrialJob,
   },
   {
     env: {
@@ -342,6 +374,7 @@ export type ChatMessage = Infer<typeof chatMessage.rowType>;
 export type MemoryFact = Infer<typeof memoryFact.rowType>;
 export type DiscordJob = Infer<typeof discordJob.rowType>;
 export type PracticeSend = Infer<typeof practiceSend.rowType>;
+export type PracticeTrial = Infer<typeof practiceTrial.rowType>;
 export type AiResultT = Infer<typeof AiResult>;
 
 // Views return table rows WITHOUT a primary key, like the C# module (a table's rowType would carry its
