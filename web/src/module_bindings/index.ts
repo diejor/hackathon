@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import ChooseGameReducer from "./choose_game_reducer";
 import CreateRoomReducer from "./create_room_reducer";
+import ForgetMeReducer from "./forget_me_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import ReturnToLobbyReducer from "./return_to_lobby_reducer";
@@ -44,8 +45,13 @@ import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
 
 // Import all procedure arg schemas
+import * as AiAskProcedure from "./ai_ask_procedure";
+import * as AiPingProcedure from "./ai_ping_procedure";
+import * as BotSendProcedure from "./bot_send_procedure";
 
 // Import all table schema definitions
+import MyFactsRow from "./my_facts_table";
+import MyMessagesRow from "./my_messages_table";
 import MyRoomRow from "./my_room_table";
 import MyRoomMembersRow from "./my_room_members_table";
 
@@ -53,6 +59,20 @@ import MyRoomMembersRow from "./my_room_members_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  myFacts: __table({
+    name: 'my_facts',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyFactsRow),
+  myMessages: __table({
+    name: 'my_messages',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyMessagesRow),
   myRoom: __table({
     name: 'my_room',
     indexes: [
@@ -73,6 +93,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("choose_game", ChooseGameReducer),
   __reducerSchema("create_room", CreateRoomReducer),
+  __reducerSchema("forget_me", ForgetMeReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("return_to_lobby", ReturnToLobbyReducer),
@@ -83,10 +104,17 @@ const reducersSchema = __reducers(
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
 const proceduresSchema = __procedures(
+  __procedureSchema("ai_ask", AiAskProcedure.params, AiAskProcedure.returnType),
+  __procedureSchema("ai_ping", AiPingProcedure.params, AiPingProcedure.returnType),
+  __procedureSchema("bot_send", BotSendProcedure.params, BotSendProcedure.returnType),
 );
 
 type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "tables"> & {
   tables: typeof tablesSchema.schemaType.tables & {
+    /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
+    readonly "MyFacts": Omit<typeof tablesSchema.schemaType.tables["myFacts"], "accessorName"> & { readonly accessorName: "MyFacts" };
+    /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
+    readonly "MyMessages": Omit<typeof tablesSchema.schemaType.tables["myMessages"], "accessorName"> & { readonly accessorName: "MyMessages" };
     /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */
     readonly "MyRoom": Omit<typeof tablesSchema.schemaType.tables["myRoom"], "accessorName"> & { readonly accessorName: "MyRoom" };
     /** @deprecated Use `myRoomMembers` instead. This alias will be removed in the next major version. */
@@ -109,6 +137,8 @@ const REMOTE_MODULE = {
 >;
 
 const tableAccessorAliases = {
+  "MyFacts": "myFacts",
+  "MyMessages": "myMessages",
   "MyRoom": "myRoom",
   "MyRoomMembers": "myRoomMembers",
 } as const;
@@ -131,6 +161,10 @@ function __withTableAccessorAliases<T extends object>(target: T, freeze = false)
 
 type __DbViewBase = __DbConnectionImpl<typeof REMOTE_MODULE>["db"];
 export type DbView = __DbViewBase & {
+  /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
+  readonly "MyFacts": __DbViewBase["myFacts"];
+  /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
+  readonly "MyMessages": __DbViewBase["myMessages"];
   /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */
   readonly "MyRoom": __DbViewBase["myRoom"];
   /** @deprecated Use `myRoomMembers` instead. This alias will be removed in the next major version. */
@@ -139,6 +173,10 @@ export type DbView = __DbViewBase & {
 
 type __TablesBase = __QueryBuilder<typeof tablesSchema.schemaType>;
 export type Tables = __TablesBase & {
+  /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
+  readonly "MyFacts": __TablesBase["myFacts"];
+  /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
+  readonly "MyMessages": __TablesBase["myMessages"];
   /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */
   readonly "MyRoom": __TablesBase["myRoom"];
   /** @deprecated Use `myRoomMembers` instead. This alias will be removed in the next major version. */

@@ -6,5 +6,14 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all procedure arg schemas
+import * as AiAskProcedure from "../ai_ask_procedure";
+import * as AiPingProcedure from "../ai_ping_procedure";
+import * as BotSendProcedure from "../bot_send_procedure";
 
+export type AiAskArgs = __Infer<typeof AiAskProcedure.params>;
+export type AiAskResult = __Infer<typeof AiAskProcedure.returnType>;
+export type AiPingArgs = __Infer<typeof AiPingProcedure.params>;
+export type AiPingResult = __Infer<typeof AiPingProcedure.returnType>;
+export type BotSendArgs = __Infer<typeof BotSendProcedure.params>;
+export type BotSendResult = __Infer<typeof BotSendProcedure.returnType>;
 

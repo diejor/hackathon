@@ -10,6 +10,45 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const AiResult = __t.object("AiResult", {
+  ok: __t.bool(),
+  text: __t.string(),
+  model: __t.string(),
+  latencyMs: __t.u32(),
+});
+export type AiResult = __Infer<typeof AiResult>;
+
+export const AiUsage = __t.object("AiUsage", {
+  identity: __t.identity(),
+  lastCall: __t.timestamp(),
+  calls: __t.u32(),
+});
+export type AiUsage = __Infer<typeof AiUsage>;
+
+export const ChatMessage = __t.object("ChatMessage", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  get role() {
+    return ChatRole;
+  },
+  text: __t.string(),
+  verdict: __t.string(),
+  redFlags: __t.array(__t.string()),
+  nextSteps: __t.array(__t.string()),
+  imageNote: __t.string(),
+  isError: __t.bool(),
+  channel: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type ChatMessage = __Infer<typeof ChatMessage>;
+
+// The tagged union or sum type for the algebraic type `ChatRole`.
+export const ChatRole = __t.enum("ChatRole", {
+  User: __t.unit(),
+  Bot: __t.unit(),
+});
+export type ChatRole = __Infer<typeof ChatRole>;
+
 export const DisconnectCleanup = __t.object("DisconnectCleanup", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -23,6 +62,15 @@ export const JoinAttempt = __t.object("JoinAttempt", {
   windowStart: __t.timestamp(),
 });
 export type JoinAttempt = __Infer<typeof JoinAttempt>;
+
+export const MemoryFact = __t.object("MemoryFact", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  fact: __t.string(),
+  source: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type MemoryFact = __Infer<typeof MemoryFact>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),
