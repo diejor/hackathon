@@ -11,16 +11,18 @@ SafeSense is for people who feel unsure about scams, often older adults. It has 
 no timers and no pressure, and it has a text-size control.
 
 - **Three short games.** *Fraudle* (guess the scam word, with a one-line lesson each time), *Scam or Not?*
-  (real-looking texts: decide, then see why) and *The Long Con*, where **you play the scammer** and see how a
-  careful person spots each move. The Long Con is being rebuilt on teammate Krishna's BadScam game engine.
-  The people and companies in the games are made up.
+  (real-looking texts: decide, then see why) and *Role Reversal*, where **you play the scammer** and see how a
+  careful person spots each move (game design adapted from teammate Krishna's BadScam). The people and
+  companies in the games are made up.
 - **The SafeSense assistant** is an AI. Type a message that worries you, say it, or add a screenshot. It
   replies with a verdict, the signs to notice and what to do next. It remembers what you struggle with in
   the games and coaches you on it. It gives guidance, not guarantees.
-- **Your progress.** Points, "signs you can spot" and "worth practicing". There are no accounts: a recovery
-  key carries your progress to another device.
+- **Your progress.** Every finished game earns 1 point (a 4th game, *The Phone Call*, shows as locked until
+  10 points; it's a "coming soon" placeholder). There are no accounts: a recovery key carries your progress to
+  another device.
 - **SafeSense by text.** Forward a suspicious text over iMessage (via Photon) and get the same calm verdict
-  back. Honest limit: on Photon's free shared line only **one registered sender** can reach it, so for the
+  back. Reply `PRACTICE` for a clearly labeled fake scam text to practice on (opt-in, 1 a day, `REPORT` to
+  answer, then a debrief). Honest limit: on Photon's free shared line only **one registered sender** can reach it, so for the
   demo that's a teammate's iPhone; judges can't text it themselves. A dedicated line removes the limit.
 
 SafeSense is meant as a companion to T-Mobile's Scam Shield: Scam Shield blocks quietly at the network
@@ -31,7 +33,7 @@ iMessage). It is not affiliated with or endorsed by T-Mobile.
 
 | Track | How SafeSense addresses it |
 | --- | --- |
-| **T-Mobile Safe Signal** | Teaches people to recognise scams through practice instead of fear, and gives a second opinion on anything that slips past network filtering. Positioned as a Scam Shield companion. |
+| **T-Mobile Safe Signal** | Teaches people to recognize scams through practice instead of fear, and gives a second opinion on anything that slips past network filtering. Positioned as a Scam Shield companion. |
 | **Best Use of Photon API** | "SafeSense by text": Photon 2.0 signed webhooks are verified (HMAC-SHA256, Standard Webhooks) and handled inside the database, replies go out through Photon's REST API, and `LINK <code>` joins a phone to the same memory as the web chat. |
 | **MLH Best Use of Gemini API** | Gemini (`gemini-3.5-flash`, through the OpenAI-compatible API) reads text and screenshots (vision), answers in a strict JSON schema (verdict, signs, next steps, memory facts), uses each person's game history to coach them, treats pasted content as data with prompt-injection rules, and falls back to `gemini-3.5-flash-lite` when the main model is overloaded. |
 
@@ -83,7 +85,9 @@ is kept in the browser (that token is the recovery key).
 - **Limits:** one AI call per person every 3 seconds on the web, 8 per minute per texting sender. Photon
   and Discord webhooks are signature-checked, deduplicated and rejected after 5 minutes.
 - **Games use fictional brands**, `.example` domains and 555 numbers. No messages or money are ever sent.
-- **Practice texts** (a fake scam text to your own phone) are planned, opt-in only, with STOP honoured.
+- **Practice texts** (a fake scam text to your own linked phone) are opt-in, use fictional brands and no links,
+  are limited to 1 a day and 3 in total, and STOP/START are honored. A kill switch (`PHOTON_SENDING_ENABLED`)
+  turns off everything except replies.
 
 ## Run it locally
 
@@ -146,7 +150,7 @@ unlockable games yet. Next, in order:
 Made by the SafeSense team at HackUTD 2026:
 
 - **Diego Rodrigues**: project lead; assistant and backend.
-- **Krishna** <!-- TODO(Diego): Krishna's full name -->: game design (BadScam / The Long Con), scam research, Photon.
+- **Krishna** <!-- TODO(Diego): Krishna's full name -->: game design (BadScam, now Role Reversal), scam research, Photon practice texts.
 - **[designer name]** <!-- TODO(Diego): designer's name -->: SafeSense design.
 
 Built with [Claude Code](https://claude.com/claude-code). Powered by [SpacetimeDB](https://spacetimedb.com),
