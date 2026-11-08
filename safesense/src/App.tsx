@@ -1,7 +1,9 @@
 import { Layout } from './components/Layout'
 import { useEffect } from 'react'
+import { AnimatePresence } from 'motion/react'
 import { useRoute } from './router'
 import { KEYS, save } from './storage'
+import { PageTransition } from './components/PageTransition'
 import Home from './pages/Home'
 import Fraudle from './pages/Fraudle'
 import ScamOrNot from './pages/ScamOrNot'
@@ -32,7 +34,12 @@ export default function App() {
   }, [route])
   return (
     <Layout route={route}>
-      <Page key={route} />
+      {/* mode="wait": the leaving page finishes its exit before the next one animates in. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <PageTransition key={route}>
+          <Page />
+        </PageTransition>
+      </AnimatePresence>
     </Layout>
   )
 }

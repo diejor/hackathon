@@ -1,8 +1,9 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { MessageCircle, ShieldCheck, Sprout, type LucideIcon } from 'lucide-react'
+import { MessageCircle, ShieldCheck, type LucideIcon } from 'lucide-react'
 import { ASK_LABEL, THE_ASSISTANT } from './chat/copy'
 import { href, type Route } from '../router'
 import { usePoints } from '../storage'
+import { Mascot } from './Mascot'
 import '../profile.css'
 
 const SIZES = ['normal', 'large', 'larger'] as const
@@ -36,15 +37,16 @@ function TextSizeButton() {
 }
 
 /**
- * Point total in the header: just the number and a sprout (the designer's badge). It links to the
- * progress page. The total comes from the rounds saved in SpacetimeDB (see storage.ts usePoints).
+ * Point total in the header: the number plus the evolving cyborg mascot (replacing the old sprout).
+ * It links to the progress page. The total comes from the rounds saved in SpacetimeDB (storage.ts
+ * usePoints). The anchor is deliberately NOT keyed by points, so the mascot persists across point
+ * changes and can play its evolution burst when a milestone is crossed.
  */
 function HeaderPoints({ route }: { route: Route }) {
   const points = usePoints()
   const label = points === null ? 'Your progress' : `Your progress: ${points} ${points === 1 ? 'point' : 'points'}`
   return (
     <a
-      key={points ?? -1}
       className="header-points"
       href={href('profile')}
       aria-current={route === 'profile' ? 'page' : undefined}
@@ -52,7 +54,7 @@ function HeaderPoints({ route }: { route: Route }) {
       title="Your progress"
     >
       {points === null ? '–' : points.toLocaleString()}
-      <Sprout size={24} strokeWidth={1.5} aria-hidden="true" />
+      <Mascot points={points} size={30} compact className="header-mascot" />
     </a>
   )
 }

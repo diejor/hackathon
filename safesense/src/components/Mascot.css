@@ -1,0 +1,110 @@
+/* Styles for the SafeSense mascot. Keeps the brand green feel; animation is all inline via Motion. */
+
+.mascot {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+.mascot svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Compact variant: inline next to a number in the header / greeting badge. */
+.mascot-compact {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.header-points .mascot-compact,
+.points-badge .mascot-compact {
+  margin-left: 2px;
+}
+
+/* Keep the burst from nudging neighbors in the tight header row. */
+.header-points,
+.points-badge {
+  align-items: center;
+}
+
+.mascot-label {
+  text-align: center;
+  font-family: inherit;
+}
+
+.mascot-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--brand, #355e4a);
+  letter-spacing: 0.01em;
+}
+
+.mascot-next {
+  font-size: 12px;
+  color: var(--muted-fg, #6b7a74);
+  margin-top: 2px;
+}
+
+.mascot-max {
+  color: var(--brand, #355e4a);
+  font-weight: 500;
+}
+
+/* Variant used inside the Home points-card: sits beside the number. */
+.points-card .mascot,
+.points-card .points-mascot {
+  flex-shrink: 0;
+}
+
+/* Progress-to-next-evolution shown under the point total on the dashboard card. */
+.mascot-progress {
+  margin-top: 10px;
+  max-width: 180px;
+}
+
+.mascot-progress-name {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--brand, #355e4a);
+}
+
+.mascot-progress-bar {
+  display: block;
+  height: 6px;
+  margin: 6px 0 4px;
+  border-radius: 999px;
+  background: rgba(53, 94, 74, 0.15);
+  overflow: hidden;
+}
+
+.mascot-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3f6b56, #7fd4a8);
+  transition: width 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.mascot-progress-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-fg, #6b7a74);
+}
+
+/* On the dark green points card, the progress reads in light colors (green-on-green was invisible), and the
+   sizes follow the text-size control. */
+.points-card .mascot-progress-name {
+  color: #fff;
+  font-size: 0.85rem;
+}
+.points-card .mascot-progress-bar {
+  background: rgba(255, 255, 255, 0.25);
+}
+.points-card .mascot-progress-hint {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+}

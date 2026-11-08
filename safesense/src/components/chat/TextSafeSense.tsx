@@ -96,7 +96,9 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
             <p>
               Text <strong className="text-safesense-code">LINK {live.code}</strong> to {number} within 10 minutes.
             </p>
-            <p className="small muted">This page will show “Linked” when it works.</p>
+            <p className="small muted">Send the whole line, including LINK, as one iMessage from your iPhone. This page will show “Linked” when it works.</p>
+            <button type="button" className="btn btn-secondary btn-block" disabled={!ready || busy}
+              onClick={() => mod && run(() => mod.createLinkCode())}>Get a new code</button>
           </>
         ) : (
           <>
