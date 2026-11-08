@@ -173,6 +173,7 @@ Each band runs as a subagent in its own git worktree and branch, and owns only i
 
 - Replace the "Security Arcade / Safe Signal" game paragraph in the bot prompt with SafeSense's games and kinds (section 5) and the calm, plain-language tone.
 - Keep everything else word for word.
+- **Found during B2/B3 (fix here):** (1) `scam-or-not` logs a safe message flagged as a scam as `answer_wrong` with `tactic: "legit"`. The coach must describe that as "flagged a safe message as a scam", not as a missed tactic. (2) A plain fake-PayPal phishing screenshot was labelled a "prompt injection". Tune the injection rule so ordinary scam screenshots are judged as scams (vision path; verify with 2 calls).
 
 ### B6 — Deploy · ~04:30, **needs Diego's OK**
 
