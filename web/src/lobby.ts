@@ -17,9 +17,11 @@ export const GAMES = [
 ] as const;
 
 const params = new URLSearchParams(location.search);
+// A host page (e.g. Safe Signal's Next.js app) can set globalThis.__STDB__ before importing this module.
+const hostDefaults = (globalThis as { __STDB__?: { server?: string; db?: string } }).__STDB__ ?? {};
 export const config = {
-  server: params.get("server") || "wss://maincloud.spacetimedb.com",
-  db: params.get("db") || "hackathon-1aa18263",
+  server: params.get("server") || hostDefaults.server || "wss://maincloud.spacetimedb.com",
+  db: params.get("db") || hostDefaults.db || "hackathon-1aa18263",
 };
 
 const TOKEN_KEY = `stdb.token.${config.db}`;

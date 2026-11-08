@@ -1,7 +1,8 @@
 // Bridge to the Help Bot (Security Arcade web app, ../web/src/bot): one SpacetimeDB connection per tab,
 // shared by /coach (the chat) and the games (which report results so the bot can coach).
 // Browser-only: web/src/lobby reads `location` at import time, so everything here is a dynamic import.
-// Server/db come from ?server=&db= (default: Maincloud hackathon-1aa18263); the identity token lives in
+// Server/db come from ?server=&db=, else NEXT_PUBLIC_STDB_SERVER / NEXT_PUBLIC_STDB_DB, else Maincloud
+// hackathon-1aa18263 (URL params are lost on <Link> navigation, so use the env vars for local testing); the identity token lives in
 // localStorage (stdb.token.<db>), so every Safe Signal page in this browser is the same bot player.
 import type { GameEvent } from '../contracts';
 
@@ -10,6 +11,8 @@ let lobby: Promise<Lobby> | null = null;
 
 /** Load the bot store and connect once (idempotent). */
 export function helpBot(): Promise<Lobby> {
+  const g = globalThis as { __STDB__?: { server?: string; db?: string } };
+  g.__STDB__ ??= { server: process.env.NEXT_PUBLIC_STDB_SERVER || undefined, db: process.env.NEXT_PUBLIC_STDB_DB || undefined };
   lobby ??= Promise.all([import('../../../web/src/lobby'), import('../../../web/src/bot/bot')]).then(([L]) => {
     L.connect();
     return L;

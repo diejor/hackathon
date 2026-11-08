@@ -1,0 +1,642 @@
+[
+  {
+    "id": "usps-redelivery-fee",
+    "channel": "sms",
+    "sender": "+1 (833) 555-0142",
+    "subject": "",
+    "body": "USPS: Your parcel is on hold due to an incomplete address. Pay the $1.99 redelivery fee within 12 hrs or it will be returned to sender: https://usps.redelivery-help.top/us\n\n(Reply Y, then reopen this message to activate the link)",
+    "is_fraud": true,
+    "tactic": "fake-delivery",
+    "flags": [
+      "USPS doesn't text you links asking for fees",
+      "Real domain is redelivery-help.top, not usps.com",
+      "'Reply Y' trick unlocks blocked links"
+    ],
+    "lesson": "Real carriers don't charge redelivery fees by text; check tracking by typing usps.com yourself.",
+    "difficulty": 1
+  },
+  {
+    "id": "fedex-customs-duty",
+    "channel": "email",
+    "sender": "FedEx Delivery <notice@fedex-customsclear.net>",
+    "subject": "Shipment #7740 3391 held - customs duty unpaid",
+    "body": "Dear Customer,\nYour international shipment could not be delivered because a customs duty of $2.89 is unpaid. Pay within 48 hours to release your package, or it will be returned to sender.\n\n[ PAY DUTY NOW ] fedex-customsclear.net/pay",
+    "is_fraud": true,
+    "tactic": "fake-delivery",
+    "flags": [
+      "Sender is fedex-customsclear.net, not fedex.com",
+      "Tiny fee is bait to capture your card",
+      "'Dear Customer' plus a deadline"
+    ],
+    "lesson": "Small 'customs fees' are card-stealing bait; check any package by typing the carrier's real site yourself.",
+    "difficulty": 2
+  },
+  {
+    "id": "ups-missed-delivery",
+    "channel": "sms",
+    "sender": "+1 (402) 555-0178",
+    "subject": "",
+    "body": "UPS: We missed you today at 2:14 PM. Your package 1Z8Q2X will be held at the local facility. Reschedule delivery: ups.com-reschedule.info/1Z8Q2X",
+    "is_fraud": true,
+    "tactic": "fake-delivery",
+    "flags": [
+      "Real domain is com-reschedule.info, not ups.com",
+      "Sent from a random 10-digit number",
+      "No fee yet: the link phishes your login and card"
+    ],
+    "lesson": "Find the real domain: it's the part right before the first slash. 'ups.com-reschedule.info' belongs to com-reschedule.info.",
+    "difficulty": 3
+  },
+  {
+    "id": "ezpass-unpaid-toll",
+    "channel": "sms",
+    "sender": "+1 (877) 555-0163",
+    "subject": "",
+    "body": "E-ZPass Final Reminder: You have an unpaid toll of $4.15. Pay by 11/09 to avoid a $50.00 late fee and suspension of your vehicle registration.\nhttps://ezpass-tollpay.icu/pay",
+    "is_fraud": true,
+    "tactic": "toll-unpaid",
+    "flags": [
+      "Toll agencies don't text payment links",
+      "Tiny charge plus a huge 'late fee' threat",
+      "Unknown .icu domain"
+    ],
+    "lesson": "Check toll balances only by typing your toll agency's real site or calling the number on your account.",
+    "difficulty": 1
+  },
+  {
+    "id": "sunpass-balance-due",
+    "channel": "sms",
+    "sender": "+1 (305) 555-0119",
+    "subject": "",
+    "body": "SunPass: Our records show an outstanding toll balance of $6.99 on your vehicle. To avoid additional fees, please settle your balance today at https://sunpass.tollsvc-billing.xyz",
+    "is_fraud": true,
+    "tactic": "toll-unpaid",
+    "flags": [
+      "Real domain is tollsvc-billing.xyz, not sunpass.com",
+      "Polite tone, still an unsolicited pay link",
+      "Sent from an ordinary phone number"
+    ],
+    "lesson": "A brand name at the start of a link means nothing; only the domain before the first slash counts.",
+    "difficulty": 2
+  },
+  {
+    "id": "dmv-final-notice",
+    "channel": "sms",
+    "sender": "+1 (214) 555-0187",
+    "subject": "",
+    "body": "State DMV FINAL NOTICE: Your vehicle has an unpaid toll violation. Enforcement begins 11/10:\n- Registration suspension\n- Credit score reporting\n- Prosecution\nPay now: https://dmv-gov-portal.top/notice\nReply Y to activate link.",
+    "is_fraud": true,
+    "tactic": "toll-unpaid",
+    "flags": [
+      "DMVs send mail; they don't text threats",
+      "Stacked penalties to scare you into paying",
+      "Says 'gov' but isn't a .gov site"
+    ],
+    "lesson": "Government agencies use .gov sites and postal mail; a scary text with a pay link is a scam.",
+    "difficulty": 1
+  },
+  {
+    "id": "tmobile-points-expiring",
+    "channel": "sms",
+    "sender": "+1 (626) 555-0131",
+    "subject": "",
+    "body": "T-Mobile: Dear Member, your 9,200 reward points expire TODAY! Redeem them for AirPods Pro or a $100 gift card before midnight: t-mobile-rewardpoints.com/redeem",
+    "is_fraud": true,
+    "tactic": "carrier-impersonation",
+    "flags": [
+      "Lookalike domain, not t-mobile.com",
+      "Sent from a random 10-digit number",
+      "'Expires today' urgency"
+    ],
+    "lesson": "Check rewards and offers in the T-Mobile app; hyphenated lookalike domains are a classic trap.",
+    "difficulty": 2
+  },
+  {
+    "id": "tmobile-sim-swap-call",
+    "channel": "call",
+    "sender": "Caller ID: T-Mobile",
+    "subject": "",
+    "body": "\"Hi, this is Kevin with T-Mobile account security. We detected a SIM swap request on your line from another state. To block it, I'm sending a verification code to your phone now. Just read it back to me so I can confirm you're the owner.\"",
+    "is_fraud": true,
+    "tactic": "carrier-impersonation",
+    "flags": [
+      "Caller ID can be faked to show any name",
+      "Reading a code back hands them your number",
+      "T-Mobile never asks for a code you received"
+    ],
+    "lesson": "Never read a texted code to a caller, even 'T-Mobile'; hang up and dial 611 yourself.",
+    "difficulty": 3
+  },
+  {
+    "id": "tmobile-autopay-declined",
+    "channel": "email",
+    "sender": "T-Mobile <billing@t-mobile-accountcenter.com>",
+    "subject": "Payment declined - service interruption in 24h",
+    "body": "Your recent AutoPay payment of $87.40 was declined by your bank. To avoid interruption of service, update your payment method within 24 hours.\n\n[ Update Payment ] t-mobile-accountcenter.com/billing\n\nThank you for being part of the T-Mobile family.",
+    "is_fraud": true,
+    "tactic": "carrier-impersonation",
+    "flags": [
+      "Sender domain isn't t-mobile.com",
+      "24-hour shutoff threat",
+      "Wants your card details through a link"
+    ],
+    "lesson": "Billing problems show up in the T-Mobile app or at t-mobile.com; go there directly instead of clicking.",
+    "difficulty": 2
+  },
+  {
+    "id": "chase-card-suspended",
+    "channel": "sms",
+    "sender": "+1 (844) 555-0107",
+    "subject": "",
+    "body": "CHASE ALERT: Your debit card has been temporarily SUSPENDED due to unusual activity. To restore access verify your identity: http://chase-secure-verify.com/login Ref#88213",
+    "is_fraud": true,
+    "tactic": "bank-impersonation",
+    "flags": [
+      "Link isn't chase.com",
+      "Real alerts ask YES/NO, not for your login",
+      "ALL-CAPS urgency"
+    ],
+    "lesson": "If your bank says something's wrong, open the bank's app or call the number on the back of your card.",
+    "difficulty": 1
+  },
+  {
+    "id": "boa-safe-account-call",
+    "channel": "call",
+    "sender": "Caller ID: Bank of America",
+    "subject": "",
+    "body": "\"This is Bank of America fraud prevention. Someone is trying to drain your checking right now. To protect your money we need to move it to a secure holding account. I'll walk you through a Zelle transfer. Stay on the line and don't tell branch staff.\"",
+    "is_fraud": true,
+    "tactic": "bank-impersonation",
+    "flags": [
+      "No real bank moves money to a 'safe account'",
+      "'Stay on the line, tell no one' isolates you",
+      "Caller ID is spoofed to look real"
+    ],
+    "lesson": "A bank will never ask you to move money to protect it; hang up and call the number on your card.",
+    "difficulty": 3
+  },
+  {
+    "id": "whatsapp-code-by-mistake",
+    "channel": "sms",
+    "sender": "+1 (512) 555-0124",
+    "subject": "",
+    "body": "Hey sorry!! I just sent my verification code to your number by mistake 😅 it's a 6 digit code, could you text it back to me? I'm locked out of my WhatsApp and it expires soon",
+    "is_fraud": true,
+    "tactic": "account-locked-otp",
+    "flags": [
+      "The code unlocks YOUR account, not theirs",
+      "A stranger with a convenient 'mistake'",
+      "Rushes you before the code expires"
+    ],
+    "lesson": "A code sent to your phone is a key to your account; never forward it to anyone.",
+    "difficulty": 2
+  },
+  {
+    "id": "marketplace-verify-code",
+    "channel": "dm",
+    "sender": "Buyer on Facebook Marketplace",
+    "subject": "",
+    "body": "Hi is the bike still available? I want it today. Before we meet I need to make sure you're real, lots of scammers on here lol. I'm sending a code from Google to your phone, just tell me the 6 digits",
+    "is_fraud": true,
+    "tactic": "account-locked-otp",
+    "flags": [
+      "The code sets up a Google Voice number in your name",
+      "Real buyers don't need to 'verify' you",
+      "Code request disguised as safety"
+    ],
+    "lesson": "Anyone who needs a code from your phone to 'verify' you is stealing an account. No exceptions.",
+    "difficulty": 3
+  },
+  {
+    "id": "wrong-number-yoga",
+    "channel": "sms",
+    "sender": "+1 (917) 555-0153",
+    "subject": "",
+    "body": "Hi Emily, are we still on for yoga Thursday? The instructor said the 7am class is full so I booked us for 8:30 🙂",
+    "is_fraud": true,
+    "tactic": "wrong-number",
+    "flags": [
+      "A stranger using a name that isn't yours",
+      "Friendly opener built to start a chat",
+      "Classic first step of 'pig butchering' scams"
+    ],
+    "lesson": "Don't reply to friendly wrong-number texts; they often open a long con that ends in a fake investment.",
+    "difficulty": 3
+  },
+  {
+    "id": "wrong-number-crypto-pivot",
+    "channel": "sms",
+    "sender": "+1 (646) 555-0198",
+    "subject": "",
+    "body": "So nice chatting with you this week 😊 My uncle works at a trading firm and taught me a crypto strategy, I made $18,000 last month!! I can show you, just open an account on bitgainpro-exchange.com and start with $500",
+    "is_fraud": true,
+    "tactic": "wrong-number",
+    "flags": [
+      "New 'friend' who started as a wrong number",
+      "Promises huge, easy returns",
+      "Pushes an unknown trading site"
+    ],
+    "lesson": "Online friends who pitch a crypto platform are running an investment scam; real returns are never guaranteed.",
+    "difficulty": 1
+  },
+  {
+    "id": "new-number-hi-mom",
+    "channel": "sms",
+    "sender": "+1 (720) 555-0146",
+    "subject": "",
+    "body": "Hi mom it's me, I dropped my phone in the toilet 🙈 this is my new number, save it. Also I need to pay a bill today and my banking app won't work on this phone. Can you help? I'll pay you back tomorrow x",
+    "is_fraud": true,
+    "tactic": "family-emergency",
+    "flags": [
+      "Unknown number claiming to be family",
+      "Can't use the old phone, needs money today",
+      "'I'll pay you back' payment request"
+    ],
+    "lesson": "If 'family' texts from a new number asking for money, call their old number or ask something only they'd know.",
+    "difficulty": 2
+  },
+  {
+    "id": "grandparent-bail-call",
+    "channel": "call",
+    "sender": "Unknown caller +1 (888) 555-0172",
+    "subject": "",
+    "body": "\"Grandma? It's me... I got in a car accident and they arrested me. Please don't tell Mom and Dad. My lawyer says I need $3,000 for bail today. He'll explain how to send it, you can use gift cards or a courier can pick up cash.\"",
+    "is_fraud": true,
+    "tactic": "family-emergency",
+    "flags": [
+      "'Don't tell Mom and Dad' secrecy",
+      "Bail by gift card or courier",
+      "Panic and time pressure; voices can be AI-cloned"
+    ],
+    "lesson": "Hang up and call the family member directly; courts never take bail by gift card or courier.",
+    "difficulty": 2
+  },
+  {
+    "id": "ceo-gift-card-email",
+    "channel": "email",
+    "sender": "Jordan Ellis, CEO <exec.office.jellis@outlook-mailbox.net>",
+    "subject": "Quick favor",
+    "body": "Are you available? I'm in back-to-back meetings and need you to pick up 5 Apple gift cards ($200 each) for client appreciation. Scratch the backs and send me photos of the codes ASAP. Keep this between us for now, it's a surprise.\n\nSent from my iPhone",
+    "is_fraud": true,
+    "tactic": "boss-gift-card",
+    "flags": [
+      "Execs don't buy client gifts as gift card codes",
+      "Outside email, not the company domain",
+      "Secrecy plus urgency"
+    ],
+    "lesson": "Gift card requests from a 'boss' are scams; confirm through a channel you already use, like Slack or a call.",
+    "difficulty": 1
+  },
+  {
+    "id": "boss-new-cell-quick-task",
+    "channel": "sms",
+    "sender": "+1 (469) 555-0115",
+    "subject": "",
+    "body": "Hi, it's Dana. This is my personal cell, I'm stuck in a board meeting and can't talk. I need a quick task handled before 3pm. Are you at your desk?",
+    "is_fraud": true,
+    "tactic": "boss-gift-card",
+    "flags": [
+      "A new 'personal number' for your boss",
+      "Vague 'quick task' that turns into gift cards",
+      "'Can't talk' means you can't verify"
+    ],
+    "lesson": "Scams start with an innocent 'are you free?'; verify a new number for your boss on a channel you already use.",
+    "difficulty": 3
+  },
+  {
+    "id": "remote-task-job-text",
+    "channel": "sms",
+    "sender": "+1 (332) 555-0129",
+    "subject": "",
+    "body": "Hi! I'm Ashley, a recruiter with Amazon. Your resume was recommended for a remote part-time role: 60-90 min/day, $300-$800/day, paid daily. Interested? Add me on WhatsApp: +1 (332) 555-0130",
+    "is_fraud": true,
+    "tactic": "job-offer",
+    "flags": [
+      "Unsolicited text with unreal pay",
+      "Moves you to WhatsApp",
+      "Vague job with no interview"
+    ],
+    "lesson": "Real recruiters don't text out of the blue promising daily pay; 'task' jobs end with you paying them.",
+    "difficulty": 1
+  },
+  {
+    "id": "fake-check-job-offer",
+    "channel": "email",
+    "sender": "Talent Team <hr@brightlane-careers.com>",
+    "subject": "Offer Letter - Remote Data Entry Clerk",
+    "body": "Congratulations! After reviewing your chat interview, we're pleased to offer you the position ($32/hr). We'll mail you a check for $2,850 to buy home-office equipment from our approved vendor. Please deposit it and send the vendor payment via Zelle.",
+    "is_fraud": true,
+    "tactic": "job-offer",
+    "flags": [
+      "Hired after a chat-only 'interview'",
+      "Deposit a check, send money out: fake check scam",
+      "You pay their 'approved vendor'"
+    ],
+    "lesson": "No real employer mails you a check and asks you to forward money; the check bounces after you've paid.",
+    "difficulty": 2
+  },
+  {
+    "id": "costco-loyalty-winner",
+    "channel": "sms",
+    "sender": "+1 (281) 555-0193",
+    "subject": "",
+    "body": "Congrats! You've been selected as our Costco loyalty winner 🎉 Claim your FREE Dyson Airwrap (value $599), just pay $4.95 shipping. Offer expires in 30 mins! costco-winnerclaim.top/gift",
+    "is_fraud": true,
+    "tactic": "prize-giveaway",
+    "flags": [
+      "You never entered a contest",
+      "'Free' prize that needs your card",
+      "30-minute countdown"
+    ],
+    "lesson": "If you have to pay to receive a prize, it isn't a prize; it's a card-theft scheme.",
+    "difficulty": 1
+  },
+  {
+    "id": "galaxy-giveaway-dm",
+    "channel": "dm",
+    "sender": "@samsung.us.giveaways (Instagram)",
+    "subject": "",
+    "body": "🎊 Congratulations! You were chosen as a winner in our Galaxy Ultra giveaway! To claim your phone, confirm your shipping details within 24h at galaxy-winners-claim.com. A small verification fee ($9.99) applies.",
+    "is_fraud": true,
+    "tactic": "prize-giveaway",
+    "flags": [
+      "Unverified account imitating a brand",
+      "Prize with a 'verification fee'",
+      "You never entered"
+    ],
+    "lesson": "Real giveaways come from verified brand accounts and never charge a fee to claim.",
+    "difficulty": 2
+  },
+  {
+    "id": "geek-squad-auto-renewal",
+    "channel": "email",
+    "sender": "Geek Squad Billing <invoice@gs-renewal-center.com>",
+    "subject": "Invoice #GS-449812: Auto-Renewal Successful",
+    "body": "Thank you for renewing your Geek Squad Total Protection. $399.99 has been charged to your account today. If you did not authorize this charge, call our refund desk within 24 hours: +1 (888) 555-0166.",
+    "is_fraud": true,
+    "tactic": "tech-support",
+    "flags": [
+      "Invoice for a plan you never bought",
+      "Wants a CALL so they can remote into your PC",
+      "Sender domain isn't the brand's"
+    ],
+    "lesson": "Fake renewal invoices bait you into calling a 'refund desk'; check real charges in your bank app.",
+    "difficulty": 2
+  },
+  {
+    "id": "windows-support-call",
+    "channel": "call",
+    "sender": "Caller ID: Windows Support",
+    "subject": "",
+    "body": "\"Hello, this is the Microsoft technical department. Your computer is sending us error signals, it has been hacked. Please go to your computer now, I will guide you to install a support tool so I can fix it remotely.\"",
+    "is_fraud": true,
+    "tactic": "tech-support",
+    "flags": [
+      "Microsoft never cold-calls about your PC",
+      "A 'support tool' gives them full control",
+      "Scare tactic: 'you've been hacked'"
+    ],
+    "lesson": "Hang up on unsolicited tech support calls and never install remote-access software for a stranger.",
+    "difficulty": 1
+  },
+  {
+    "id": "chase-fraud-alert-yes-no",
+    "channel": "sms",
+    "sender": "Chase",
+    "subject": "",
+    "body": "Chase Fraud Alert: Did you attempt a $487.20 card purchase at BESTBUY.COM on 11/06? Reply YES or NO. We will never ask for your PIN, password or a code by text.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Only asks YES or NO: no link, no login",
+      "Says it will never ask for codes",
+      "Arrives in your usual Chase alert thread"
+    ],
+    "lesson": "Real fraud alerts ask you to confirm a charge, never to log in or share a code.",
+    "difficulty": 3
+  },
+  {
+    "id": "google-code-you-requested",
+    "channel": "sms",
+    "sender": "Google",
+    "subject": "",
+    "body": "[You're signing in to Gmail on your new laptop]\n\nG-482913 is your Google verification code. Don't share it with anyone.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "You requested it seconds ago",
+      "Doesn't ask you to reply or share it",
+      "Tells you not to share it"
+    ],
+    "lesson": "A code you asked for is fine to type into the site; the scam is anyone asking you to read it to them.",
+    "difficulty": 2
+  },
+  {
+    "id": "tmobile-bill-due",
+    "channel": "sms",
+    "sender": "T-Mobile",
+    "subject": "",
+    "body": "T-Mobile: Your bill of $142.17 is due 11/15. AutoPay is currently OFF. To pay or turn on AutoPay, open the T-Mobile app or go to t-mobile.com. Reply STOP to opt out.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Points to the official app or t-mobile.com",
+      "No instant-shutoff threat",
+      "No lookalike link"
+    ],
+    "lesson": "Legit bill notices send you to the app or the brand's real site, not to a mystery link.",
+    "difficulty": 2
+  },
+  {
+    "id": "roommate-cabin-link",
+    "channel": "dm",
+    "sender": "Sam (your roommate, Instagram)",
+    "subject": "",
+    "body": "ok here's the cabin I was talking about at lunch!! airbnb.com/rooms/48213977 hot tub + 3 bedrooms, if we split 4 ways it's like $90 each. lmk by friday so I can book",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Follows up on a real conversation",
+      "Link goes to airbnb.com",
+      "No ask for your card or a code"
+    ],
+    "lesson": "A link is fine when it's expected, from someone you know, and goes to a real site you recognize.",
+    "difficulty": 2
+  },
+  {
+    "id": "ups-delivery-today",
+    "channel": "sms",
+    "sender": "UPS",
+    "subject": "",
+    "body": "UPS: Your package from Target is scheduled for delivery today between 2:00 PM and 6:00 PM. Track or change delivery at ups.com. No action needed.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "No fee or payment request",
+      "Points to ups.com",
+      "'No action needed'"
+    ],
+    "lesson": "Real delivery notices just inform you; they don't demand fees or urgent action.",
+    "difficulty": 2
+  },
+  {
+    "id": "cvs-prescription-ready",
+    "channel": "sms",
+    "sender": "CVS Pharmacy",
+    "subject": "",
+    "body": "CVS Pharmacy: Your prescription is ready for pickup at your Main St store. It will be held for 7 days. Questions? Call your store. Reply STOP to end texts.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "No link and no payment ask",
+      "Sends you to your own store",
+      "Standard opt-out wording"
+    ],
+    "lesson": "Pickup and appointment reminders are normal when they only ask you to show up.",
+    "difficulty": 1
+  },
+  {
+    "id": "coworker-sprint-review",
+    "channel": "dm",
+    "sender": "Marcus (Slack, #platform-team)",
+    "subject": "",
+    "body": "hey, are we still on for the 2pm sprint review? 3A is booked so I moved us to 4B. I'll bring the demo build on my laptop",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Known coworker on your company Slack",
+      "No money, codes or links",
+      "Normal work context"
+    ],
+    "lesson": "Not every message is a trap; a request with no money, codes or links is usually just work.",
+    "difficulty": 1
+  },
+  {
+    "id": "chase-new-device-email",
+    "channel": "email",
+    "sender": "Chase <no.reply.alerts@chase.com>",
+    "subject": "New sign-in to your account",
+    "body": "We noticed a sign-in from a new device (iPhone, Dallas, TX) on Nov 6 at 9:42 PM ET. If this was you, no action is needed. If not, open the Chase Mobile app or call the number on the back of your card. We'll never ask for your password by email.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Sent from chase.com",
+      "Sends you to the app or your card's number",
+      "No link or login button"
+    ],
+    "lesson": "Legit security emails send you to channels you already trust, not to a link inside the message.",
+    "difficulty": 3
+  },
+  {
+    "id": "mom-call-me-flights",
+    "channel": "sms",
+    "sender": "Mom (saved contact)",
+    "subject": "",
+    "body": "Can you call me when you get a sec? Nothing's wrong!! Just want to ask about Thanksgiving flights before prices go up ✈️",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Saved contact you text all the time",
+      "Wants a call instead of avoiding one",
+      "No money or code request"
+    ],
+    "lesson": "Scammers avoid calls; family asking you to call them back is acting normally.",
+    "difficulty": 1
+  },
+  {
+    "id": "amazon-refund-issued",
+    "channel": "email",
+    "sender": "Amazon.com <return@amazon.com>",
+    "subject": "Your refund for Anker USB-C Charger",
+    "body": "We've issued your refund of $23.99 for your return. It will appear on your original payment method in 3-5 business days. You can check refund status anytime in Your Orders.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Sent from amazon.com",
+      "Nothing to click, pay or confirm",
+      "Matches a return you made"
+    ],
+    "lesson": "A legit notice just informs you; you can always check it in the app instead of following a link.",
+    "difficulty": 2
+  },
+  {
+    "id": "tmobile-sim-change-alert",
+    "channel": "sms",
+    "sender": "T-Mobile",
+    "subject": "",
+    "body": "T-Mobile: A SIM change was just requested for your line ending 0142. If you did not request this, call 611 from another T-Mobile phone or visit a T-Mobile store.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "No link and no code request",
+      "Points to 611 and stores: official channels",
+      "Warns you; doesn't ask you to act in the thread"
+    ],
+    "lesson": "Real SIM-change alerts tell you to contact T-Mobile directly; they never ask you to read back a code.",
+    "difficulty": 3
+  },
+  {
+    "id": "dentist-reminder-call",
+    "channel": "call",
+    "sender": "Lakeside Dental (your dentist)",
+    "subject": "",
+    "body": "\"Hi, this is Lakeside Dental calling to confirm your cleaning this Thursday at 10 AM. If you need to reschedule, just give the office a call back. Have a great day!\"",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Appointment with your own dentist",
+      "Asks nothing sensitive",
+      "Says to call the office you already know"
+    ],
+    "lesson": "Reminders that only ask you to show up, or call back an office you know, are safe.",
+    "difficulty": 1
+  },
+  {
+    "id": "wellsfargo-fraud-call",
+    "channel": "call",
+    "sender": "Caller ID: Wells Fargo",
+    "subject": "",
+    "body": "\"This is Wells Fargo fraud prevention. We declined a $612 purchase on your card ending 4471. We won't ask for your PIN, password or any code. Please hang up and call the number on the back of your card so we can review it with you.\"",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Tells you to hang up and call back",
+      "Says it won't ask for PINs or codes",
+      "Asks for nothing on this call"
+    ],
+    "lesson": "A real bank is happy for you to hang up and call the number on your card. Scammers aren't.",
+    "difficulty": 3
+  },
+  {
+    "id": "microsoft-security-info-added",
+    "channel": "email",
+    "sender": "Microsoft account team <account-security-noreply@accountprotection.microsoft.com>",
+    "subject": "Microsoft account security info was added",
+    "body": "The following security info was recently added to the account ja***@outlook.com: Authenticator app. If this was you, you can safely ignore this email. If not, go to account.microsoft.com to review your security info.",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Real microsoft.com sender domain",
+      "'Safely ignore' if it was you",
+      "Tells you to visit the site yourself"
+    ],
+    "lesson": "Legit security notices let you ignore them if it was you and send you to the real site to check.",
+    "difficulty": 3
+  },
+  {
+    "id": "tmobile-recruiter-linkedin",
+    "channel": "dm",
+    "sender": "T-Mobile recruiter (LinkedIn, verified)",
+    "subject": "",
+    "body": "Hi! I saw your hackathon project and think you'd be a great fit for our Associate Security Engineer role. Here's the posting on our careers site: careers.t-mobile.com. Open to a 20-min video call next week?",
+    "is_fraud": false,
+    "tactic": "legit",
+    "flags": [
+      "Links to the company's real careers site",
+      "Proposes a normal video interview",
+      "No fees, checks or WhatsApp"
+    ],
+    "lesson": "Legit recruiters point to the official job posting and a real interview, and never ask you to pay.",
+    "difficulty": 3
+  }
+]
