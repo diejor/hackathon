@@ -212,9 +212,14 @@ export default function LongCon() {
               }}
             />
           )}
-          <button className="btn btn-secondary btn-block con-restart" onClick={() => begin(null)}>
-            Choose a different campaign
-          </button>
+          <div className="con-exit">
+            <a className="btn btn-secondary btn-block" href={href('home')}>
+              Back to home
+            </a>
+            <button className="con-pick-other" onClick={() => begin(null)}>
+              Pick another story
+            </button>
+          </div>
           <SidePanel />
         </div>
       </div>

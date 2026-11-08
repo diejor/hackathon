@@ -52,7 +52,6 @@ export function Hud({
   status: Record<string, Reaction>
 }) {
   const shown = useCountUp(reach)
-  const believed = c.people.filter((p) => status[p.id] === 'believed').length
   const low = cred < LOW_CRED
   return (
     <section className="con-hud" aria-label="How your campaign is going">
@@ -62,8 +61,13 @@ export function Hud({
             <span className="con-long">People who believed it</span>
             <span className="con-short">Believed it</span>
           </span>
-          <strong className="con-count-num">{shown.toLocaleString('en-US')}</strong>
-          <span className="con-sub">of {c.sentTo.toLocaleString('en-US')} texts sent</span>
+          <span className="con-count-line">
+            <strong className="con-count-num">{shown.toLocaleString('en-US')}</strong>
+            <span className="con-sub">
+              of {c.sentTo.toLocaleString('en-US')}
+              <span className="con-long"> texts sent</span>
+            </span>
+          </span>
         </div>
         <div className="con-cred">
           <span className="con-label">
@@ -88,14 +92,9 @@ export function Hud({
 
       <div className={`con-people${c.people.length === 1 ? ' is-solo' : ''}`}>
         <p className="con-label">
-          {c.people.length === 1 ? (
-            <span className="con-long">The person you’re following</span>
-          ) : (
-            <>
-              <span className="con-long">{`${believed} of the ${c.people.length} people you met believed it`}</span>
-              <span className="con-short">{`${believed} of ${c.people.length} believed it`}</span>
-            </>
-          )}
+          <span className="con-long">
+            {c.people.length === 1 ? 'The person you’re following' : 'The people you’re following'}
+          </span>
         </p>
         <ul>
           {c.people.map((p) => {

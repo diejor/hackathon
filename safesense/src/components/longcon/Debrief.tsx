@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ArrowRight, MessageCircle, RotateCcw, ShieldCheck, Sprout } from 'lucide-react'
+import { ArrowRight, Gamepad2, MessageCircle, RotateCcw, ShieldCheck, Sprout } from 'lucide-react'
 import { href } from '../../router'
 import { SAFETY_LINE, TACTICS, lessonFor } from '../../content/longCon'
 import { outcomeLine, type CampaignState } from './useCampaign'
@@ -81,8 +81,11 @@ export function Debrief({
           <RotateCcw size={20} /> Play this campaign again
         </button>
         <button className="btn btn-secondary btn-block" onClick={onOther}>
-          <ArrowRight size={20} /> Try another campaign
+          <ArrowRight size={20} /> Pick another story
         </button>
+        <a className="btn btn-secondary btn-block" href={href('home')}>
+          <Gamepad2 size={20} /> Try another game
+        </a>
         <p className="see-progress-row">
           <a className="see-progress" href={href('profile')}>
             <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
