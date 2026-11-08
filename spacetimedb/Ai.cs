@@ -3,19 +3,23 @@ using System.Text;
 using System.Text.Json;
 using SpacetimeDB;
 
-// Secrets live in the database environment (supplied at publish time, never in source or clients).
-// Publish with: NVIDIA_API_KEY=... scripts/publish.sh   (scripts load it from the gitignored .env file)
+// Provider-neutral AI access over the OpenAI-compatible "chat completions" API.
+// Default provider: Google Gemini (https://generativelanguage.googleapis.com/v1beta/openai).
+// Secrets live in the database environment (supplied at publish time from the gitignored .env,
+// never in source or clients). Switch provider by changing AI_BASE_URL / AI_API_KEY / AI_MODEL.
 [SpacetimeDB.Env]
 public partial struct EnvironmentSchema
 {
-    public string? NVIDIA_API_KEY;
-    public string? NVIDIA_MODEL; // optional override, e.g. "nvidia/nemotron-3.5-lightning-30b-a3b"
+    public string? AI_API_KEY;
+    public string? AI_BASE_URL;     // default: Gemini's OpenAI-compatible endpoint
+    public string? AI_MODEL;        // chat model id (run ai_ping to list what your key can use)
+    public string? AI_VISION_MODEL; // model for screenshots; defaults to AI_MODEL
 }
 
 public static partial class Module
 {
-    const string NvidiaBase = "https://integrate.api.nvidia.com/v1";
-    const string DefaultModel = "nvidia/nemotron-3-super-120b-a12b";
+    const string DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
+    const string DefaultModel = "gemini-flash-latest";
     const int MaxPromptChars = 4000;
     const long AiCooldownMicros = 3_000_000; // one AI call per player every 3 s (protects API credits)
 
@@ -37,45 +41,62 @@ public static partial class Module
         public uint LatencyMs;
     }
 
-    // Connectivity check, no key needed: lists NVIDIA's hosted models and returns the Nemotron ones.
+    readonly record struct AiConfig(string Key, string BaseUrl, string Model, string VisionModel);
+
+    static AiConfig? LoadAiConfig(ProcedureContext ctx)
+    {
+        var key = ctx.Env.AI_API_KEY;
+        if (string.IsNullOrEmpty(key)) return null;
+        var baseUrl = (string.IsNullOrEmpty(ctx.Env.AI_BASE_URL) ? DefaultBaseUrl : ctx.Env.AI_BASE_URL!).TrimEnd('/');
+        var model = string.IsNullOrEmpty(ctx.Env.AI_MODEL) ? DefaultModel : ctx.Env.AI_MODEL!;
+        var vision = string.IsNullOrEmpty(ctx.Env.AI_VISION_MODEL) ? model : ctx.Env.AI_VISION_MODEL!;
+        return new AiConfig(key, baseUrl, model, vision);
+    }
+
+    // Connectivity + key check: lists the models this key can use.
     [SpacetimeDB.Procedure]
     public static AiResult AiPing(ProcedureContext ctx)
     {
-        var started = ctx.Timestamp;
-        var result = ctx.Http.Get($"{NvidiaBase}/models");
+        if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
+        var result = ctx.Http.Send(new HttpRequest
+        {
+            Uri = $"{cfg.BaseUrl}/models",
+            Method = SpacetimeDB.HttpMethod.Get,
+            Headers = new() { new HttpHeader("authorization", $"Bearer {cfg.Key}") },
+            Body = HttpBody.FromString(""),
+        });
         return result.Match(
             response =>
             {
                 var body = response.Body.ToStringUtf8Lossy();
-                if (response.StatusCode != 200)
-                    return Fail($"HTTP {response.StatusCode}: {Trim(body, 300)}");
+                if (response.StatusCode != 200) return Fail($"HTTP {response.StatusCode}: {Trim(body, 300)}");
                 using var doc = JsonDocument.Parse(body);
-                var ids = new List<string>();
-                foreach (var m in doc.RootElement.GetProperty("data").EnumerateArray())
-                {
-                    var id = m.GetProperty("id").GetString() ?? "";
-                    if (id.Contains("nemotron", StringComparison.OrdinalIgnoreCase)) ids.Add(id);
-                }
-                return new AiResult { Ok = true, Text = string.Join("\n", ids), Model = "", LatencyMs = 0 };
+                var ids = doc.RootElement.GetProperty("data").EnumerateArray()
+                    .Select(m => m.GetProperty("id").GetString() ?? "")
+                    .Where(id => id.Length > 0)
+                    .ToList();
+                return new AiResult { Ok = true, Text = string.Join("\n", ids), Model = cfg.Model, LatencyMs = 0 };
             },
             error => Fail($"HTTP error: {error.Message}"));
     }
 
-    // Send one prompt to Nemotron. Rate-limited per identity; key never leaves the server.
+    // Send one prompt. Rate-limited per identity; the key never leaves the server.
     [SpacetimeDB.Procedure]
     public static AiResult AiAsk(ProcedureContext ctx, string system, string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt)) return Fail("Empty prompt");
         if (prompt.Length > MaxPromptChars || (system ?? "").Length > MaxPromptChars) return Fail("Prompt too long");
+        if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
+        if (!TakeAiQuota(ctx)) return Fail("Slow down a little — try again in a few seconds");
+        return Complete(ctx, cfg, cfg.Model, ChatPayload(cfg.Model, system ?? "", prompt));
+    }
 
-        var key = ctx.Env.NVIDIA_API_KEY;
-        if (string.IsNullOrEmpty(key)) return Fail("AI is not configured on the server (NVIDIA_API_KEY missing)");
-        var model = string.IsNullOrEmpty(ctx.Env.NVIDIA_MODEL) ? DefaultModel : ctx.Env.NVIDIA_MODEL!;
-
-        // Rate limit (short transaction before any network I/O).
+    // Rate limit: a short transaction before any network I/O.
+    static bool TakeAiQuota(ProcedureContext ctx)
+    {
         var sender = ctx.Sender;
         var now = ctx.Timestamp;
-        var allowed = ctx.WithTx(tx =>
+        return ctx.WithTx(tx =>
         {
             var usage = tx.Db.AiUsage.Identity.Find(sender);
             if (usage is { } u && now.MicrosecondsSinceUnixEpoch - u.LastCall.MicrosecondsSinceUnixEpoch < AiCooldownMicros)
@@ -84,29 +105,29 @@ public static partial class Module
             else tx.Db.AiUsage.Insert(new AiUsage { Identity = sender, LastCall = now, Calls = 1 });
             return true;
         });
-        if (!allowed) return Fail("Slow down a little — try again in a few seconds");
+    }
 
-        var payload = ChatPayload(model, system ?? "", prompt);
+    static AiResult Complete(ProcedureContext ctx, AiConfig cfg, string model, string payload)
+    {
+        var started = ctx.Timestamp;
         var result = ctx.Http.Send(new HttpRequest
         {
-            Uri = $"{NvidiaBase}/chat/completions",
+            Uri = $"{cfg.BaseUrl}/chat/completions",
             Method = SpacetimeDB.HttpMethod.Post,
             Headers = new()
             {
                 new HttpHeader("content-type", "application/json"),
-                new HttpHeader("accept", "application/json"),
-                new HttpHeader("authorization", $"Bearer {key}"),
+                new HttpHeader("authorization", $"Bearer {cfg.Key}"),
             },
             Body = HttpBody.FromString(payload),
         });
-
         return result.Match(
             response =>
             {
                 var body = response.Body.ToStringUtf8Lossy();
                 if (response.StatusCode != 200)
                 {
-                    Log.Warn($"AiAsk HTTP {response.StatusCode}: {Trim(body, 500)}");
+                    Log.Warn($"AI HTTP {response.StatusCode}: {Trim(body, 500)}");
                     return Fail($"AI service error (HTTP {response.StatusCode})");
                 }
                 using var doc = JsonDocument.Parse(body);
@@ -124,7 +145,6 @@ public static partial class Module
             w.WriteStartObject();
             w.WriteString("model", model);
             w.WriteNumber("temperature", 0.6);
-            w.WriteNumber("max_tokens", 600);
             w.WriteStartArray("messages");
             if (system.Length > 0)
             {
@@ -137,7 +157,7 @@ public static partial class Module
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
+    static AiResult NotConfigured() => Fail("AI is not configured on the server (AI_API_KEY missing)");
     static AiResult Fail(string message) => new() { Ok = false, Text = message, Model = "", LatencyMs = 0 };
-
     static string Trim(string s, int max) => s.Length <= max ? s : s[..max] + "…";
 }

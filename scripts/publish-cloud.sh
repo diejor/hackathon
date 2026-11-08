@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DB="${STDB_CLOUD_DB:-hackathon-1aa18263}"
-# Secrets (NVIDIA_API_KEY, ...) from the gitignored .env; the CLI sends declared env vars to the database.
+# Secrets (AI_API_KEY, ...) from the gitignored .env; the CLI sends declared env vars to the database.
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 export DOTNET_ROOT="$HOME/.dotnet" PATH="$HOME/.dotnet:$PATH"
 (cd spacetimedb && dotnet publish -c Release -v quiet -nologo)
