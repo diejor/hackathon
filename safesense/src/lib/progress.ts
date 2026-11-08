@@ -4,7 +4,8 @@
 //
 // Activity contract (docs/PLAN.md §5):
 //   fraudle      word_solved | word_missed   {word, tries}
-//   scam-or-not  answer_correct | answer_wrong {item, said, tactic}
+//   scam-or-not  answer_correct | answer_wrong {item, said, tactic, checked}
+//                run_done                    {correct, total}   (one per completed run; earns the point)
 //   long-con     round_done                  {scenario, tactics: string[], fooled}
 //   practice-text answer_correct | answer_wrong {template, tactic}   (a practice scam by iMessage: REPORT = caught)
 // Older/demo rows (seed_demo_activity) use friend-or-fraud / scam-wordle and a few other tactic slugs;
@@ -60,19 +61,22 @@ export function classify(e: ProgressEvent): Outcome {
 }
 
 /**
- * Points: one simple rule, only ever adding (wrong answers and missed words cost nothing).
- *   +10  Scam or Not? answer_correct (a caught practice text counts the same)
- *   +10  Fraudle word_solved
- *   +5   Long Con round_done (a whole story played)
- *   +2   any other finished round or attempt (a wrong answer, a missed word, another game's round)
+ * Points: +1 for every finished game, nothing else (no penalties, nothing extra for being right).
+ *   fraudle        word_solved | word_missed      each word finished
+ *   scam-or-not    run_done                       each completed run (the per-answer rows earn nothing;
+ *                                                 they feed the signs and the coaching)
+ *   long-con       round_done                     each finished Role Reversal story
+ *   practice-text  answer_correct | answer_wrong  each graded practice text
+ * Each game's end-of-game "+1" (points.tsx) shows right after it logs the row that earns it.
  * Points show how much someone has practiced. No ranks, no leaderboards.
  */
 export function pointsFor(e: ProgressEvent): number {
+  const game = normalizeGame(e.game)
+  if (game === 'scam-or-not') return e.kind === 'run_done' ? 1 : 0
   const o = classify(e)
-  if (o.type === 'answer') return o.correct ? 10 : 2
-  if (o.type === 'word') return o.solved ? 10 : 2
-  if (o.type === 'story') return 5
-  return 2
+  if (o.type === 'word' || o.type === 'story') return 1
+  if (o.type === 'answer' && game === 'practice-text') return 1
+  return 0
 }
 
 export const totalPoints = (events: ProgressEvent[]) => events.reduce((sum, e) => sum + pointsFor(e), 0)

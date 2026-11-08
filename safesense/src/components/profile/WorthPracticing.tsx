@@ -5,7 +5,7 @@ import { GENUINE_SIGN, signFor } from '../../content/signs'
 
 const GAME_NAME: Partial<Record<Route, string>> = {
   'scam-or-not': 'Scam or Not?',
-  'long-con': 'The Long Con',
+  'role-reversal': 'Role Reversal',
   fraudle: 'Fraudle',
 }
 

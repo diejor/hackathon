@@ -21,7 +21,8 @@ import {
   UserRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
+import { BackHome, Crumb, PageHead, TipHead } from '../components/Layout'
+import { EndOverlay } from '../points'
 import { InspectPanel } from '../components/scamornot/InspectPanel'
 import { Marked } from '../components/scamornot/Marked'
 import { ProgressTrack } from '../components/scamornot/ProgressTrack'
@@ -197,6 +198,9 @@ export default function ScamOrNot() {
   // A gentle "steady" run of right answers. It is acknowledged, never required.
   const [streak, setStreak] = useState(0)
   const [best, setBest] = useState(0)
+  const [score, setScore] = useState(0)
+  /** After the end overlay, the player can close it to review the last answer (design01). */
+  const [reviewing, setReviewing] = useState(false)
 
   const s = rounds[round]
   const revealed = guess !== null
@@ -217,15 +221,22 @@ export default function ScamOrNot() {
     setStreak(run)
     setBest((b) => Math.max(b, run))
     if (!right) setMissed((m) => [...m, s])
-    // The answer appears under the buttons, often below the fold on a laptop. If it doesn't fit,
-    // scroll so the buttons sit at the top with the answer under them.
+    if (right) setScore((n) => n + 1)
+    // The answer appears under the buttons. On a laptop it is often below the fold: if it doesn't fit,
+    // scroll so the buttons sit at the top with the answer under them. On phones the buttons are docked
+    // at the bottom of the screen, so bring the answer itself into view.
     requestAnimationFrame(() => {
-      const feedback = document.querySelector('.son-page .play > .feedback')
-      if (!feedback || feedback.getBoundingClientRect().bottom <= window.innerHeight) return
-      document.querySelector('.son-page .verdicts')?.scrollIntoView({
-        block: 'start',
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      })
+      const feedback = document.querySelector<HTMLElement>('.son-page .play > .feedback')
+      if (!feedback) return
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      if (window.matchMedia('(max-width: 720px)').matches) {
+        const dock = document.querySelector<HTMLElement>('.son-page .scam-dock')
+        const limit = window.innerHeight - (dock?.offsetHeight ?? 0)
+        if (feedback.getBoundingClientRect().top > limit - 80) feedback.scrollIntoView({ block: 'start', behavior })
+        return
+      }
+      if (feedback.getBoundingClientRect().bottom <= window.innerHeight) return
+      document.querySelector('.son-page .verdicts')?.scrollIntoView({ block: 'start', behavior })
     })
     void logActivity('scam-or-not', right ? 'answer_correct' : 'answer_wrong', {
       item: s.id,
@@ -233,7 +244,16 @@ export default function ScamOrNot() {
       tactic: s.tactic,
       checked,
     })
+    // The whole run is one finished game: +1 point (lib/progress.ts pointsFor), shown by the end overlay.
+    if (last) {
+      void logActivity('scam-or-not', 'run_done', {
+        correct: score + (right ? 1 : 0),
+        total: rounds.length,
+      })
+    }
   }
+
+  const ended = last && revealed && !reviewing && !done
 
   const next = () => {
     if (last) {
@@ -242,6 +262,7 @@ export default function ScamOrNot() {
     } else setRound(round + 1)
     setGuess(null)
     setOpened([])
+    setReviewing(false)
     window.scrollTo(0, 0)
   }
 
@@ -254,6 +275,8 @@ export default function ScamOrNot() {
     setCheckedTotal(0)
     setStreak(0)
     setBest(0)
+    setScore(0)
+    setReviewing(false)
     setDone(false)
     window.scrollTo(0, 0)
   }
@@ -270,16 +293,19 @@ export default function ScamOrNot() {
           <WrapUp missed={missed} checked={checkedTotal} best={best} onAgain={again} />
         ) : (
         <section className="game-shell" aria-label="Game">
-          <div className="section-top">
+          <div className="section-top" inert={ended}>
             <ProgressTrack total={rounds.length} done={round + (revealed ? 1 : 0)} current={round} />
           </div>
 
-          <div className="section play">
+          <div className="section play" inert={ended}>
             <SenderCard s={s} revealed={revealed} marks={marks} />
             <MessageCard s={s} marks={marks} />
 
             <InspectPanel checks={s.inspect} opened={opened} onCheck={check} answered={revealed} />
 
+            {/* Controls (design01): docked to the bottom of the screen on phones; on wider screens the
+                wrapper is display: contents and CSS order keeps verdicts → feedback → next. */}
+            <div className="dock scam-dock">
             <div className="verdicts" role="radiogroup" aria-label="Is this a scam?">
               {(['scam', 'safe'] as Guess[]).map((g) => {
                 const Icon = g === 'scam' ? ShieldAlert : ShieldCheck
@@ -299,6 +325,10 @@ export default function ScamOrNot() {
                   </button>
                 )
               })}
+            </div>
+            <button className="btn btn-primary btn-block next-round" onClick={next} disabled={!revealed}>
+              <ArrowRight size={20} /> {last ? 'Finish' : 'Next message'}
+            </button>
             </div>
 
             {revealed && (
@@ -350,18 +380,37 @@ export default function ScamOrNot() {
             )}
           </div>
 
-          <div className="section">
-            <button className="btn btn-primary btn-block" onClick={next} disabled={!revealed}>
-              <ArrowRight size={20} /> {last ? 'Finish' : 'Next message'}
-            </button>
-          </div>
+          {ended && (
+            <EndOverlay label="All messages done">
+              <div className="result-box">
+                <p className="clue-label">All messages done</p>
+                <h2 className="result-word">
+                  {score} of {rounds.length}
+                </h2>
+                <p className="result-def">
+                  messages judged correctly.{' '}
+                  {score === rounds.length
+                    ? 'A perfect run. You know what to look for.'
+                    : 'Every one you check makes the next scam easier to spot.'}
+                </p>
+                <button autoFocus className="btn btn-primary btn-block" onClick={next}>
+                  See what to remember <ArrowRight size={20} />
+                </button>
+                <button className="btn btn-secondary btn-block" style={{ marginTop: 10 }} onClick={() => setReviewing(true)}>
+                  Review last answer
+                </button>
+                <button className="btn btn-secondary btn-block" style={{ marginTop: 10 }} onClick={again}>
+                  <RotateCcw size={20} /> Play again
+                </button>
+              </div>
+            </EndOverlay>
+          )}
         </section>
         )}
 
         <aside className="stack" style={{ gap: 16 }}>
           <div className="panel">
-            <Lightbulb size={26} strokeWidth={1.4} className="icon-muted" />
-            <h2 className="h3">Signs to look for</h2>
+            <TipHead icon={Lightbulb}>Signs to look for</TipHead>
             <p>
               Scams often rush you, ask for money or personal details, or come from someone you can’t check. A
               real company won’t mind if you hang up and contact them using details you already trust.
@@ -369,9 +418,7 @@ export default function ScamOrNot() {
             <p>Not sure? Use “Check it” to look closer at the sender, the link or the wording before you decide.</p>
             <p className="son-credit">The “Check it” idea comes from Friend or Fraud? by Krishna (SafeSense team).</p>
           </div>
-          <a className="btn btn-secondary btn-block" href={href('home')}>
-            Back to home
-          </a>
+          <BackHome />
         </aside>
       </div>
     </div>

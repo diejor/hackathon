@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 
-export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'long-con' | 'chat' | 'profile' | 'about' | 'phone-call'
+export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'role-reversal' | 'chat' | 'profile' | 'about' | 'phone-call'
 
-const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'long-con', 'chat', 'profile', 'about', 'phone-call']
+const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'role-reversal', 'chat', 'profile', 'about', 'phone-call']
+
+/** Old links keep working: The Long Con was renamed Role Reversal. */
+const ALIASES: Record<string, Route> = { 'long-con': 'role-reversal' }
 
 /** The browser tab title for each page, so screen readers and tab lists say where you are. */
 const TITLES: Record<Route, string> = {
   home: 'SafeSense · Practice spotting scams',
   fraudle: 'Fraudle · SafeSense',
   'scam-or-not': 'Scam or Not? · SafeSense',
-  'long-con': 'The Long Con · SafeSense',
+  'role-reversal': 'Role Reversal · SafeSense',
   chat: 'Ask SafeSense · SafeSense',
   profile: 'Your progress · SafeSense',
   about: 'About SafeSense',
@@ -19,7 +22,8 @@ const TITLES: Record<Route, string> = {
 export const href = (route: Route) => (route === 'home' ? '#/' : `#/${route}`)
 
 function parse(hash: string): Route {
-  const slug = hash.replace(/^#\/?/, '') as Route
+  const raw = hash.replace(/^#\/?/, '')
+  const slug = (ALIASES[raw] ?? raw) as Route
   return ROUTES.includes(slug) ? slug : 'home'
 }
 

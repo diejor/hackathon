@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { MessageCircle } from 'lucide-react'
 import type { BotSnapshot } from '../../lib/useBot'
 import { ASSISTANT, THE_ASSISTANT } from './copy'
 import { Message } from './Message'
@@ -53,12 +54,13 @@ export function Conversation({ bot }: { bot: BotSnapshot }) {
       // Scrollable regions must be reachable by keyboard.
       tabIndex={empty ? undefined : 0}
     >
+      {/* The designer's empty thread (design01), carrying the assistant's greeting. */}
       {empty && status !== 'loading' && status !== 'connecting' && (
-        <div className="bubble chat-bubble chat-greeting">
-          <span className="meta">{ASSISTANT}</span>
+        <div className="empty-thread chat-empty">
+          <MessageCircle size={32} strokeWidth={1.3} className="icon-muted" aria-hidden="true" />
           <p className="chat-text">
             Hello, I’m the SafeSense assistant. Tell me about a message, call or email that worries you, or add a
-            picture of it.
+            screenshot or photo of it.
           </p>
         </div>
       )}

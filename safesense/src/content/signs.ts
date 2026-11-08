@@ -1,5 +1,5 @@
 // "Signs you can spot" on the profile page: every tactic slug the games log, in plain words.
-// Scam or Not? logs the message bank's slugs (content/scamOrNot.ts); The Long Con logs its move ids
+// Scam or Not? logs the message bank's slugs (content/scamOrNot.ts); Role Reversal logs its move ids
 // (content/longCon.ts). `tell` is the tell-tale sign, reused from the games so the wording stays the same.
 import type { Route } from '../router'
 import { REMEMBER } from './scamOrNot'
@@ -30,7 +30,7 @@ const move = (slug: TacticId, line: string): Sign => ({
   name: TACTICS[slug].name,
   line,
   tell: TACTICS[slug].spot,
-  train: 'long-con',
+  train: 'role-reversal',
 })
 
 /** Kinds of scam message (Scam or Not?). */
@@ -53,7 +53,7 @@ export const GENUINE_SIGN: Sign = message(
   'Knowing when a message is just information and asks for nothing.'
 )
 
-/** Moves seen from the scammer’s side (The Long Con). */
+/** Moves seen from the scammer’s side (Role Reversal). */
 export const MOVE_SIGNS: Sign[] = [
   move('impersonation', 'Someone you love, on a “new number”.'),
   move('authority', 'Using a bank’s name to sound official.'),

@@ -22,7 +22,7 @@ export default function About() {
               <li>
                 <Gamepad2 size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
-                  <strong>Three short games</strong> to practice with: Fraudle, Scam or Not? and The Long Con. The
+                  <strong>Three short games</strong> to practice with: Fraudle, Scam or Not? and Role Reversal. The
                   people and companies in them are made up. No messages or money are ever sent.
                 </span>
               </li>
@@ -37,8 +37,8 @@ export default function About() {
               <li>
                 <HeartHandshake size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
-                  <strong>Points</strong> are a gentle tally of how much you’ve practiced. There’s no race and no
-                  timer.
+                  <strong>Points</strong> are a gentle tally of how much you’ve practiced: 1 point for every game
+                  you finish. There’s no race and no timer.
                 </span>
               </li>
             </ul>

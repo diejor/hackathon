@@ -243,60 +243,12 @@
   margin-top: 20px;
   padding-top: 20px;
 }
-.composer label {
-  margin: 0 0 10px;
-}
-/* Send is the main action; speaking and adding a picture sit under it as secondary buttons. */
-.chat-send {
-  margin-top: 14px;
-}
-.chat-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-}
-.chat-tools .btn {
-  flex: 1 1 auto;
-  gap: 8px;
-  padding: 0 16px;
-  white-space: nowrap; /* wrap the row, not the label */
-}
-.btn.chat-listening,
-.btn.chat-listening:hover {
-  background: #8b3a2b;
-  border-color: #8b3a2b;
-  color: #fff;
-}
 .composer .mic-hint {
   margin-top: 10px;
 }
-/* Wide screens: Send, Speak and Add a picture share one row under the text box, so the whole composer
-   (and the example chips) sit on a laptop's first screen. */
-@media (min-width: 961px) {
-  .composer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    column-gap: 12px;
-  }
-  .composer > * {
-    grid-column: 1 / -1;
-  }
-  .composer > .chat-send {
-    grid-column: 1;
-  }
-  .composer > .chat-tools {
-    display: contents;
-  }
-  .chat-tools .btn {
-    margin-top: 14px;
-  }
-  .composer > .chat-preview {
-    justify-self: start;
-  }
-  .chat-page .composer textarea {
-    min-height: 96px;
-  }
+/* The picture preview sits above the composer row (design01). */
+.composer > .chat-preview {
+  margin: 0 0 12px;
 }
 
 /* ---------- Header of the card: name + the one AI disclosure ---------- */
@@ -393,7 +345,7 @@
    three lines; it stops growing well before it pushes Send off the screen. */
 .chat-page .composer textarea {
   field-sizing: content;
-  max-height: min(40vh, 320px);
+  max-height: min(40vh, 200px);
 }
 
 /* The empty greeting is short: never give it an inner scrollbar (bigger text sizes included). */
@@ -421,9 +373,6 @@
   .chat-bubble.chat-answer,
   .chat-bubble.chat-greeting {
     max-width: 100%;
-  }
-  .chat-page .composer textarea {
-    min-height: 96px;
   }
 }
 
@@ -463,4 +412,38 @@
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   letter-spacing: 0.08em;
   white-space: nowrap;
+}
+
+/* ---------- design01: the card follows the side panel on desktop (Chat.tsx sets --chat-base) ---------- */
+@media (min-width: 961px) {
+  .chat-card .chat-scroll {
+    max-height: none;
+  }
+}
+.chat-empty .chat-text {
+  max-width: 440px;
+}
+/* Our side panel is taller than the designer's (Text SafeSense, Forget me), so following it exactly pushed
+   the text box below the first screen on a 1366x768 laptop. Follow it only up to what fits on screen. */
+@media (min-width: 961px) {
+  .chat-card {
+    min-height: min(var(--chat-base, 0px), calc(100vh - 340px));
+    max-height: max(560px, calc(100vh - 140px));
+  }
+  .chat-card .empty-thread {
+    padding: 24px 16px;
+  }
+}
+@media (min-width: 961px) {
+  /* Never squeeze the greeting into a scroll box; a running conversation keeps a readable height. */
+  .chat-card .chat-scroll.chat-scroll-empty {
+    flex: none;
+  }
+  .chat-card .chat-scroll:not(.chat-scroll-empty) {
+    min-height: 200px;
+  }
+}
+/* Let the one-line box grow with a pasted or handed-over message (design01 fixes its height). */
+.chat-page .composer textarea {
+  height: auto;
 }

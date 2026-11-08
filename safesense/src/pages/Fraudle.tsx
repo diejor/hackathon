@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { ArrowLeftRight, ArrowRight, Check, Lightbulb, Minus, RotateCcw, Sprout } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
+import { ArrowLeftRight, ArrowRight, Check, Delete, Eye, Lightbulb, Minus, RotateCcw, Shuffle, Sprout } from 'lucide-react'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
+import { EndOverlay } from '../points'
 import { href } from '../router'
 import { logActivity } from '../lib/stdb'
 import { PUZZLES, type Puzzle } from '../content/fraudle'
 import '../fraudle.css'
 
-// Words, clues and lessons live in ../content/fraudle.ts.
+// Words, clues and lessons live in ../content/fraudle.ts. Look and layout follow the designer's design01
+// (clue behind a cover, key press feedback, end-of-game overlay with the +1 point); the reveal, lessons,
+// random order and activity logging are ours.
 const TRIES = 6
 // A to Z on purpose: easier to scan for people who don't type on a QWERTY keyboard every day.
 const ROWS = ['ABCDEFG', 'HIJKLMN', 'OPQRST', 'UVWXYZ']
-const NUMBER_WORDS = ['', '', '', '', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
 
 type Mark = 'correct' | 'present' | 'absent'
 
@@ -112,7 +114,6 @@ function Board({
   const sectionRef = useRef<HTMLElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
   const activeRowRef = useRef<HTMLDivElement>(null)
-  const lessonRef = useRef<HTMLParagraphElement>(null)
   // True while the last guess's tiles are turning over. Typing waits; the keyboard, the message
   // and the lesson only change once every tile has shown its mark.
   const [revealing, setRevealing] = useState(false)
@@ -150,8 +151,33 @@ function Board({
     }),
   )
 
+  // Clue reveal (design01): 'hidden' → 'pressed' (button feedback) → 'fading' (cover fades out) → 'shown'
+  const [clue, setClue] = useState<'hidden' | 'pressed' | 'fading' | 'shown'>('hidden')
+  const clueTimer = useRef<number>(undefined)
+  const revealClue = () => {
+    if (clue !== 'hidden') return
+    if (reducedMotion()) return setClue('shown')
+    setClue('pressed')
+    clueTimer.current = window.setTimeout(() => {
+      setClue('fading')
+      clueTimer.current = window.setTimeout(() => setClue('shown'), 260)
+    }, 320)
+  }
+  useEffect(() => () => window.clearTimeout(clueTimer.current), [])
+
+  // Briefly highlight a key when it is pressed, by tap, click or physical keyboard (design01).
+  const [flash, setFlash] = useState<string | null>(null)
+  const flashTimer = useRef<number>(undefined)
+  const flashKey = (ch: string) => {
+    setFlash(ch)
+    window.clearTimeout(flashTimer.current)
+    flashTimer.current = window.setTimeout(() => setFlash(null), 180)
+  }
+  useEffect(() => () => window.clearTimeout(flashTimer.current), [])
+
   const locked = over || revealing
   const type = (ch: string) => {
+    flashKey(ch)
     if (locked) return
     setCurrent((c) => (c.length >= length ? c : c + ch))
   }
@@ -175,7 +201,7 @@ function Board({
     setGuesses(next)
     setCurrent('')
 
-    // Logged straight away (points come from activity); the words on screen wait for the reveal.
+    // Logged right away (points come from activity); the words on screen wait for the reveal.
     let result: boolean | null = null
     let text: string
     if (guess === answer) {
@@ -257,11 +283,6 @@ function Board({
     })
   }, [typing, guesses.length, over])
 
-  // When the word is done the Check button goes away, so move focus to the lesson.
-  useEffect(() => {
-    if (over) lessonRef.current?.focus()
-  }, [over])
-
   // Played rows, the row being typed, then the tries left as thin placeholders.
   const rows = Array.from({ length: TRIES }, (_, r): { letters: string; marks: Mark[]; kind: RowKind } => {
     if (r < guesses.length)
@@ -275,23 +296,38 @@ function Board({
   })
 
   return (
-    <section className={`card fraudle-card${over ? ' is-over' : ''}`} ref={sectionRef} aria-label="Fraudle game">
+    <section className="card board-card fraudle-card" ref={sectionRef} aria-label="Fraudle game">
+      <div className="game-top">
+        <div className="guess-tracker" role="img" aria-label={`${guesses.length} of ${TRIES} tries used`}>
+          {Array.from({ length: TRIES }, (_, i) => (
+            <span key={i} className={`pip ${i < guesses.length ? 'used' : ''}`} />
+          ))}
+        </div>
+      </div>
+
       <div className="clue-strip">
         <span className="clue-icon" aria-hidden="true">
           <Lightbulb size={22} strokeWidth={1.5} />
         </span>
-        <div className="clue-body">
-          <div className="clue-head">
-            <span className="clue-label">Clue</span>
-            <div className="guess-tracker" role="img" aria-label={`${guesses.length} of ${TRIES} tries used`}>
-              {Array.from({ length: TRIES }, (_, i) => (
-                <span key={i} className={`pip ${i < guesses.length ? 'used' : ''}`} />
-              ))}
-            </div>
-          </div>
+        <div className="clue-body" aria-hidden={clue !== 'shown'}>
+          <span className="clue-label">Clue</span>
           <p className="clue-text">{puzzle.clue}</p>
-          <p className="clue-meta">One word · {NUMBER_WORDS[length]} letters</p>
         </div>
+        {clue !== 'shown' && (
+          <div className={`clue-cover ${clue === 'fading' ? 'fading' : ''}`}>
+            <button
+              className={`clue-eye ${clue !== 'hidden' ? 'pressed' : ''}`}
+              onClick={revealClue}
+              aria-label="Reveal the clue"
+              title="Reveal the clue"
+            >
+              <Eye size={24} strokeWidth={1.75} />
+            </button>
+          </div>
+        )}
+        <span className="sr-only" aria-live="polite">
+          {clue === 'shown' ? `Clue: ${puzzle.clue}` : ''}
+        </span>
       </div>
 
       <div className="board" role="grid" aria-label="Your guesses" style={{ '--n': length } as CSSProperties}>
@@ -339,18 +375,55 @@ function Board({
         })}
       </div>
 
-      {/* One dock for the status line and either the letters (sticky while playing) or the lesson.
-          The status line stays mounted so the result is announced. */}
-      <div className={`fraudle-dock${over ? ' is-over' : ''}`} ref={dockRef}>
+      {/* The status line, the letters and the buttons. On phones this dock sticks to the bottom of the
+          screen while the board scrolls. The status line stays mounted so the result is announced. */}
+      <div className="fraudle-dock" ref={dockRef} inert={over}>
         <p className="status-line" role="status">
           {message}
         </p>
-        {over ? (
-          <div className="fraudle-lesson">
-            <p className="feedback-title" tabIndex={-1} ref={lessonRef}>
-              <Lightbulb size={20} strokeWidth={1.5} aria-hidden="true" /> Worth remembering
-            </p>
-            <p>{puzzle.lesson}</p>
+        <div className="keyboard" role="group" aria-label="Letters">
+          {ROWS.map((row) => (
+            <div className="key-row" key={row}>
+              {row.split('').map((ch) => {
+                const mark = keyMarks[ch]
+                return (
+                  <button
+                    key={ch}
+                    className={`key ${mark ?? ''} ${flash === ch ? 'pressed' : ''}`}
+                    onClick={() => type(ch)}
+                    aria-label={mark ? `${ch}, ${MARK_NAME[mark]}` : ch}
+                  >
+                    {ch}
+                    {mark && (
+                      <span className="mark" aria-hidden="true">
+                        <MarkIcon mark={mark} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="two-btns">
+          <button className="btn btn-secondary" onClick={erase} aria-label="Delete last letter" title="Delete last letter">
+            <Delete size={24} strokeWidth={1.75} />
+          </button>
+          <button className="btn btn-primary" onClick={check}>
+            Check word
+          </button>
+        </div>
+      </div>
+
+      {/* design01's end of game: the +1 point (logged as word_solved / word_missed), then the result. */}
+      {over && (
+        <EndOverlay label={won ? 'Word solved' : 'Game over'}>
+          <div className="result-box fraudle-result">
+            <p className="clue-label">{won ? 'Nice catch, you got it' : 'The word was'}</p>
+            <h2 id="result-word" className="result-word">
+              {answer}
+            </h2>
+            <p className="result-def">{puzzle.lesson}</p>
             {won && (
               <p className="fraudle-session-note">
                 Words solved this visit: {session.solved}
@@ -362,9 +435,9 @@ function Board({
                 That was the last of the {PUZZLES.length} words. Start again to play them all in a new order.
               </p>
             )}
-            <button className="btn btn-primary btn-block" onClick={onNext}>
-              {isLast ? <RotateCcw size={20} aria-hidden="true" /> : <ArrowRight size={20} aria-hidden="true" />}
+            <button autoFocus className="btn btn-primary btn-block" onClick={onNext}>
               {isLast ? 'Start again' : 'Next word'}
+              {isLast ? <RotateCcw size={20} aria-hidden="true" /> : <ArrowRight size={20} strokeWidth={1.75} aria-hidden="true" />}
             </button>
             <p className="see-progress-row">
               <a className="see-progress" href={href('profile')}>
@@ -372,43 +445,8 @@ function Board({
               </a>
             </p>
           </div>
-        ) : (
-          <>
-            <div className="keyboard" role="group" aria-label="Letters">
-              {ROWS.map((row) => (
-                <div className="key-row" key={row}>
-                  {row.split('').map((ch) => {
-                    const mark = keyMarks[ch]
-                    return (
-                      <button
-                        key={ch}
-                        className={`key ${mark ?? ''}`}
-                        onClick={() => type(ch)}
-                        aria-label={mark ? `${ch}, ${MARK_NAME[mark]}` : ch}
-                      >
-                        {ch}
-                        {mark && (
-                          <span className="mark" aria-hidden="true">
-                            <MarkIcon mark={mark} />
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-            <div className="two-btns">
-              <button className="btn btn-secondary" onClick={erase}>
-                Delete
-              </button>
-              <button className="btn btn-primary" onClick={check}>
-                Check word
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+        </EndOverlay>
+      )}
     </section>
   )
 }
@@ -436,7 +474,7 @@ export default function Fraudle() {
       <PageHead
         crumb={<Crumb label="Fraudle" />}
         title="Fraudle"
-        lead="Guess the safety word from the clue. Type, or tap the letters (in A to Z order), then Check word. Six tries."
+        lead="Guess the safety word. Reveal the clue, then type or tap the letters (in A to Z order) and select Check word. You have six tries."
       />
       <div className="page-grid">
         <div className="stack">
@@ -481,13 +519,11 @@ export default function Fraudle() {
               </>
             ) : (
               <>
-                <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" /> Skip to next word
+                <Shuffle size={18} strokeWidth={1.75} aria-hidden="true" /> Try a different word
               </>
             )}
           </button>
-          <a className="btn btn-secondary btn-block" href={href('home')}>
-            Back to home
-          </a>
+          <BackHome />
           <p className="fraudle-credit">Inspired by Scam Wordle by Krishna (SafeSense team).</p>
         </div>
       </div>
