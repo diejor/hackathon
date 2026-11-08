@@ -248,6 +248,13 @@
   white-space: nowrap;
 }
 
+/* An app notification's card carries the class "app", which is also the page shell's class
+   (min-height: 100vh). Undo that here, or the card is a screen tall with empty space. */
+.message-card.app {
+  display: block;
+  min-height: 0;
+}
+
 /* After answering, the buttons scroll to the top of the screen (when the answer would not fit). */
 .son-page .verdicts {
   scroll-margin-top: 16px;
