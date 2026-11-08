@@ -1,3 +1,11 @@
+# SafeSense
+
+Scam training that knows you: three short games build your scam profile, you practise the scam that
+would most likely get you as a safe drill text on your own phone, then talk it through with a coach.
+The app lives in [`safe-signal/`](safe-signal/README.md) (Next.js). Its coach at `/coach` is the Help Bot
+from this repo's Security Arcade (`web/src/bot` on the SpacetimeDB module in `spacetimedb/`), which
+serves as the coach backend.
+
 # Security Arcade
 
 Phone-first multiplayer security games (T-Mobile security hackathon). A web app (Vite + TypeScript,

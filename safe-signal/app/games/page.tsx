@@ -44,15 +44,18 @@ export default function Games() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <main className="mx-auto max-w-md px-4 pb-6 pt-4">
-        <header className="mb-4 flex items-center justify-between">
-          <Link href="/" className="text-base font-bold text-indigo-700">SafeSense</Link>
+        {/* The site header carries the brand; this row is only the 3-game progress. */}
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-600">
+            {step.kind === 'intro' ? 'Training · 3 games' : step.kind === 'done' ? 'Training · all done' : `Training · game ${gameIndex + 1} of 3`}
+          </p>
           <ol className="flex items-center gap-1.5" aria-label="Training progress">
             {GAMES.map((g, i) => (
               <li key={g.id} title={g.name}
                 className={cx('h-2 w-8 rounded-full', i < gameIndex || (step.kind === 'between' && i === gameIndex) ? 'bg-indigo-600' : i === gameIndex ? 'bg-indigo-300' : 'bg-slate-200')} />
             ))}
           </ol>
-        </header>
+        </div>
 
         {step.kind === 'intro' && (
           <>
@@ -112,7 +115,7 @@ function Complete({ results }: { results: Partial<Record<GameId, GameSummary>> }
   return (
     <div data-testid="complete">
       <div className="rounded-2xl bg-indigo-600 p-6 text-white shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wider text-indigo-200">SafeSense</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-indigo-200">All 3 games done</p>
         <h1 className="mt-1 text-3xl font-bold">Training complete</h1>
         <p className="mt-2 text-indigo-100">You've seen 12 messages and built 2 scams. Next, see which scam would most likely get you.</p>
       </div>

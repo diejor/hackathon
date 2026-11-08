@@ -9,7 +9,7 @@ import { CROWD_SIZE } from '../../lib/crowd';
 export const cx = (...xs: (string | false | null | undefined)[]) => xs.filter(Boolean).join(' ');
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cx('rounded-2xl bg-white p-5 shadow-sm', className)}>{children}</section>;
+  return <section className={cx('rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/60', className)}>{children}</section>;
 }
 
 export function Button({ children, onClick, disabled, variant = 'primary', className, type = 'button' }: {
@@ -32,7 +32,8 @@ export function Button({ children, onClick, disabled, variant = 'primary', class
 
 /** Pinned primary action at the bottom of the column (thumb reach on phones). */
 export function ActionBar({ children }: { children: ReactNode }) {
-  return <div className="sticky bottom-0 z-10 -mx-4 mt-4 space-y-2 bg-gradient-to-t from-slate-50 via-slate-50 to-slate-50/0 px-4 pb-5 pt-6">{children}</div>;
+  // The fade above the buttons is decoration: let taps fall through it to the content underneath.
+  return <div className="pointer-events-none sticky bottom-0 z-10 -mx-4 mt-4 space-y-2 bg-gradient-to-t from-slate-50 via-slate-50 to-slate-50/0 px-4 pb-5 pt-6 [&>*]:pointer-events-auto">{children}</div>;
 }
 
 export function Progress({ game, round, rounds, score, scoreLabel = 'pts', revealed = false }: { game: string; round: number; rounds: number; score: number; scoreLabel?: string; revealed?: boolean }) {
