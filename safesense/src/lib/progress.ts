@@ -6,6 +6,7 @@
 //   fraudle      word_solved | word_missed   {word, tries}
 //   scam-or-not  answer_correct | answer_wrong {item, said, tactic}
 //   long-con     round_done                  {scenario, tactics: string[], fooled}
+//   practice-text answer_correct | answer_wrong {template, tactic}   (a practice scam by iMessage: REPORT = caught)
 // Older/demo rows (seed_demo_activity) use friend-or-fraud / scam-wordle and a few other tactic slugs;
 // they are mapped onto the same shapes below.
 
@@ -43,7 +44,7 @@ type Outcome =
 export function classify(e: ProgressEvent): Outcome {
   const game = normalizeGame(e.game)
   const d = parseDetails(e.details)
-  if (game === 'scam-or-not' && (e.kind === 'answer_correct' || e.kind === 'answer_wrong'))
+  if ((game === 'scam-or-not' || game === 'practice-text') && (e.kind === 'answer_correct' || e.kind === 'answer_wrong'))
     return { type: 'answer', correct: e.kind === 'answer_correct', tactic: normalizeTactic(str(d.tactic)) }
   if (game === 'fraudle') {
     const word = str(d.word).toUpperCase()
@@ -60,7 +61,7 @@ export function classify(e: ProgressEvent): Outcome {
 
 /**
  * Points: one simple rule, only ever adding (wrong answers and missed words cost nothing).
- *   +10  Scam or Not? answer_correct
+ *   +10  Scam or Not? answer_correct (a caught practice text counts the same)
  *   +10  Fraudle word_solved
  *   +5   Long Con round_done (a whole story played)
  *   +2   any other finished round or attempt (a wrong answer, a missed word, another game's round)

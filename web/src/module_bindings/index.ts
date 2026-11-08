@@ -41,6 +41,7 @@ import ForgetMeReducer from "./forget_me_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import LogActivityReducer from "./log_activity_reducer";
+import RequestPracticeTextReducer from "./request_practice_text_reducer";
 import ReturnToLobbyReducer from "./return_to_lobby_reducer";
 import SeedDemoActivityReducer from "./seed_demo_activity_reducer";
 import SetNameReducer from "./set_name_reducer";
@@ -59,6 +60,7 @@ import MyChannelLinksRow from "./my_channel_links_table";
 import MyFactsRow from "./my_facts_table";
 import MyLinkCodeRow from "./my_link_code_table";
 import MyMessagesRow from "./my_messages_table";
+import MyPracticeTextsRow from "./my_practice_texts_table";
 import MyRoomRow from "./my_room_table";
 import MyRoomMembersRow from "./my_room_members_table";
 
@@ -101,6 +103,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyMessagesRow),
+  myPracticeTexts: __table({
+    name: 'my_practice_texts',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyPracticeTextsRow),
   myRoom: __table({
     name: 'my_room',
     indexes: [
@@ -126,6 +135,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("log_activity", LogActivityReducer),
+  __reducerSchema("request_practice_text", RequestPracticeTextReducer),
   __reducerSchema("return_to_lobby", ReturnToLobbyReducer),
   __reducerSchema("seed_demo_activity", SeedDemoActivityReducer),
   __reducerSchema("set_name", SetNameReducer),

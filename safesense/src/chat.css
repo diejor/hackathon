@@ -448,6 +448,17 @@
 .text-safesense-link .btn {
   margin-top: 12px;
 }
+.text-safesense-practice {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.text-safesense-practice > p:first-child {
+  margin-top: 0;
+}
+.text-safesense-practice + .btn {
+  margin-top: 16px;
+}
 .text-safesense-code {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   letter-spacing: 0.08em;
