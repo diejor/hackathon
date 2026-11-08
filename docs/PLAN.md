@@ -225,7 +225,12 @@ Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tool
 
 ### B10 — Profile: progress, not points · ~00:45–02:15
 
-- **Decided (Diego, ~00:40):** no points, levels or sign-in. Progress is saved on this device (SpacetimeDB identity); a nickname is optional.
+- **Decided (Diego, ~00:40; updated ~01:00):**
+  - **Simple points** from persisted activity: +10 for a correct answer or solved word, +5 per Long Con story, no penalties. Shown quietly on the profile and as a header chip.
+  - **Points will unlock games.** A teammate is designing the unlock UI in their design copy; we provide the points total.
+  - **No accounts.** A **recovery key** (show and copy the device's SpacetimeDB token; paste it on another device) keeps progress across devices.
+  - **SpacetimeAuth sign-in** goes on the Devpost "What's next" list: about 2–3 h, and signing in creates a new identity, which would need a progress merge. Little benefit for judges.
+  - Nickname optional, local for now.
 - **Page `#/profile`**, linked from the header and from the games' wrap-ups. It shows:
   - **"Signs you can spot":** tactics caught in the games, a collection that fills up;
   - **"Worth practising":** the top 2–3 missed tactics in plain words, each linking to a game (Krishna's trait idea applied personally);
