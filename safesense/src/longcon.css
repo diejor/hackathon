@@ -737,7 +737,12 @@
   gap: 4px;
 }
 .rr-trust .msg-bar {
+  flex: none;
   width: 100%;
+  height: 8px;
+}
+.rr-card .con-label {
+  white-space: nowrap;
 }
 .rr-trust.is-low .msg-bar > span {
   background: var(--scam-dark);
@@ -817,7 +822,10 @@
 .rr-result .result-def {
   text-align: left;
 }
-/* A long ending can be taller than a phone screen: let the overlay scroll. */
-.end-overlay {
-  overflow-y: auto;
+/* A long ending can be taller than a phone screen: let the overlay scroll (phones only: there it is fixed to
+   the screen; on wider screens it must not scroll, so its panel can stay in view with position: sticky). */
+@media (max-width: 720px) {
+  .end-overlay {
+    overflow-y: auto;
+  }
 }

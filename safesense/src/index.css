@@ -2481,3 +2481,20 @@ a.points-badge:hover {
 .name-dialog .text-input {
   color: var(--text-body);
 }
+/* A game card can be taller than the screen (Scam or Not?, Role Reversal): keep the +1 award and the end
+   panel in view wherever the page is scrolled, instead of at the middle of the card. */
+.end-overlay > .award,
+.end-overlay > .end-panel {
+  position: sticky;
+  top: 24px;
+  bottom: 24px;
+}
+/* design01 meant the overlay to cover the whole screen on phones, but its base rule (position: absolute)
+   comes later in this file and won. Restate it here, after the base rule. */
+@media (max-width: 720px) {
+  .end-overlay {
+    position: fixed;
+    z-index: 50;
+    border-radius: 0;
+  }
+}

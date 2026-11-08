@@ -423,3 +423,27 @@
 .chat-empty .chat-text {
   max-width: 440px;
 }
+/* Our side panel is taller than the designer's (Text SafeSense, Forget me), so following it exactly pushed
+   the text box below the first screen on a 1366x768 laptop. Follow it only up to what fits on screen. */
+@media (min-width: 961px) {
+  .chat-card {
+    min-height: min(var(--chat-base, 0px), calc(100vh - 340px));
+    max-height: max(560px, calc(100vh - 140px));
+  }
+  .chat-card .empty-thread {
+    padding: 24px 16px;
+  }
+}
+@media (min-width: 961px) {
+  /* Never squeeze the greeting into a scroll box; a running conversation keeps a readable height. */
+  .chat-card .chat-scroll.chat-scroll-empty {
+    flex: none;
+  }
+  .chat-card .chat-scroll:not(.chat-scroll-empty) {
+    min-height: 200px;
+  }
+}
+/* Let the one-line box grow with a pasted or handed-over message (design01 fixes its height). */
+.chat-page .composer textarea {
+  height: auto;
+}

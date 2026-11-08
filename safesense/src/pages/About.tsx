@@ -37,8 +37,8 @@ export default function About() {
               <li>
                 <HeartHandshake size={22} strokeWidth={1.5} aria-hidden="true" />
                 <span>
-                  <strong>Points</strong> are a gentle tally of how much you’ve practiced. There’s no race and no
-                  timer.
+                  <strong>Points</strong> are a gentle tally of how much you’ve practiced: 1 point for every game
+                  you finish. There’s no race and no timer.
                 </span>
               </li>
             </ul>

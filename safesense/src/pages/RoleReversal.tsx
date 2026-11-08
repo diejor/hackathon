@@ -24,7 +24,9 @@ function Thread({ s }: { s: CampaignState }) {
   const scene = s.done ? s.scene + 1 : s.scene
 
   // After a choice, bring its first new line into view if it landed low on the screen.
+  // (Not on the story's first lines: the brief and the "how it's going" bar above them stay in view.)
   useEffect(() => {
+    if (s.firstNew === 0) return
     const el = refs.current.get(s.firstNew)
     if (!el) return
     if (el.getBoundingClientRect().top > window.innerHeight * 0.55)

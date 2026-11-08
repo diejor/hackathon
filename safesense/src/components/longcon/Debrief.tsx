@@ -78,7 +78,7 @@ export function Debrief({
           <MessageCircle size={20} /> Ask SafeSense about a message
         </a>
         <button className="btn btn-secondary btn-block" onClick={onAgain}>
-          <RotateCcw size={20} /> Play this campaign again
+          <RotateCcw size={20} /> Play this story again
         </button>
         <button className="btn btn-secondary btn-block" onClick={onOther}>
           <ArrowRight size={20} /> Pick another story
