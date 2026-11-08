@@ -16,8 +16,9 @@ import {
   UserRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
-import { href } from '../router'
+import { BackHome, Crumb, PageHead, TipHead } from '../components/Layout'
+import { EndOverlay } from '../points'
+import { addPoints } from '../storage'
 
 type Guess = 'scam' | 'safe'
 type Kind = 'text' | 'email' | 'social' | 'app'
@@ -211,15 +212,29 @@ function MessageCard({ s }: { s: Scenario }) {
 export default function ScamOrNot() {
   const [round, setRound] = useState(0)
   const [guess, setGuess] = useState<Guess | null>(null)
+  const [score, setScore] = useState(0)
+  /** After the end screen, the player can close it to review the last answer. */
+  const [reviewing, setReviewing] = useState(false)
 
   const s = SCENARIOS[round]
   const revealed = guess !== null
   const correct = guess === s.answer
   const last = round === SCENARIOS.length - 1
 
+  const answer = (g: Guess) => {
+    if (revealed) return
+    setGuess(g)
+    if (g === s.answer) setScore(score + 1)
+    if (last) addPoints(1)
+  }
+
+  const ended = last && revealed && !reviewing
+
   const next = () => {
     setRound(last ? 0 : round + 1)
     setGuess(null)
+    setReviewing(false)
+    if (last) setScore(0)
   }
 
   return (
@@ -231,7 +246,7 @@ export default function ScamOrNot() {
       />
       <div className="page-grid">
         <section className="game-shell" aria-label="Game">
-          <div className="game-top section-top">
+          <div className="game-top section-top" inert={ended}>
             <div
               className="guess-tracker"
               role="img"
@@ -243,10 +258,13 @@ export default function ScamOrNot() {
             </div>
           </div>
 
-          <div className="section play">
+          <div className="section play" inert={ended}>
             <SenderCard s={s} revealed={revealed} />
             <MessageCard s={s} />
 
+            {/* Controls: docked to the bottom of the screen on mobile; on desktop the wrapper
+                is display: contents and CSS order keeps verdicts → feedback → next. */}
+            <div className="dock scam-dock">
             <div className="verdicts" role="radiogroup" aria-label="Is this a scam?">
               {(['scam', 'safe'] as Guess[]).map((g) => {
                 const Icon = g === 'scam' ? ShieldAlert : ShieldCheck
@@ -257,7 +275,7 @@ export default function ScamOrNot() {
                     role="radio"
                     aria-checked={guess === g}
                     className={`verdict ${g} ${state}`}
-                    onClick={() => !revealed && setGuess(g)}
+                    onClick={() => answer(g)}
                     disabled={revealed && guess !== g}
                   >
                     <Icon size={24} strokeWidth={2} />
@@ -266,6 +284,10 @@ export default function ScamOrNot() {
                   </button>
                 )
               })}
+            </div>
+            <button className="btn btn-primary btn-block next-round" onClick={next} disabled={!revealed}>
+              {last ? <RotateCcw size={20} /> : <ArrowRight size={20} />} {last ? 'Play again' : 'Next round'}
+            </button>
             </div>
 
             {revealed && (
@@ -287,25 +309,39 @@ export default function ScamOrNot() {
             )}
           </div>
 
-          <div className="section">
-            <button className="btn btn-primary btn-block" onClick={next} disabled={!revealed}>
-              {last ? <RotateCcw size={20} /> : <ArrowRight size={20} />} {last ? 'Play again' : 'Next round'}
-            </button>
-          </div>
+          {ended && (
+            <EndOverlay label="All rounds complete">
+              <div className="result-box">
+                <p className="clue-label">All rounds complete</p>
+                <h2 className="result-word">
+                  {score} of {SCENARIOS.length}
+                </h2>
+                <p className="result-def">
+                  messages judged correctly.{' '}
+                  {score === SCENARIOS.length
+                    ? 'A perfect round. You know what to look for.'
+                    : 'Every one you check makes the next scam easier to spot.'}
+                </p>
+                <button autoFocus className="btn btn-primary btn-block" onClick={next}>
+                  <RotateCcw size={20} /> Play again
+                </button>
+                <button className="btn btn-secondary btn-block" style={{ marginTop: 10 }} onClick={() => setReviewing(true)}>
+                  Review last answer
+                </button>
+              </div>
+            </EndOverlay>
+          )}
         </section>
 
         <aside className="stack" style={{ gap: 16 }}>
           <div className="panel">
-            <Lightbulb size={26} strokeWidth={1.4} className="icon-muted" />
-            <h2 className="h3">Signs to look for</h2>
+            <TipHead icon={Lightbulb}>Signs to look for</TipHead>
             <p>
               Scams often rush you, ask for money or personal details, or come from someone you cannot check. A
               real company will not mind if you hang up and contact them using details you already trust.
             </p>
           </div>
-          <a className="btn btn-secondary btn-block" href={href('home')}>
-            Leave game
-          </a>
+          <BackHome />
         </aside>
       </div>
     </>

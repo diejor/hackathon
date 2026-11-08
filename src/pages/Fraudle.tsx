@@ -1,25 +1,53 @@
-import { useState, type CSSProperties } from 'react'
-import { ArrowLeftRight, Check, Lightbulb, Minus, Shuffle } from 'lucide-react'
-import { Crumb, PageHead } from '../components/Layout'
-import { href } from '../router'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { ArrowLeftRight, ArrowRight, Check, Delete, Eye, Lightbulb, Minus, Shuffle } from 'lucide-react'
+import { BackHome, Crumb, PageHead } from '../components/Layout'
+import { EndOverlay } from '../points'
+import { addPoints } from '../storage'
 
 // Client-side demo only — puzzles would come from a backend in the real app.
 // The board adapts to any word between 4 and 12 letters.
-type Puzzle = { word: string; clue: string }
+type Puzzle = { word: string; clue: string; definition: string }
 
 const PUZZLES: Puzzle[] = [
-  { word: 'PAUSE', clue: 'Stop for a moment before you act.' },
-  { word: 'SCAM', clue: 'A trick to take your money.' },
-  { word: 'VERIFY', clue: 'Check that something is true.' },
-  { word: 'PHISHING', clue: 'Fake emails that fish for your details.' },
-  { word: 'SKEPTICAL', clue: 'Not quick to believe what you are told.' },
-  { word: 'SUSPICIOUS', clue: 'A feeling that something is not right.' },
-  { word: 'IMPERSONATOR', clue: 'Someone pretending to be someone else.' },
+  {
+    word: 'PAUSE',
+    clue: 'Stop for a moment before you act.',
+    definition: 'To stop briefly. Taking a pause before you reply or pay gives you time to notice if something is wrong.',
+  },
+  {
+    word: 'SCAM',
+    clue: 'A trick to take your money.',
+    definition: 'A dishonest scheme to trick someone out of money or personal information.',
+  },
+  {
+    word: 'VERIFY',
+    clue: 'Check that something is true.',
+    definition: 'To make sure something is true, for example by calling a company on a number you already trust.',
+  },
+  {
+    word: 'PHISHING',
+    clue: 'Fake emails that fish for your details.',
+    definition: 'Messages that pretend to be from a trusted company to get you to share passwords, card numbers or codes.',
+  },
+  {
+    word: 'SKEPTICAL',
+    clue: 'Not quick to believe what you are told.',
+    definition: 'Wanting proof before you believe something. A healthy habit with unexpected messages.',
+  },
+  {
+    word: 'SUSPICIOUS',
+    clue: 'A feeling that something is not right.',
+    definition: 'Feeling that something may be dishonest. It is always fine to stop and check when you feel this way.',
+  },
+  {
+    word: 'IMPERSONATOR',
+    clue: 'Someone pretending to be someone else.',
+    definition: 'A person who pretends to be someone else, such as a bank, the police or a family member, to gain your trust.',
+  },
 ]
 
 const TRIES = 6
 const ROWS = ['ABCDEFG', 'HIJKLMN', 'OPQRST', 'UVWXYZ']
-const NUMBER_WORDS = ['', '', '', '', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
 
 type Mark = 'correct' | 'present' | 'absent'
 
@@ -52,12 +80,24 @@ function MarkIcon({ mark }: { mark?: Mark }) {
   return null
 }
 
-function Board({ puzzle }: { puzzle: Puzzle }) {
+function Board({ puzzle, onNext }: { puzzle: Puzzle; onNext: () => void }) {
   const answer = puzzle.word
   const length = answer.length
   const [guesses, setGuesses] = useState<string[]>([])
   const [current, setCurrent] = useState('')
   const [message, setMessage] = useState('Choose letters to make your guess.')
+  // Clue reveal: 'hidden' → 'pressed' (button feedback) → 'fading' (overlay fades out) → 'shown'
+  const [clue, setClue] = useState<'hidden' | 'pressed' | 'fading' | 'shown'>('hidden')
+  const clueTimer = useRef<number>(undefined)
+  const revealClue = () => {
+    if (clue !== 'hidden') return
+    setClue('pressed')
+    clueTimer.current = window.setTimeout(() => {
+      setClue('fading')
+      clueTimer.current = window.setTimeout(() => setClue('shown'), 260)
+    }, 320)
+  }
+  useEffect(() => () => window.clearTimeout(clueTimer.current), [])
 
   const won = guesses.includes(answer)
   const over = won || guesses.length >= TRIES
@@ -70,7 +110,18 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
     }),
   )
 
+  // Briefly highlight a key when it is pressed, by tap, click or physical keyboard.
+  const [flash, setFlash] = useState<string | null>(null)
+  const flashTimer = useRef<number>(undefined)
+  const flashKey = (ch: string) => {
+    setFlash(ch)
+    window.clearTimeout(flashTimer.current)
+    flashTimer.current = window.setTimeout(() => setFlash(null), 180)
+  }
+  useEffect(() => () => window.clearTimeout(flashTimer.current), [])
+
   const type = (ch: string) => {
+    flashKey(ch)
     if (over || current.length >= length) return
     setCurrent(current + ch)
   }
@@ -83,6 +134,7 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
     const next = [...guesses, current]
     setGuesses(next)
     setCurrent('')
+    if (current === answer || next.length >= TRIES) addPoints(1)
     if (current === answer) {
       setMessage(`Well done — the word was ${answer}.`)
     } else if (next.length >= TRIES) {
@@ -93,6 +145,22 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
     }
   }
 
+  // Physical keyboard support. Re-subscribed each render so the handler always sees current state.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const target = e.target as HTMLElement
+      if (target.closest('input, textarea, [contenteditable]')) return
+      if (/^[a-z]$/i.test(e.key)) type(e.key.toUpperCase())
+      else if (e.key === 'Backspace' && !over) setCurrent((c) => c.slice(0, -1))
+      else if (e.key === 'Enter' && !over && !target.closest('button, a')) check()
+      else return
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   const rows = Array.from({ length: TRIES }, (_, r) => {
     if (r < guesses.length) return { letters: guesses[r], marks: score(guesses[r], answer), active: false }
     if (r === guesses.length && !over) return { letters: current, marks: [] as Mark[], active: true }
@@ -100,7 +168,7 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
   })
 
   return (
-    <section className="card">
+    <section className="card board-card">
       <div className="game-top">
         <div
           className="guess-tracker"
@@ -117,11 +185,25 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
         <span className="clue-icon">
           <Lightbulb size={22} strokeWidth={1.5} />
         </span>
-        <div>
+        <div className="clue-body" aria-hidden={clue !== 'shown'}>
           <span className="clue-label">Clue</span>
           <p className="clue-text">{puzzle.clue}</p>
-          <p className="clue-meta">One word · {NUMBER_WORDS[length]} letters</p>
         </div>
+        {clue !== 'shown' && (
+          <div className={`clue-cover ${clue === 'fading' ? 'fading' : ''}`}>
+            <button
+              className={`clue-eye ${clue !== 'hidden' ? 'pressed' : ''}`}
+              onClick={revealClue}
+              aria-label="Reveal the clue"
+              title="Reveal the clue"
+            >
+              <Eye size={24} strokeWidth={1.75} />
+            </button>
+          </div>
+        )}
+        <span className="sr-only" aria-live="polite">
+          {clue === 'shown' ? `Clue: ${puzzle.clue}` : ''}
+        </span>
       </div>
 
       <div className="board" role="grid" aria-label="Guesses" style={{ '--n': length } as CSSProperties}>
@@ -150,6 +232,8 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
         ))}
       </div>
 
+      {/* On mobile this block stays docked at the bottom of the screen while the board scrolls */}
+      <div className="dock">
       <p className="status-line" aria-live="polite">
         {message}
       </p>
@@ -158,7 +242,11 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
         {ROWS.map((row) => (
           <div className="key-row" key={row}>
             {row.split('').map((ch) => (
-              <button key={ch} className={`key ${keyMarks[ch] ?? ''}`} onClick={() => type(ch)}>
+              <button
+                key={ch}
+                className={`key ${keyMarks[ch] ?? ''} ${flash === ch ? 'pressed' : ''}`}
+                onClick={() => type(ch)}
+              >
                 {ch}
                 {keyMarks[ch] && (
                   <span className="mark">
@@ -172,13 +260,35 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
       </div>
 
       <div className="two-btns">
-        <button className="btn btn-secondary" onClick={() => setCurrent(current.slice(0, -1))} disabled={over}>
-          Delete
+        <button
+          className="btn btn-secondary"
+          onClick={() => setCurrent(current.slice(0, -1))}
+          disabled={over}
+          aria-label="Delete last letter"
+          title="Delete last letter"
+        >
+          <Delete size={24} strokeWidth={1.75} />
         </button>
         <button className="btn btn-primary" onClick={check} disabled={over}>
           Check word
         </button>
       </div>
+      </div>
+
+      {over && (
+        <EndOverlay label={won ? 'Word solved' : 'Game over'}>
+          <div className="result-box">
+            <p className="clue-label">{won ? 'Well done, you got it' : 'The word was'}</p>
+            <h2 id="result-word" className="result-word">
+              {answer}
+            </h2>
+            <p className="result-def">{puzzle.definition}</p>
+            <button autoFocus className="btn btn-primary btn-block" onClick={onNext}>
+              Next word <ArrowRight size={20} strokeWidth={1.75} />
+            </button>
+          </div>
+        </EndOverlay>
+      )}
     </section>
   )
 }
@@ -186,6 +296,7 @@ function Board({ puzzle }: { puzzle: Puzzle }) {
 export default function Fraudle() {
   const [index, setIndex] = useState(0)
   const puzzle = PUZZLES[index]
+  const next = () => setIndex((index + 1) % PUZZLES.length)
 
   return (
     <>
@@ -196,7 +307,7 @@ export default function Fraudle() {
       />
       <div className="page-grid">
         <div className="stack">
-          <Board key={puzzle.word} puzzle={puzzle} />
+          <Board key={puzzle.word} puzzle={puzzle} onNext={next} />
         </div>
 
         <div className="stack">
@@ -215,12 +326,10 @@ export default function Fraudle() {
             </ul>
           </section>
           <p className="muted">A useful habit: you do not have to respond to a message straight away.</p>
-          <button className="btn btn-secondary btn-block" onClick={() => setIndex((index + 1) % PUZZLES.length)}>
+          <button className="btn btn-secondary btn-block" onClick={next}>
             <Shuffle size={18} strokeWidth={1.75} /> Try a different word
           </button>
-          <a className="btn btn-secondary btn-block" href={href('home')}>
-            Back to home
-          </a>
+          <BackHome />
         </div>
       </div>
     </>

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { MessageCircle, ShieldCheck } from 'lucide-react'
+import { MessageCircle, ShieldCheck, Sprout, type LucideIcon } from 'lucide-react'
 import { href, type Route } from '../router'
+import { usePoints } from '../storage'
 
 const SIZES = ['normal', 'large', 'larger'] as const
 type Size = (typeof SIZES)[number]
@@ -26,9 +27,20 @@ function TextSizeButton() {
   const next = () => setSize(SIZES[(SIZES.indexOf(size) + 1) % SIZES.length])
 
   return (
-    <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`}>
-      <span className="aa">Aa</span> Text size
+    <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`} title="Text size">
+      <span className="aa">Aa</span>
     </button>
+  )
+}
+
+/** Point total in the header: just the number and a sprout. Re-read on every page change. */
+function HeaderPoints() {
+  const points = usePoints()
+  return (
+    <span key={points} className="header-points" role="img" aria-label={`${points} ${points === 1 ? 'point' : 'points'}`}>
+      {points.toLocaleString()}
+      <Sprout size={24} strokeWidth={1.5} aria-hidden="true" />
+    </span>
   )
 }
 
@@ -44,6 +56,7 @@ function Header({ route }: { route: Route }) {
           <span className="brand-name">SafeSense</span>
         </a>
         <div className="header-actions">
+          <HeaderPoints />
           <TextSizeButton />
           <a
             className="chat-link"
@@ -97,6 +110,25 @@ export function PageHead({
       <div className="eyebrow">{crumb}</div>
       <h1 className="page-title">{title}</h1>
       <p className="lead">{lead}</p>
+    </div>
+  )
+}
+
+/** Dark green "Back to home" button at the bottom of every minigame's side panel. */
+export function BackHome() {
+  return (
+    <a className="btn btn-primary btn-block" href={href('home')}>
+      Back to home
+    </a>
+  )
+}
+
+/** Icon and heading on a single line, used at the top of tip/advice boxes. */
+export function TipHead({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <div className="tip-head">
+      <Icon size={24} strokeWidth={1.5} className="icon-muted" aria-hidden="true" />
+      <h2 className="h3">{children}</h2>
     </div>
   )
 }

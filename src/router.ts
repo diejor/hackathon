@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
-export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'long-con' | 'chat'
+export type Route = 'home' | 'fraudle' | 'scam-or-not' | 'role-reversal' | 'chat'
 
-const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'long-con', 'chat']
+const ROUTES: Route[] = ['home', 'fraudle', 'scam-or-not', 'role-reversal', 'chat']
 
 export const href = (route: Route) => (route === 'home' ? '#/' : `#/${route}`)
 
