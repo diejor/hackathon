@@ -151,7 +151,7 @@ export default function Profile() {
             </>
           )}
         </div>
-        <aside className="stack">
+        <aside className="stack profile-aside">
           <NicknamePanel />
           {status === 'ready' && progress.events > 0 && (
             <a className="btn btn-secondary btn-block" href={href('home')}>
