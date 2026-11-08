@@ -340,6 +340,21 @@
   .brand-name {
     font-size: 24px;
   }
+  /* The header controls stop growing with the text size here, so "SafeSense" always fits. */
+  .header-actions {
+    gap: 6px;
+  }
+  .text-size {
+    font-size: 16px;
+    padding: 0 10px;
+  }
+  .progress-link {
+    padding: 0 8px;
+  }
+  .points-chip {
+    font-size: 13px;
+    padding: 0 6px;
+  }
 }
 @media (max-width: 374px) {
   .points-chip {

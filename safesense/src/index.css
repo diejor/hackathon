@@ -73,6 +73,13 @@ button {
   outline: 3px solid var(--green-600);
   outline-offset: 2px;
 }
+h1[tabindex='-1']:focus,
+h2[tabindex='-1']:focus {
+  outline: none;
+}
+.nowrap {
+  white-space: nowrap;
+}
 
 .sr-only {
   position: absolute;
@@ -136,6 +143,7 @@ main {
   color: var(--green-900);
 }
 .brand-mark {
+  flex-shrink: 0;
   width: 40px;
   height: 44px;
   border-radius: 9px;
@@ -145,6 +153,7 @@ main {
   place-items: center;
 }
 .brand-name {
+  white-space: nowrap;
   font-family: var(--font-serif);
   font-size: 1.95rem;
   font-weight: 500;
@@ -152,6 +161,7 @@ main {
 }
 .header-actions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 10px;
 }
@@ -172,6 +182,11 @@ main {
 }
 .chat-link:hover {
   background: var(--green-900);
+}
+.chat-link[aria-current='page'] {
+  background: var(--surface);
+  color: var(--green-700);
+  border: 2px solid var(--green-700);
 }
 .text-size {
   display: inline-flex;
@@ -194,15 +209,49 @@ main {
 /* ---------- Footer ---------- */
 .footer {
   border-top: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text-muted);
   font-size: 0.95rem;
+  line-height: 1.55;
 }
 .footer-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: start;
+  padding-top: 28px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+}
+.footer-brand,
+.footer-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding-top: 26px;
-  padding-bottom: 26px;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: var(--green-900);
+  font-weight: 600;
+}
+.footer-brand {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--green-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-links a:hover {
+  color: var(--green-900);
 }
 
 /* ---------- Typography ---------- */
@@ -412,13 +461,22 @@ main {
 .home-hero .lead {
   max-width: 760px;
 }
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
 .reassure {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 24px;
   color: var(--text-muted);
   font-size: 1.05rem;
+}
+.reassure svg {
+  flex-shrink: 0;
 }
 .motto {
   font-family: var(--font-serif);
@@ -432,6 +490,7 @@ main {
 }
 .games-title {
   margin: 36px 0 20px;
+  scroll-margin-top: 16px;
 }
 .games {
   display: grid;
@@ -555,6 +614,36 @@ main {
 }
 .help-banner .btn {
   white-space: nowrap;
+}
+
+/* ================= ABOUT ================= */
+.about-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.about-list li,
+.about-text {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.about-text {
+  margin-top: 12px;
+}
+.about-list svg,
+.about-text svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--green-700);
+}
+.about-section a {
+  color: var(--green-700);
+  font-weight: 600;
+  text-underline-offset: 3px;
 }
 
 /* ================= FRAUDLE ================= */
@@ -1189,11 +1278,77 @@ main {
   .lead {
     font-size: 1.05rem;
   }
-  .footer-tag {
-    display: none;
+  .footer-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding-top: 24px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
   .card {
     padding: 20px 16px;
+  }
+  /* Home: the first screen says what SafeSense does and shows both actions; the motto becomes a slim band. */
+  .home-hero {
+    gap: 20px;
+  }
+  .hero-actions .btn {
+    flex: 1 1 100%;
+  }
+  .reassure {
+    margin-top: 18px;
+    font-size: 1rem;
+  }
+  .motto-panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: center;
+    padding: 18px 20px;
+  }
+  .motto-panel .motto {
+    margin-top: 0 !important;
+    font-size: 1.35rem;
+  }
+  .motto-panel p:last-child {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+  }
+  .games-title {
+    margin: 28px 0 16px;
+  }
+  /* Game cards: icon beside the kind and title instead of a big tile on top (H-5). */
+  .game-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-areas:
+      'icon kind'
+      'icon title'
+      'desc desc'
+      'info info';
+    column-gap: 14px;
+  }
+  .game-card .icon-tile {
+    grid-area: icon;
+    width: 48px;
+    height: 48px;
+    align-self: center;
+  }
+  .game-card .kind {
+    grid-area: kind;
+    margin-top: 0;
+  }
+  .game-card .h3 {
+    grid-area: title;
+    margin-top: 0;
+  }
+  .game-card .desc {
+    grid-area: desc;
+    margin-top: 12px;
+    font-size: 1.05rem;
+  }
+  .game-card .info {
+    grid-area: info;
+    margin-top: 12px;
   }
   .help-banner {
     flex-direction: column;
