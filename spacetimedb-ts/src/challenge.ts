@@ -10,6 +10,8 @@ import { callIdOf, challengeTokenOf, normalizePhone, outcomeOf, recordPracticeCa
 
 const day = 86_400_000_000n;
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// RETELL_API_BASE only exists so local tests can point at a dead address (no request ever reaches Retell).
+const retellBase = (env: Env) => (env.RETELL_API_BASE || 'https://api.retellai.com').replace(/\/+$/, '');
 const base = (env: Env) => (env.CHALLENGE_ROUTE_BASE || '').replace(/\/+$/, '');
 // SMS enrollment path (JOIN texts, Groq drills, challenge_enrollment with a raw phone column): OFF unless
 // CHALLENGE_ENABLED is exactly "true". Nothing inserts into challenge_enrollment or challenge_job otherwise.
@@ -117,7 +119,7 @@ export const challengeRunJob = spacetimedb.procedure({onSchedule:challengeJob},{
     deliverProactive(ctx, outbound, 'SafeSense training simulation. ' + outbound.script + ' Open your training link: ' + link, plan.token);
     return {};
   }
-  const response = ctx.http.fetch('https://api.retellai.com/v2/create-phone-call', {
+  const response = ctx.http.fetch(retellBase(ctx.env) + '/v2/create-phone-call', {
     method: 'POST', timeout: TimeDuration.fromMillis(10000),
     headers: {authorization: 'Bearer ' + secret, 'content-type': 'application/json'},
     body: utf8(JSON.stringify({
@@ -279,7 +281,7 @@ export const demoCallRunJob = spacetimedb.procedure(
     }
     let ok = false;
     try {
-      const response = ctx.http.fetch('https://api.retellai.com/v2/create-phone-call', {
+      const response = ctx.http.fetch(retellBase(ctx.env) + '/v2/create-phone-call', {
         method: 'POST', timeout: TimeDuration.fromMillis(10000),
         headers: { authorization: 'Bearer ' + env.RETELL_API_KEY!, 'content-type': 'application/json' },
         body: utf8(JSON.stringify({

@@ -387,6 +387,7 @@ const spacetimedb = schema(
       RETELL_AGENT_ID: t.option(t.string()), // the SafeSense practice-caller agent
       CHALLENGE_NUMBER: t.option(t.string()), // E.164 from_number for outbound practice calls
       CHALLENGE_ALLOWED_NUMBERS: t.option(t.string()), // comma-separated E.164 allowlist (private beta)
+      RETELL_API_BASE: t.option(t.string()), // default https://api.retellai.com (local tests only)
       // SMS enrollment (JOIN texts, Groq-picked drills): OFF unless exactly "true". Leave unset.
       CHALLENGE_ENABLED: t.option(t.string()),
       CHALLENGE_ROUTE_BASE: t.option(t.string()),

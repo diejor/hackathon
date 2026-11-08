@@ -10,6 +10,7 @@
 //   photon.ts    Photon.cs    Photon messaging, channel links (+ Sha256.cs via crypto.ts)
 //   practice.ts  (new)        practice scam texts by iMessage (templates, limits, grading)
 //   voice.ts     (new)        practice calls: /voice/context and /voice/result for the voice agent
+//   challenge.ts (new)        practice call started from the web (invited numbers only) + Retell post-call webhook
 //
 // Only values registered with SpacetimeDB are exported from this entry file; the export name is the
 // function's name (snake_cased for clients).
