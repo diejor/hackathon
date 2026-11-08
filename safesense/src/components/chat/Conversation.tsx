@@ -49,11 +49,15 @@ export function Conversation({ bot, onExample }: { bot: BotSnapshot; onExample: 
         <Message key={String(m.id)} m={m} />
       ))}
 
-      {(status === 'loading' || status === 'connecting') && (
+      {status !== 'ready' && (
         <p className="chat-note" role="status">
-          {bot.slow
-            ? 'Still connecting… This is taking longer than usual. Check your internet connection.'
-            : 'Connecting to the assistant…'}
+          {status === 'offline'
+            ? 'Can’t reach the assistant right now. Check your internet connection, then reload the page.'
+            : status === 'reconnecting'
+              ? 'The connection dropped. Reconnecting…'
+              : bot.slow
+                ? 'Still connecting… This is taking longer than usual. Check your internet connection.'
+                : 'Connecting to the assistant…'}
         </p>
       )}
 

@@ -103,6 +103,7 @@ export function Composer({
     micHint = voice.secure
       ? 'Voice input isn’t available in this browser. You can type your question instead.'
       : 'The microphone only works on a secure (https) page. You can type your question instead.'
+  else if (!ready && !listening) micHint = 'The microphone will be ready once the assistant connects.'
   else if (listening) micHint = 'Microphone is on. Speak when you are ready. Select the button again to stop.'
   else micHint = 'Microphone is off. Select the button to start speaking. Your words will appear as text.'
 
@@ -202,7 +203,7 @@ export function Composer({
           <ArrowUp size={20} strokeWidth={1.75} /> {bot.pending ? 'Waiting for an answer…' : 'Send message'}
         </button>
       </div>
-      <p className="chat-footnote">Answers are guidance, not a guarantee. When in doubt, call the company on a number you trust.</p>
+      <p className="chat-footnote">Answers are guidance, not a guarantee. When in doubt, call the company at a number you trust.</p>
     </div>
   )
 }

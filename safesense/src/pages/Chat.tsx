@@ -33,7 +33,7 @@ export default function Chat() {
       <div className="page-grid">
         <section className="card" aria-label="Conversation">
           <div className="chat-head">
-            <h2>Conversation history</h2>
+            <h2>Conversation</h2>
             <span className="muted">Only you can see this</span>
           </div>
           <Conversation bot={bot} onExample={fillExample} />
