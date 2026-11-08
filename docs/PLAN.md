@@ -259,9 +259,9 @@ Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tool
 
 1. Partner insights dashboard (B9, stretch).
 2. Practice texts (B4 stretch).
-4. Extra Scam or Not rounds: keep the designer's 7, localized.
-5. **The TypeScript port: if it slips past ~03:30, ship on the C# module** (additive prompt change, publish to a new or the existing db).
-6. "Text SafeSense" live on an iPhone: show simulated webhooks plus a screen recording if the real line isn't ready.
+3. Extra Scam or Not rounds: keep the designer's 7, localized.
+4. **The TypeScript port: if it slips past ~03:30, ship on the C# module** (additive prompt change, publish to a new or the existing db).
+5. "Text SafeSense" live on an iPhone: show simulated webhooks plus a screen recording if the real line isn't ready.
 
 Never cut: the three games working with explanations, the chat with screenshots, the calm tone, and honesty.
 
