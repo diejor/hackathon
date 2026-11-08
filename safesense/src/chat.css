@@ -486,3 +486,10 @@
   font-size: 1rem;
   margin-top: 4px;
 }
+/* One heading line: the title says it; the "A safe place to ask" eyebrow is dropped here. */
+.chat-page .page-head .eyebrow {
+  display: none;
+}
+.chat-page .page-title {
+  margin-top: 0;
+}
