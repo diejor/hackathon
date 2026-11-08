@@ -29,7 +29,7 @@ function ReflectionCard({ drill }: { drill: NonNullable<Progress['reflection']> 
   }
   return <section className="card about-section" aria-labelledby="reflection-title">
     <h2 className="h2" id="reflection-title">Reflect on your practice drill</h2>
-    <p>{drill.voice ? 'You talked with the SafeSense practice caller.' : 'You opened the practice link.'} It was a practice call from SafeSense, and your points are safe.</p>
+    <p>{drill.voice ? 'You talked with the SafeSense practice caller.' : 'You opened the practice link.'} It was a practice call from SafeSense: nobody real was calling.</p>
     {drill.lesson && <p>{drill.lesson}</p>}
     {drill.answer ? <p><strong>Your reflection</strong><br />{drill.answer}</p> :
       <form className="stack" onSubmit={e => { e.preventDefault(); void save() }}>

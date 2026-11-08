@@ -33,7 +33,7 @@ export function UnlockProgress({ id }: { id: string }) {
 /** Whether the player has reached the unlock (only once progress has loaded). */
 function useUnlocked(): boolean {
   const { status, progress } = useProgress()
-  return status === 'ready' && pointsToGo(progress.points) === 0
+  return status === 'ready' && pointsToGo(progress.peak) === 0
 }
 
 /** The fourth card on Home: The Phone Call, locked until enough points. Opens its page. */

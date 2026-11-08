@@ -50,7 +50,7 @@ SafeSense has three parts.
 - **Limits:** practice texts are opt-in only, use fictional brands and contain no links. STOP is honored.
 
 **Progress without an account:**
-- every finished game earns 1 point;
+- every finished game earns 1 point; a practice text or call is the real test: catch it for +1, get fooled and lose 1 (never below 0);
 - your dashboard shows what you've practiced and what's worth practicing next;
 - a locked 4th game, *The Phone Call*, opens at 2 points: SafeSense places a practice scam call (private beta, invited numbers only).
 

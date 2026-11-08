@@ -80,7 +80,8 @@ export function pointsFor(e: ProgressEvent): number {
   if (game === 'scam-or-not') return e.kind === 'run_done' ? 1 : 0
   const o = classify(e)
   if (o.type === 'word' || o.type === 'story') return 1
-  if (o.type === 'answer' && PRACTICE_GAMES.has(game)) return 1
+  // Practice texts and calls are the real-world test: catching one earns a point, being fooled costs one.
+  if (o.type === 'answer' && PRACTICE_GAMES.has(game)) return o.correct ? 1 : -1
   return 0
 }
 
@@ -99,7 +100,15 @@ function latestReflection(events: ProgressEvent[]) {
 }
 
 // Every point counts, always: practice drills never take points away.
-export const totalPoints = (events: ProgressEvent[]) => events.reduce((sum, e) => sum + pointsFor(e), 0)
+/** Running total, oldest first; it never goes below 0 (a fooled practice text or call takes 1 point off). */
+export const totalPoints = (events: ProgressEvent[]) => events.reduce((sum, e) => Math.max(0, sum + pointsFor(e)), 0)
+
+/** The highest the total has ever been: unlocks use it, so losing a point never locks a game again. */
+export const peakPoints = (events: ProgressEvent[]) =>
+  events.reduce(([sum, peak], e) => {
+    const next = Math.max(0, sum + pointsFor(e))
+    return [next, Math.max(peak, next)]
+  }, [0, 0])[1]
 
 /** Local calendar day (YYYY-MM-DD) for a timestamp; `offsetMin` is minutes ahead of UTC (tests pass 0). */
 export function dayKey(at: number, offsetMin = -new Date(at).getTimezoneOffset()): string {
@@ -211,6 +220,8 @@ export function genuineMissed(events: ProgressEvent[]): number {
 export type Progress = {
   events: number
   points: number
+  /** Highest total ever reached (for unlocks). */
+  peak: number
   counts: Counts
   caught: Map<string, Caught>
   words: string[]
@@ -225,6 +236,7 @@ export function deriveProgress(events: ProgressEvent[]): Progress {
     reflection: latestReflection(events),
     events: events.length,
     points: totalPoints(events),
+    peak: peakPoints(events),
     counts: counts(events),
     caught: caughtSigns(events),
     words: safetyWords(events),

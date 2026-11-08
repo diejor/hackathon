@@ -12,7 +12,7 @@ export const UPCOMING = {
   /** How it works, on its page. */
   what: [
     'SafeSense calls your phone with a practice scam: a pretend caller who says they’re from your bank. It’s a practice call from SafeSense, not a real one, and nothing is at risk.',
-    'Listen, decide when something doesn’t add up, then hang up. A finished practice call earns 1 point, and your points never go down.',
+    'Listen, decide when something doesn’t add up, then hang up. Spot the scam and you earn 1 point; get fooled and you lose 1. Once unlocked, it stays unlocked.',
   ],
   /** Why phone scams are worth practicing. Kept calm, and no numbers unless they're sourced. */
   why: [

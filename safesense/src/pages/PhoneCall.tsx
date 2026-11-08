@@ -13,7 +13,7 @@ const PHONE_KEY = 'safesense.challenge.phone'
 /** The Phone Call: locked until UPCOMING.unlockAt points, then SafeSense can call an invited phone. */
 export default function PhoneCall() {
   const { status, progress } = useProgress()
-  const toGo = status === 'ready' ? pointsToGo(progress.points) : null
+  const toGo = status === 'ready' ? pointsToGo(progress.peak) : null
   const unlocked = toGo === 0
 
   return (
