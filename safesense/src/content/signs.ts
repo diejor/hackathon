@@ -65,6 +65,12 @@ export const MOVE_SIGNS: Sign[] = [
   move('fake-link', 'A link to “unlock” or “confirm” something.'),
   move('code-request', 'Asking you to read out a code sent to you.'),
   move('safe-account', 'Moving your money to keep it “safe”.'),
+  move('fake-sender', 'A trusted company’s name typed in as the sender.'),
+  move('fake-badges', 'Padlocks and “verified” badges pasted on a page.'),
+  move('lookalike-page', 'A copycat page with real links at the bottom.'),
+  move('callback-number', 'A phone number to call, printed in the message.'),
+  move('stolen-card', 'A small fee that needs your card number.'),
+  move('sim-swap', 'Your phone losing service after a SIM change you didn’t ask for.'),
 ]
 
 const ALL = [...MESSAGE_SIGNS, GENUINE_SIGN, ...MOVE_SIGNS]
