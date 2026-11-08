@@ -1,0 +1,639 @@
+/* The Long Con: a campaign feed with a "how it's going" panel (people who believed it, a believability
+   dial, the simulated people). Game feel from BadScam, restyled to SafeSense's calm tokens. */
+
+/* ---------- Cover and campaign picker ---------- */
+.con-cover .con-serif-title {
+  margin-top: 10px;
+}
+.con-cover-lead {
+  margin: 8px 0 10px;
+  font-size: 1.2rem;
+  color: var(--green-900);
+}
+.con-pick {
+  margin-top: 32px;
+}
+.con-campaign {
+  padding: 18px 20px;
+}
+.con-campaign .text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.con-campaign-title {
+  font-size: 1.2rem;
+  color: var(--green-900);
+}
+.con-campaign-pitch {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* ---------- Shared bits ---------- */
+.con-serif-title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--green-900);
+}
+.con-eyebrow {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-700);
+  margin-bottom: 6px;
+}
+.con-tactic {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--green-700);
+  margin-bottom: 4px;
+}
+.con-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* ---------- Game layout ---------- */
+.con-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 20px;
+}
+.con-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-areas: 'main side';
+  gap: 28px;
+  align-items: start;
+}
+.con-main {
+  grid-area: main;
+  min-width: 0;
+}
+.con-side {
+  grid-area: side;
+  position: sticky;
+  top: 20px;
+}
+
+/* ---------- The "how it's going" panel ---------- */
+.con-hud {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.con-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.con-count-num {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 2.6rem;
+  line-height: 1.15;
+  color: var(--green-900);
+  font-variant-numeric: tabular-nums;
+}
+.con-sub {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.con-dial {
+  position: relative;
+  max-width: 220px;
+  margin-top: 6px;
+}
+.con-dial svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.con-dial path {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+}
+.con-dial-track {
+  stroke: var(--neutral-200);
+}
+.con-dial-low {
+  stroke: var(--warn-bg);
+}
+.con-dial-fill {
+  stroke: var(--green-600);
+  transition: d 0.6s ease;
+}
+.con-dial.is-low .con-dial-fill {
+  stroke: var(--warn-border);
+}
+.con-dial-needle {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+  transition: transform 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+.con-dial-needle polygon {
+  fill: var(--green-900);
+}
+.con-dial-pin {
+  fill: var(--green-900);
+}
+.con-dial-word {
+  display: block;
+  margin-top: 4px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--green-900);
+}
+.con-dial.is-low .con-dial-word {
+  color: var(--warn-text);
+}
+
+.con-low {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  color: var(--warn-text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.con-low svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.con-people ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.con-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.con-person-pic {
+  position: relative;
+  flex-shrink: 0;
+}
+.con-person.is-none .con-avatar {
+  opacity: 0.6;
+}
+.con-person-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid;
+  background: var(--surface);
+}
+.con-person.is-believed .con-person-badge {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  color: var(--warn-text);
+}
+.con-person.is-checked .con-person-badge {
+  background: var(--green-100);
+  border-color: var(--green-600);
+  color: var(--green-700);
+}
+.con-person-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+.con-person-name {
+  font-weight: 600;
+  color: var(--green-900);
+}
+.con-person-bio {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.con-person-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.con-person.is-believed .con-person-status {
+  color: var(--warn-text);
+}
+.con-person.is-checked .con-person-status {
+  color: var(--green-700);
+}
+
+/* Avatars: soft tints, one per simulated person; your costume is a square. */
+.con-avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+.con-avatar.tone-1 {
+  background: #ece3f1;
+  color: #5b3f73;
+}
+.con-avatar.tone-2 {
+  background: #dcebe2;
+  color: #2f5d47;
+}
+.con-avatar.tone-3 {
+  background: #f5e6cc;
+  color: #6f4c12;
+}
+.con-avatar.tone-4 {
+  background: #e2e6ea;
+  color: #3a444e;
+}
+.con-avatar.is-costume {
+  border-radius: 10px;
+  background: var(--green-700);
+  color: #fff;
+}
+
+/* ---------- Feed ---------- */
+.con-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.con-row {
+  scroll-margin-top: 24px;
+  animation: con-in 0.28s ease-out both;
+  transition: opacity 0.3s;
+}
+@keyframes con-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.con-row p {
+  font-size: 1.1rem;
+  line-height: 1.55;
+}
+.con-row.is-old {
+  opacity: 0.62;
+}
+.con-say {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+.con-who-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.con-post,
+.con-sent {
+  max-width: 90%;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+.con-post {
+  align-self: flex-start;
+  background: var(--neutral-100);
+  border-bottom-left-radius: 6px;
+}
+.con-sent {
+  align-self: flex-end;
+  background: var(--green-100);
+  border-bottom-right-radius: 6px;
+}
+.con-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.con-who b {
+  display: block;
+  font-weight: 600;
+  color: var(--green-900);
+  line-height: 1.3;
+}
+.con-who i {
+  display: block;
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+.con-receipt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--green-700);
+}
+.con-receipt .is-down {
+  color: var(--warn-text);
+}
+
+.con-choices {
+  margin-top: 28px;
+}
+.con-move-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--green-900);
+  margin-bottom: 12px;
+}
+.con-choice {
+  min-height: 60px;
+  padding: 14px 18px;
+}
+.con-beat {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  letter-spacing: 0.2em;
+}
+.con-ending {
+  margin-top: 28px;
+  border-color: var(--green-600);
+}
+.con-ending > p:not(.con-eyebrow) {
+  margin: 10px 0 20px;
+  font-size: 1.1rem;
+}
+.con-restart {
+  margin-top: 24px;
+}
+.con-main .con-about {
+  margin-top: 24px;
+}
+.con-about p {
+  margin-top: 10px;
+}
+.con-credit,
+.con-fineprint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.con-credit {
+  font-style: italic;
+}
+
+/* ---------- Debrief ---------- */
+.con-outcome {
+  margin: 10px 0 20px;
+  font-size: 1.1rem;
+}
+.con-playbook {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.con-playbook li {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.con-play-num {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--green-100);
+  color: var(--green-700);
+  font-weight: 700;
+}
+.con-playbook .con-tactic {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.con-playbook strong {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--green-900);
+  line-height: 1.35;
+}
+.con-playbook p {
+  margin-top: 4px;
+}
+.con-routing {
+  margin-top: 24px;
+}
+.con-routing .h3 {
+  margin-top: 0;
+}
+.con-routing ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+.con-routing li + li {
+  margin-top: 8px;
+}
+.con-motto {
+  margin-top: 16px;
+}
+.con-motto .motto {
+  margin-top: 8px !important;
+}
+.con-actions {
+  margin-top: 24px;
+  gap: 12px;
+}
+.con-fineprint {
+  margin-top: 14px;
+}
+.con-others {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.con-short {
+  display: none;
+}
+
+/* ---------- Phones and narrow windows: the panel becomes a slim bar that stays at the top ---------- */
+@media (max-width: 960px) {
+  .con-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'side' 'main';
+    gap: 16px;
+  }
+  .con-side {
+    top: 0;
+    z-index: 5;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    background: var(--bg);
+  }
+  .con-hud {
+    padding: 10px 14px;
+    gap: 8px;
+    border-radius: var(--radius);
+    box-shadow: 0 6px 16px rgba(36, 57, 47, 0.08);
+  }
+  .con-stats {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .con-count {
+    min-width: 0;
+  }
+  .con-count-num {
+    font-size: 1.7rem;
+  }
+  .con-label,
+  .con-sub {
+    font-size: 0.8rem;
+  }
+  .con-hud .con-long {
+    display: none;
+  }
+  .con-hud .con-short {
+    display: inline;
+  }
+  .con-cred {
+    flex: 0 0 auto;
+    width: 104px;
+    text-align: center;
+  }
+  .con-dial {
+    margin: 2px auto 0;
+  }
+  .con-dial-word {
+    margin-top: 0;
+    font-size: 0.85rem;
+  }
+  .con-low {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    align-items: center;
+  }
+  .con-low svg {
+    margin-top: 0;
+  }
+  .con-people {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .con-people.is-solo .con-person-bio {
+    display: none;
+  }
+  .con-people .con-label {
+    flex: 1;
+    min-width: 0;
+  }
+  .con-people ul {
+    flex-direction: row;
+    gap: 10px;
+    margin: 0;
+  }
+  .con-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  .con-person-badge {
+    width: 16px;
+    height: 16px;
+    right: -5px;
+    bottom: -3px;
+  }
+  .con-person-badge svg {
+    width: 10px;
+    height: 10px;
+  }
+  /* Names and statuses stay readable to screen readers; the badges show them on screen. */
+  .con-hud .con-people:not(.is-solo) .con-person-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .con-row {
+    scroll-margin-top: 190px;
+  }
+  .con-post,
+  .con-sent {
+    max-width: 94%;
+  }
+  .con-row p {
+    font-size: 1.05rem;
+  }
+}
+@media (max-width: 720px) {
+  .con-say {
+    padding: 14px 16px;
+  }
+  .con-playbook li {
+    padding: 14px;
+  }
+  .con-serif-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .con-row {
+    animation: none;
+    transition: none;
+  }
+  .con-dial-needle,
+  .con-dial-fill {
+    transition: none;
+  }
+}
