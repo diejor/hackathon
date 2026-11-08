@@ -38,7 +38,7 @@ SafeSense has three parts.
 - **Scam or Not?:** realistic texts from made-up companies. You decide whether each one is a scam, then see the signs that give it away. Some are genuine, so the game also teaches people not to panic at every message.
 - **Role Reversal:** *you* play the scammer. You choose the tactics, such as a fake brand, a deadline, a small fee or a callback number. You watch a careful person spot each move, forward the text to 7726 and check her real order history. The debrief turns every tactic into a defense.
 
-**2. Ask SafeSense.**
+**2. Chat with SafeSense.**
 - **How you ask:** type a message, say it, or add a screenshot of anything that worries you.
 - **What you get back:** a verdict ("Scam", "Suspicious" or "Looks safe"), the signs to notice and what to do next.
 - **What it remembers:** what you struggle with in the games, so it can coach you on that.
@@ -101,7 +101,7 @@ There's no sign-up. A **recovery key** carries your progress to another device.
 
 1. A dedicated Photon line, so anyone can text SafeSense rather than one registered phone.
 2. Optional sign-in (SpacetimeAuth), with "bring my progress" from the anonymous key.
-3. More games, starting with *The Phone Call* (voice scams), plus server-side unlocks.
+3. Open *The Phone Call* to everyone: personalized practice calls that target the tricks each person misses, plus more games and server-side unlocks.
 4. A partner dashboard with anonymous aggregates (which tactics people miss most), so carriers and community groups can target their education.
 5. Points earned over iMessage counting the same as on the web.
 

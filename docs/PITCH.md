@@ -62,7 +62,7 @@ Research on "inoculation" games, like Bad News for misinformation, suggests that
 **Business model or what's next?**
 - A partner dashboard for carriers and community groups (libraries, senior centers), showing anonymous trends like which tactics people miss most, so they can target their education.
 - Optional sign-in.
-- More games, starting with The Phone Call (voice scams).
+- Open The Phone Call (practice scam calls, now in private beta) to everyone, personalized to the tricks each person misses.
 
 **What did each of you do?**
 - **Diego:** the backend (SpacetimeDB), Gemini, Photon integration and deploys.
