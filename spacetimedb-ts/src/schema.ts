@@ -257,6 +257,22 @@ export const practiceJob = table(
   }
 );
 
+// ---------- Practice calls (voice.ts) ----------
+// New table only, like the guards above: an existing database republishes without a wipe.
+
+// Which player a phone number belongs to, for the voice agent (docs/VOICE.md). Saved when a phone LINKs over
+// iMessage; deleted by UNLINK / FORGET ME. No phone numbers: phoneHash = hex SHA-256 of a salted, normalized
+// E.164 number (voice.ts phoneHash). Private.
+const voiceLink = table(
+  { name: 'voice_link' },
+  {
+    phoneHash: t.string().primaryKey(),
+    owner: t.identity().index('btree'),
+    senderKey: t.string().index('btree'), // the channel_link it came from, "<platform>:<Photon user id>"
+    linkedAt: t.timestamp(),
+  }
+);
+
 // ---------- Schema + environment ----------
 
 // Secrets live in the database environment (supplied at publish time from the gitignored .env,
@@ -282,6 +298,7 @@ const spacetimedb = schema(
     channelReach,
     practiceSend,
     practiceJob,
+    voiceLink,
   },
   {
     env: {
@@ -303,6 +320,9 @@ const spacetimedb = schema(
       DISCORD_PUBLIC_KEY: t.option(t.string()), // app public key (hex), verifies X-Signature-Ed25519
       DISCORD_APPLICATION_ID: t.option(t.string()), // optional: reject interactions for other apps
       DISCORD_API_BASE: t.option(t.string()), // default https://discord.com/api/v10
+      // Practice calls (voice.ts); optional, the /voice routes answer 503 when both are unset.
+      RETELL_API_KEY: t.option(t.string()), // Retell key with the webhook badge: verifies X-Retell-Signature
+      VOICE_WEBHOOK_SECRET: t.option(t.string()), // shared secret in the x-safesense-voice-secret header
     },
   }
 );

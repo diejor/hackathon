@@ -8,6 +8,7 @@
 //                run_done                    {correct, total}   (one per completed run; earns the point)
 //   long-con     round_done                  {scenario, tactics: string[], fooled}
 //   practice-text answer_correct | answer_wrong {template, tactic}   (a practice scam by iMessage: REPORT = caught)
+//   practice-call answer_correct | answer_wrong {call, tactic, outcome} (a practice scam phone call; tactic may be "")
 // Older/demo rows (seed_demo_activity) use friend-or-fraud / scam-wordle and a few other tactic slugs;
 // they are mapped onto the same shapes below.
 
@@ -35,6 +36,9 @@ export function parseDetails(details: string): Record<string, unknown> {
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
+/** Graded practice drills sent to the person's phone: each finished one earns a point. */
+const PRACTICE_GAMES = new Set(['practice-text', 'practice-call'])
+
 type Outcome =
   | { type: 'answer'; correct: boolean; tactic: string }
   | { type: 'word'; solved: boolean; word: string }
@@ -45,7 +49,7 @@ type Outcome =
 export function classify(e: ProgressEvent): Outcome {
   const game = normalizeGame(e.game)
   const d = parseDetails(e.details)
-  if ((game === 'scam-or-not' || game === 'practice-text') && (e.kind === 'answer_correct' || e.kind === 'answer_wrong'))
+  if ((game === 'scam-or-not' || PRACTICE_GAMES.has(game)) && (e.kind === 'answer_correct' || e.kind === 'answer_wrong'))
     return { type: 'answer', correct: e.kind === 'answer_correct', tactic: normalizeTactic(str(d.tactic)) }
   if (game === 'fraudle') {
     const word = str(d.word).toUpperCase()
@@ -67,6 +71,7 @@ export function classify(e: ProgressEvent): Outcome {
  *                                                 they feed the signs and the coaching)
  *   long-con       round_done                     each finished Role Reversal story
  *   practice-text  answer_correct | answer_wrong  each graded practice text
+ *   practice-call  answer_correct | answer_wrong  each finished practice call
  * Each game's end-of-game "+1" (points.tsx) shows right after it logs the row that earns it.
  * Points show how much someone has practiced. No ranks, no leaderboards.
  */
@@ -75,7 +80,7 @@ export function pointsFor(e: ProgressEvent): number {
   if (game === 'scam-or-not') return e.kind === 'run_done' ? 1 : 0
   const o = classify(e)
   if (o.type === 'word' || o.type === 'story') return 1
-  if (o.type === 'answer' && game === 'practice-text') return 1
+  if (o.type === 'answer' && PRACTICE_GAMES.has(game)) return 1
   return 0
 }
 

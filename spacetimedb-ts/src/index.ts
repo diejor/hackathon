@@ -9,6 +9,7 @@
 //   discord.ts   Discord.cs   Discord interactions (+ Ed25519.cs via crypto.ts)
 //   photon.ts    Photon.cs    Photon messaging, channel links (+ Sha256.cs via crypto.ts)
 //   practice.ts  (new)        practice scam texts by iMessage (templates, limits, grading)
+//   voice.ts     (new)        practice calls: /voice/context and /voice/result for the voice agent
 //
 // Only values registered with SpacetimeDB are exported from this entry file; the export name is the
 // function's name (snake_cased for clients).
@@ -16,6 +17,7 @@ import spacetimedb from './schema';
 import { Router } from 'spacetimedb/server';
 import { photonWebhook } from './photon';
 import { discordInteractions } from './discord';
+import { voiceContext, voiceResult } from './voice';
 
 export default spacetimedb;
 
@@ -40,6 +42,13 @@ export { myMessages, myFacts, forgetMe, botSend } from './bot';
 export { discordInteractions, discordRunJob } from './discord';
 export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebhook, practiceRunJob } from './photon';
 export { myPracticeTexts, requestPracticeText } from './practice';
+export { voiceContext, voiceResult } from './voice';
 
 // Photon.cs Routes(): served at /v1/database/<db>/route/<path>.
-export const routes = spacetimedb.httpRouter(new Router().post('/photon', photonWebhook).post('/discord', discordInteractions));
+export const routes = spacetimedb.httpRouter(
+  new Router()
+    .post('/photon', photonWebhook)
+    .post('/discord', discordInteractions)
+    .post('/voice/context', voiceContext)
+    .post('/voice/result', voiceResult)
+);
