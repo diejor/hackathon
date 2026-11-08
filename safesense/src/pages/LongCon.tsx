@@ -6,7 +6,6 @@ import {
   Info,
   Landmark,
   MessageCircle,
-  Package,
   RotateCcw,
   ShieldCheck,
   Smartphone,
@@ -21,11 +20,7 @@ import { SCENARIOS, TACTICS, type Scenario } from '../content/longCon'
 type Msg = { from: 'them' | 'me'; time: string; text: string }
 
 const LETTERS = ['A', 'B', 'C']
-const ICONS = {
-  'new-number-hi-mom': Smartphone,
-  'bank-fraud-alert': Landmark,
-  'parcel-fee-smish': Package,
-} as Record<string, typeof Smartphone>
+const ICONS = { 'new-number-hi-mom': Smartphone, 'bank-fraud-alert': Landmark } as Record<string, typeof Smartphone>
 
 function Picker({ onPick }: { onPick: (s: Scenario) => void }) {
   return (
@@ -107,7 +102,7 @@ function Debrief({
           <RotateCcw size={20} /> Play this scenario again
         </button>
         <button className="btn btn-secondary btn-block" onClick={onOther}>
-          <ArrowRight size={20} /> Try another scenario
+          <ArrowRight size={20} /> Try the other scenario
         </button>
         <p className="see-progress-row">
           <a className="see-progress" href={href('profile')}>
@@ -195,9 +190,7 @@ export default function LongCon() {
                   scenario={scenario}
                   picks={picks}
                   onAgain={() => start(scenario)}
-                  onOther={() =>
-                    start(SCENARIOS[(SCENARIOS.findIndex((s) => s.id === scenario.id) + 1) % SCENARIOS.length])
-                  }
+                  onOther={() => start(SCENARIOS.find((s) => s.id !== scenario.id) ?? null)}
                 />
               ) : (
                 <>

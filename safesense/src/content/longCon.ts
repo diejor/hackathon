@@ -2,8 +2,7 @@
 // Each step offers three moves; each move is one named tactic. Some moves "work" (to show why scams
 // succeed), others hit a classic red flag and the target pushes back. US English, fictional names,
 // 555-01xx numbers and `.example` domains only. Drawn in part from Krishna's archetypes and tactic list
-// (combined:safe-signal/data/scam-archetypes.json, src/contracts.ts). The third story, "parcel-fee-smish", is
-// rewritten from his BadScam game and its lessons (origin/web-app 8f415eb, mini-games/badscam/scenarios.js).
+// (combined:safe-signal/data/scam-archetypes.json, src/contracts.ts).
 
 export type TacticId =
   | 'impersonation'
@@ -18,9 +17,6 @@ export type TacticId =
   | 'fake-link'
   | 'code-request'
   | 'safe-account'
-  | 'sender-name'
-  | 'prize-giveaway'
-  | 'callback-number'
 
 export type Tactic = {
   name: string
@@ -67,7 +63,7 @@ export const TACTICS: Record<TacticId, Tactic> = {
   },
   'fake-link': {
     name: 'A fake link',
-    spot: 'Banks and real companies don’t send links to “unlock” or “release” things. Read a web address from the right, or better, open the company’s own app yourself.',
+    spot: 'Banks don’t send links to “unlock” your account. Open the bank’s own app or type its address yourself.',
   },
   'code-request': {
     name: 'Asking for a code',
@@ -76,19 +72,6 @@ export const TACTICS: Record<TacticId, Tactic> = {
   'safe-account': {
     name: 'A “safe account”',
     spot: 'A real bank never asks you to move your money to protect it. Hang up and call the number on your card.',
-  },
-  'sender-name': {
-    name: 'A trusted company’s name',
-    spot: 'The name at the top of a text is typed in by whoever sent it. Treat it as the least reliable part of the message and check with the company yourself.',
-  },
-  // Same slug as the Scam or Not? message tactic, so the profile counts both games on one sign.
-  'prize-giveaway': {
-    name: 'A prize out of nowhere',
-    spot: 'You can’t win a contest you never entered. Capital letters and free money are the easiest scam to spot, so real scammers rarely use them.',
-  },
-  'callback-number': {
-    name: 'A number to call back',
-    spot: 'A phone number printed in a message belongs to whoever wrote the message. Call the number on your card, your bill or the company’s own app instead.',
   },
 }
 
@@ -318,103 +301,5 @@ export const SCENARIOS: Scenario[] = [
       'In real life, Robert would now send his savings to an account you control. His real account was never in danger until he moved the money.',
     caughtEnd:
       'Robert called the number on the back of his card. The bank said there was no fraud, and nothing had been taken. The scam ended there.',
-  },
-  {
-    id: 'parcel-fee-smish',
-    title: 'A parcel fee text',
-    chip: 'A parcel text',
-    pitch: 'Pretend to be a delivery company and talk a busy nurse into paying a small “redelivery fee”.',
-    playerAs: 'You, as “Parcelo Support”',
-    target: 'Priya (night-shift nurse)',
-    channel: 'Text message simulation',
-    times: [
-      ['7:42 AM', '7:50 AM'],
-      ['7:52 AM', '7:58 AM'],
-      ['8:01 AM', '8:15 AM'],
-    ],
-    steps: [
-      {
-        title: 'Pick who you pretend to be',
-        moves: [
-          {
-            tactic: 'sender-name',
-            text: 'Parcelo: We tried to deliver parcel 6712 today. Please choose a new delivery time in the Parcelo planner.',
-            reply: 'Oh, that’s probably the scrubs I ordered. I’ll sort it out after my shift.',
-            works: true,
-            note: 'It worked. A familiar company name on a dull, everyday message rarely gets questioned. Half the city is waiting for a parcel.',
-          },
-          {
-            tactic: 'prize-giveaway',
-            text: 'CONGRATULATIONS!!! Parcelo has picked YOU for a FREE $1,000 gift card!!! Claim it NOW!!!',
-            reply: 'I never entered anything. Capital letters and a free prize? Deleting this.',
-            works: false,
-            note: 'Priya noticed. A prize she never entered is exactly what people are taught to look for.',
-          },
-          {
-            tactic: 'fake-link',
-            text: 'Parcelo ✅ Verified 🔒 Secure: Your parcel is on hold. Release it here: parcelo.com.release-hold.example',
-            reply: 'It has a padlock and a “verified” tick, so I guess it’s real? I’ll look later.',
-            works: true,
-            note: 'It half worked. Badges are just pictures anyone can copy. Read from the right, this address belongs to release-hold.example, not Parcelo.',
-          },
-        ],
-      },
-      {
-        title: 'Ask for something',
-        moves: [
-          {
-            tactic: 'urgency',
-            text: 'Your delivery slot closes at midnight tonight. After that, parcel 6712 goes back to the sender.',
-            reply: 'Midnight? I’m on shift until seven. Fine, I’ll do it on my break.',
-            works: true,
-            note: 'It worked. A deadline takes away the pause where she would have checked.',
-          },
-          {
-            tactic: 'small-amount',
-            text: 'A $2.99 redelivery fee is due before we can try again. Pay securely on the planner page.',
-            reply: 'Three dollars? Not worth the fuss. Okay.',
-            works: true,
-            note: 'It worked. Nobody calls their bank over $2.99. The fee was never the goal: the card number typed in to pay it was.',
-          },
-          {
-            tactic: 'code-request',
-            text: 'To confirm it’s you, please reply with the 6-digit code we just sent to your phone.',
-            reply: 'A delivery company wants a code sent to my phone? No. That code is for my accounts.',
-            works: false,
-            note: 'Priya caught it. Asking for a code this early felt wrong, even at the end of a long night shift.',
-          },
-        ],
-      },
-      {
-        title: 'Get past a careful check',
-        moves: [
-          {
-            tactic: 'callback-number',
-            text: 'Not sure? Call Parcelo Support any time at +1 (888) 555-0171. Have parcel 6712 ready.',
-            reply: 'I don’t tap links in texts, so I called the number instead. The agent knew my parcel number and said the fee is real. I’ve paid it.',
-            works: true,
-            note: 'It worked. Priya did check, but with the number you chose. You wrote the message, so you answered the phone.',
-          },
-          {
-            tactic: 'emotional-pressure',
-            text: 'Priya, this parcel is marked as a medicine delivery. If it’s sent back, it could take weeks to replace.',
-            reply: 'I don’t have any medicine coming. I opened the store’s app myself: my order arrived last week, and no fee is owed.',
-            works: false,
-            note: 'Priya caught it. Worry could have rushed her, but she checked her order in her own app instead of using your link.',
-          },
-          {
-            tactic: 'switch-channel',
-            text: 'Our texts are having trouble. Please message our agent on WhatsApp at +1 (888) 555-0172 to finish.',
-            reply: 'Now it’s another app? No. I’m forwarding this to 7726 to report it as spam, then deleting it.',
-            works: false,
-            note: 'Priya caught it. Being moved to another app made her stop, and she reported the text.',
-          },
-        ],
-      },
-    ],
-    fooledEnd:
-      'In real life, Priya’s card details would now be in a scammer’s hands, and the “agent” might call back asking for more. No parcel was ever held up.',
-    caughtEnd:
-      'Priya checked her order in the store’s own app: nothing was waiting and no fee was owed. She reported the text by forwarding it to 7726 and deleted it. Nothing was lost.',
   },
 ]
