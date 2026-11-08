@@ -40,7 +40,7 @@ export { myActivity, logActivity, seedDemoActivity } from './activity';
 export { aiPing, aiAsk } from './ai';
 export { myMessages, myFacts, forgetMe, botSend } from './bot';
 export { discordInteractions, discordRunJob } from './discord';
-export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebhook, practiceRunJob } from './photon';
+export { myLinkCode, myChannelLinks, createLinkCode, unlinkChannels, photonWebhook, practiceRunJob, practiceTrialRunJob } from './photon';
 export { myPracticeTexts, requestPracticeText } from './practice';
 export { voiceContext, voiceResult } from './voice';
 

@@ -18,10 +18,11 @@
 //  - channel_link / link_code / link_attempt / webhook_seen are private; players see only their own rows.
 //  - Outbound guards (photon-guards.ts): kill switch PHOTON_SENDING_ENABLED, STOP/START opt-out, a daily
 //    cap per sender; every outbound message goes through deliver(). The bot only ever replies to a text,
-//    except practice texts (practice.ts), which the linked player asks for and go through deliverProactive().
+//    except practice texts (practice.ts), which the player asks for (a trial if the phone isn't linked) and go
+//    through deliverProactive().
 import { t, SenderError, SyncResponse, type Headers, type Request } from 'spacetimedb/server';
 import { Identity, Timestamp, TimeDuration } from 'spacetimedb';
-import spacetimedb, { practiceJob, tables, viewRow, type Db, type Env, type Handler } from './schema';
+import spacetimedb, { practiceJob, practiceTrialJob, tables, viewRow, type Db, type Env, type Handler } from './schema';
 import { errorMessage, loadAiConfig, trim, trimEndChar, type HttpClient, type TxHost } from './ai';
 import { BotApology, MaxBotTextChars, forgetAll, runBotTurn, upsertFacts, type BotReply } from './bot';
 import { CodeAlphabet } from './lib';
@@ -43,7 +44,16 @@ import {
   reserveSend,
   saveReach,
 } from './photon-guards';
-import { PracticeQueuedReply, dropPracticeOfOwner, dropPracticeOfSender, gradePractice, queuePractice } from './practice';
+import {
+  PracticeDailyLimit,
+  PracticeOff,
+  PracticeQueuedReply,
+  dropPracticeOfOwner,
+  dropPracticeOfSender,
+  gradePractice,
+  queuePractice,
+  queueTrial,
+} from './practice';
 import { base64Decode, base64Encode, concat, fixedTimeEquals, fromUtf8, hmacSha256, sha256, toHex, utf8 } from './crypto';
 import { dropVoiceOfOwner, dropVoiceOfSender, saveVoiceLink } from './voice';
 
@@ -168,7 +178,14 @@ export const photonWebhook = spacetimedb.httpHandler((ctx, request) => {
   return respond(200, `ok: ${outcome}`);
 });
 
-type Reply = { text: string; optOutNotice?: boolean; why?: string };
+type Reply = { text: string; optOutNotice?: boolean; why?: string; tag?: string };
+
+// Shown in the webhook's 200 body after the outcome, e.g. "ok: sent (practice queued)" (photon-sim checks).
+const ReplyTags: Record<string, string> = {
+  [PracticeQueuedReply]: 'practice queued',
+  [PracticeDailyLimit]: 'practice limit',
+  [PracticeOff]: 'practice off',
+};
 
 const senderKeyOf = (msg: InboundMessage) => `${msg.platform}:${msg.senderUserId}`;
 
@@ -196,7 +213,7 @@ function guardedInbound(ctx: Handler, msg: InboundMessage): Reply {
   // Kill switch on: commands still work (LINK, UNLINK, FORGET ME), but no AI turn for a reply nobody gets.
   const sending = killSwitchBlock(ctx.env, 'reply') === null;
   const text = handleInbound(ctx, msg, sending);
-  return sending || text.length > 0 ? { text } : { text: '', why: 'sending disabled' };
+  return sending || text.length > 0 ? { text, tag: ReplyTags[text] } : { text: '', why: 'sending disabled' };
 }
 
 // The only way out to a phone: kill switch, opt-out and daily cap, then Photon's REST API.
@@ -218,14 +235,19 @@ function deliver(ctx: Handler, msg: InboundMessage, reply: Reply, idempotencyKey
   }
   const text = gate === 'last' ? trim(reply.text, MaxChannelReplyChars - LastSendNote.length) + LastSendNote : reply.text;
   const sent = sendChannelReply(ctx.http, ctx.env, msg, text, idempotencyKey);
-  return (sent ? 'sent' : 'send failed') + (gate === 'last' ? ' (last today)' : '') + (reply.optOutNotice ? ' (opt-out confirmation)' : '');
+  return (
+    (sent ? 'sent' : 'send failed') +
+    (gate === 'last' ? ' (last today)' : '') +
+    (reply.optOutNotice ? ' (opt-out confirmation)' : '') +
+    (reply.tag ? ` (${reply.tag})` : '')
+  );
 }
 
 // The only way out for a practice text (not a reply): the proactive kill switch, opt-out and daily cap, then
 // Photon. The shared line still refuses it (403) unless that phone texted the line first.
 function deliverProactive(
   ctx: TxHost,
-  target: { senderKey: string; spaceId: string; agentUserId: string },
+  target: { senderKey: string; spaceId: string; agentUserId: string; projectId?: string },
   text: string,
   idempotencyKey: string
 ): string {
@@ -242,7 +264,7 @@ function deliverProactive(
     console.log(`Photon: not sending (${gate})`);
     return `skipped (${gate})`;
   }
-  const to = { spaceId: target.spaceId, agentUserId: target.agentUserId, projectId: '' };
+  const to = { spaceId: target.spaceId, agentUserId: target.agentUserId, projectId: target.projectId ?? '' };
   return sendChannelReply(ctx.http, ctx.env, to, text, idempotencyKey) ? 'sent' : 'send failed';
 }
 
@@ -279,6 +301,34 @@ export const practiceRunJob = spacetimedb.procedure(
       setStatus(outcome === 'sent' ? 'pending' : 'failed');
     } catch (e) {
       console.error(`Practice: job ${job.scheduledId} failed: ${errorName(e)}: ${errorMessage(e)}`);
+      setStatus('failed');
+    }
+    return {};
+  }
+);
+
+// Scheduled only (practice_trial_job): send one trial practice text to the unlinked phone that asked for it,
+// into the chat it texted from. Same guards (deliverProactive); marks the trial "pending" or "failed".
+export const practiceTrialRunJob = spacetimedb.procedure(
+  { onSchedule: practiceTrialJob },
+  { job: practiceTrialJob.rowType },
+  t.unit(),
+  (ctx, { job }) => {
+    if (!ctx.withTx(tx => tx.senderAuth.isInternal)) throw new SenderError('Not allowed');
+    const setStatus = (status: string) =>
+      ctx.withTx(tx => {
+        const row = tx.db.practiceTrial.id.find(job.trialId);
+        if (row && row.status === 'queued') tx.db.practiceTrial.id.update({ ...row, status });
+      });
+    try {
+      const row = ctx.withTx(tx => tx.db.practiceTrial.id.find(job.trialId));
+      if (!row || row.status !== 'queued') return {};
+      console.log(`Practice trial: sending #${job.trialId}: ${job.text}`);
+      const outcome = deliverProactive(ctx, row, job.text, `practice-trial-${job.trialId}`);
+      console.log(`Practice trial: #${job.trialId} ${outcome}`);
+      setStatus(outcome === 'sent' ? 'pending' : 'failed');
+    } catch (e) {
+      console.error(`Practice trial: job ${job.scheduledId} failed: ${errorName(e)}: ${errorMessage(e)}`);
       setStatus('failed');
     }
     return {};
@@ -415,12 +465,15 @@ function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): s
       dropVoiceOfOwner(tx.db, owner);
       return 'Done. I deleted our conversation and everything I remembered about you.';
     });
-  // "PRACTICE": ask for a practice text by text (same rules as the web's request_practice_text).
+  // "PRACTICE": ask for a practice text by text (same rules as the web's request_practice_text). Not linked:
+  // a trial into this chat, not saved to anyone's progress.
   if (command === 'PRACTICE' || command === 'PRACTICE TEXT')
     return ctx.withTx(tx => {
       const linked = tx.db.channelLink.senderKey.find(senderKey);
-      if (!linked)
-        return 'Practice texts need a linked phone. In the SafeSense chat, select Link my phone, text LINK and the code, then text PRACTICE.';
+      if (!linked) {
+        const to = { senderKey, projectId: msg.projectId, spaceId: msg.spaceId, agentUserId: msg.agentUserId };
+        return queueTrial(tx, to) ?? PracticeQueuedReply;
+      }
       return queuePractice(tx, linked.owner) ?? PracticeQueuedReply;
     });
   // A clear answer (REPORT, YES, ...) to a practice text from the last 2 h: grade it and debrief (no AI).

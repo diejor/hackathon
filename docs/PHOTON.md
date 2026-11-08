@@ -65,6 +65,8 @@ Krishna's drill idea, built into the module (`spacetimedb-ts/src/practice.ts`). 
    - The result is logged as game `practice-text`, `answer_correct` or `answer_wrong`, with `{template, tactic}`. The coach and the profile count it like a Scam or Not? answer.
 4. **Which scam:** the tactic they miss most in the games, if there's a template for it; otherwise one they haven't had yet.
 
+**Before linking (trials):** `PRACTICE` from a phone that hasn't done `LINK <code>` works too, so a demo doesn't need the link step first. The phone gets exactly the same confirmation, practice text (60–120 s later, into the same chat, through the scheduled job `practice_trial_job`) and debrief as a linked one; the wording never says "trial". The only differences are internal: nothing is written to anyone's activity or points, and the limit is 3 per phone per UTC day (keyed by `<platform>:<Photon user id>`, no lifetime cap; a text that couldn't be sent doesn't count), after which the reply is the usual "You've had today's practice text…". Every other guard still applies: `PHOTON_SENDING_ENABLED` = `"true"`, `STOP`, the 30-a-day cap, the 320-character cap and footer, templates only, no AI. State lives in the private table `practice_trial` (chat id and our line's id from the `PRACTICE` message, template, status; no phone number); `FORGET ME` deletes it. Linked phones are unchanged.
+
 **The texts:** 8 templates with fictional brands (Parcelo, SwiftShip, TollPay, GlacierBank, Meridian Trust, BrightLine Mobile, StreamNest, BrightNet), `.example` addresses shown as plain text and 555-01xx numbers. Each is at most 320 characters and ends with "(SafeSense practice — reply REPORT if you think it's a scam)". No real links, and no text asks anyone to read out or send a code. Krishna's `code_relay` template was left out for that reason.
 
 **Limits and guards:**
@@ -72,7 +74,7 @@ Krishna's drill idea, built into the module (`spacetimedb-ts/src/practice.ts`). 
 - Sending needs `PHOTON_SENDING_ENABLED` = `"true"`. With it unset, replies still work, but practice texts are refused ("switched off right now").
 - It also needs a linked iPhone (saved at `LINK`), no `STOP`, and room under the 30-a-day cap. These are checked when it's asked for and again when it's sent.
 - `UNLINK`, `FORGET ME` and the web's Unlink and Forget me delete the person's practice rows and queued jobs.
-- **Schema:** 2 new private tables, `practice_send` and `practice_job`, plus the view `my_practice_texts`. No existing table changed, so Maincloud republishes without a wipe; this was tested locally by upgrading a database built from `safesense`.
+- **Schema:** 4 new private tables, `practice_send` and `practice_job` (linked), `practice_trial` and `practice_trial_job` (before linking), plus the view `my_practice_texts`. No existing table changed, so Maincloud republishes without a wipe; this was tested locally by upgrading a database built from `safesense`.
 
 **Shared line:** Photon only lets the line message the registered iPhone after it has texted the line. If the send is refused (for example 403 `SHARED_LINE_INBOUND_REQUIRED`), the practice row is marked `failed` and the logs say why. Text the line once (anything, or `PRACTICE`), then ask again.
 
@@ -82,8 +84,9 @@ Krishna's drill idea, built into the module (`spacetimedb-ts/src/practice.ts`). 
 3. Wait about a minute for the text, reply `REPORT`, and show the debrief and the card's "You caught the last one".
 4. To demo again on the same day, the database owner can clear the limits:
    `spacetime sql --no-config -s maincloud safesense-1aa18263 "DELETE FROM practice_send"`.
+   For trials (unlinked phones): `"DELETE FROM practice_trial"`.
 
-**Testing locally:** follow "Testing locally" below with `PHOTON_SENDING_ENABLED=true` exported. Use `spacetime call --no-config -s local <db> create_link_code` and read the code with `spacetime sql … "SELECT code FROM link_code"`, then sim `LINK <code>` and `spacetime call … request_practice_text`. The job's log line shows the rendered text. A local send always fails, so the row ends `failed`. To test grading, mark it sent with `spacetime sql … "UPDATE practice_send SET status = 'pending'"`, then sim `REPORT` or `YES`.
+**Testing locally:** follow "Testing locally" below with `PHOTON_SENDING_ENABLED=true` exported. Use `spacetime call --no-config -s local <db> create_link_code` and read the code with `spacetime sql … "SELECT code FROM link_code"`, then sim `LINK <code>` and `spacetime call … request_practice_text`. The job's log line shows the rendered text. A local send always fails, so the row ends `failed`. To test grading, mark it sent with `spacetime sql … "UPDATE practice_send SET status = 'pending'"`, then sim `REPORT` or `YES`. For a trial, sim `PRACTICE` from an unlinked number, then `UPDATE practice_trial SET status = 'pending'` and sim `REPORT` from the same number; `activity_event` stays empty. `--checks` covers trials (queued, the 4th in a day gets the limit reply, nothing after STOP) when the db was published with `PHOTON_SENDING_ENABLED=true`.
 
 ## The important limitation
 
