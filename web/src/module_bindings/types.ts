@@ -83,6 +83,17 @@ export const DisconnectCleanup = __t.object("DisconnectCleanup", {
 });
 export type DisconnectCleanup = __Infer<typeof DisconnectCleanup>;
 
+export const DiscordJob = __t.object("DiscordJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  applicationId: __t.string(),
+  interactionToken: __t.string(),
+  userId: __t.string(),
+  text: __t.string(),
+  attachmentUrl: __t.string(),
+});
+export type DiscordJob = __Infer<typeof DiscordJob>;
+
 export const JoinAttempt = __t.object("JoinAttempt", {
   identity: __t.identity(),
   failures: __t.u32(),

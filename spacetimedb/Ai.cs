@@ -20,6 +20,11 @@ public partial struct EnvironmentSchema
     public string? PHOTON_PROJECT_ID;     // defaults to the projectId in each webhook event
     public string? PHOTON_WEBHOOK_SECRET; // whsec_... signing secret of the webhook destination
     public string? PHOTON_BASE_URL;       // default https://api.photon.codes
+    // Discord HTTP interactions (Discord.cs); optional, the endpoint answers 503 without a public key.
+    // The bot token is NOT declared here on purpose: only scripts/discord-register.sh uses it.
+    public string? DISCORD_PUBLIC_KEY;     // app public key (hex), verifies X-Signature-Ed25519
+    public string? DISCORD_APPLICATION_ID; // optional: reject interactions for other apps
+    public string? DISCORD_API_BASE;       // default https://discord.com/api/v10
 }
 
 public static partial class Module

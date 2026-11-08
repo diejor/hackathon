@@ -60,6 +60,13 @@ It runs the same bot pipeline as the web and replies in plain text. Senders get 
 `LINK <code>` (Help Bot → ⋯ → Link iMessage); after that, their chats share the player's history and show up in the web chat as "via iMessage".
 Other commands: `UNLINK`, `FORGET ME`. Set the bot's number in `web/src/bot/config.ts`.
 
+**Discord (HTTP interactions):** `spacetimedb/Discord.cs` serves the app's Interactions Endpoint at `/v1/database/<db>/route/discord`
+(env `DISCORD_PUBLIC_KEY`, optional `DISCORD_APPLICATION_ID`, `DISCORD_API_BASE`). Every request's Ed25519 signature is checked
+(`spacetimedb/Ed25519.cs`, pure C#, ~70 ms). Commands: `/check message: screenshot:`, the message menu **Apps → Check with Help Bot**,
+`/link <code>` (Help Bot → ⋯ → Link Discord) and `/unlink`. Checks are deferred: a scheduled procedure runs the bot and edits in one
+ephemeral embed (verdict, red flags, what to do; no clickable links). Register the commands with `scripts/discord-register.sh`
+(needs `DISCORD_BOT_TOKEN` in `.env`; the token is never sent to the database) and set `DISCORD_INSTALL_URL` in `web/src/bot/config.ts`.
+
 **Privacy:** chat messages, memory facts and game activity live in private tables; each player sees only their own
 rows through per-user views (`my_messages`, `my_facts`, `my_activity`), and screenshots are never stored.
 "Forget me" deletes the player's messages, facts and game activity.

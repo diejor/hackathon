@@ -134,7 +134,9 @@ public static partial class Module
     }
 
     [SpacetimeDB.HttpRouter]
-    public static Router Routes() => SpacetimeDB.Router.New().Post("/photon", Handlers.PhotonWebhook);
+    public static Router Routes() => SpacetimeDB.Router.New()
+        .Post("/photon", Handlers.PhotonWebhook)
+        .Post("/discord", Handlers.DiscordInteractions);
 
     [SpacetimeDB.HttpHandler]
     public static HttpResponse PhotonWebhook(HandlerContext ctx, HttpRequest request)
@@ -256,7 +258,7 @@ public static partial class Module
         // ---- Commands (no AI call) ----
         // "LINK ABC123" (also "link abc-123"); a longer text that merely starts with "link" is a normal message.
         if (System.Text.RegularExpressions.Regex.Match(command, @"^LINK[\s:]+([A-Z0-9][A-Z0-9 \-]{0,10})$") is { Success: true } link)
-            return host.Tx((db, now) => LinkSender(db, now, senderKey, pseudo, msg, link.Groups[1].Value));
+            return host.Tx((db, now) => LinkSender(db, now, senderKey, pseudo, msg.Platform, MaskHandle(msg.SenderHandle), link.Groups[1].Value));
         if (command == "UNLINK")
             return host.Tx((db, now) =>
             {
@@ -329,9 +331,11 @@ public static partial class Module
         }
     }
 
-    static string LinkSender(Local db, Timestamp now, string senderKey, Identity pseudo, InboundMessage msg, string arg)
+    // Shared by Photon (LINK <code>) and Discord (/link). handleHint: what the web app shows for the link.
+    static string LinkSender(Local db, Timestamp now, string senderKey, Identity pseudo, string platform, string handleHint, string arg)
     {
-        var code = new string(arg.Where(char.IsLetterOrDigit).ToArray());
+        var discord = platform == "discord";
+        var code = new string(arg.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         if (db.LinkAttempt.SenderKey.Find(senderKey) is { } a)
         {
             if (now.MicrosecondsSinceUnixEpoch - a.WindowStart.MicrosecondsSinceUnixEpoch > FailedLinkWindowMicros)
@@ -346,7 +350,7 @@ public static partial class Module
             if (db.LinkAttempt.SenderKey.Find(senderKey) is { } f) db.LinkAttempt.SenderKey.Update(f with { Failures = f.Failures + 1 });
             else db.LinkAttempt.Insert(new LinkAttempt { SenderKey = senderKey, Failures = 1, WindowStart = now });
             return "That code didn't work. Codes are 6 characters and expire after 10 minutes. " +
-                "In the Security Arcade app, open Help Bot → ⋯ → Link iMessage for a new one.";
+                $"In the Security Arcade app, open Help Bot → ⋯ → {(discord ? "Link Discord" : "Link iMessage")} for a new one.";
         }
 
         var player = found.Owner;
@@ -357,8 +361,8 @@ public static partial class Module
         {
             SenderKey = senderKey,
             Owner = player,
-            Platform = msg.Platform,
-            HandleHint = MaskHandle(msg.SenderHandle),
+            Platform = platform,
+            HandleHint = handleHint,
             CreatedAt = now,
         });
         // Bring along what this sender said before linking (it's the same person: they had the code).
@@ -367,7 +371,7 @@ public static partial class Module
         foreach (var f in facts) db.MemoryFact.Id.Delete(f.Id);
         UpsertFacts(db, player, facts.Select(f => f.Fact).ToList(), now);
         return "Linked! Your chats here now share your Security Arcade history and game progress, and show up in the app. " +
-            "Text UNLINK to undo.";
+            (discord ? "Run /unlink to undo." : "Text UNLINK to undo.");
     }
 
     // Plain text for messaging apps (no cards): verdict line, reply, up to 3 red flags, one next step.

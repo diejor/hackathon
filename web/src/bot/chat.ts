@@ -4,7 +4,7 @@
 // nodes): model output and pasted scam texts are untrusted, and URLs are deliberately not linkified.
 import { h } from "../ui";
 import * as Bot from "./bot";
-import { BOT_IMESSAGE_ADDRESS } from "./config";
+import { BOT_IMESSAGE_ADDRESS, CHANNEL_LABELS, DISCORD_INSTALL_URL } from "./config";
 import { createDictation, voiceSupported } from "./voice";
 
 const VERDICTS: Record<string, string> = { scam: "Scam", suspicious: "Suspicious", likely_safe: "Likely safe" };
@@ -27,45 +27,47 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   let previewUrl: string | null = null;
   let confirming = false;
   let menuOpen = false;
-  let linking = false; // "Link iMessage" panel open
+  let linking: "imessage" | "discord" | null = null; // "Link iMessage" / "Link Discord" panel open
   let linkTimer: ReturnType<typeof setInterval> | null = null;
   let lastCount = -1;
   let seeding = false;
   let hint = false; // "Check a message" chip: textarea shows CHECK_HINT until the next send
 
-  // ---------- Top bar (⋯ menu: Link iMessage, Forget me) + panels ----------
+  // ---------- Top bar (⋯ menu: Link iMessage, Link Discord, Forget me) + panels ----------
   const menuBtn = h("button", {
     class: "bot-top-btn bot-menu-btn", "aria-label": "Menu", "aria-haspopup": "menu", "aria-expanded": "false",
     onclick: () => { menuOpen = !menuOpen; update(); },
   }, "⋯");
   const menu = h("div", { class: "bot-menu", role: "menu" },
-    h("button", { class: "bot-menu-item bot-menu-link", role: "menuitem", hidden: !BOT_IMESSAGE_ADDRESS, onclick: () => void openLink() }, "Link iMessage"),
-    h("button", { class: "bot-menu-item bot-forget", role: "menuitem", onclick: () => { menuOpen = false; linking = false; confirming = true; update(); } }, "Forget me"));
+    h("button", { class: "bot-menu-item bot-menu-link", role: "menuitem", hidden: !BOT_IMESSAGE_ADDRESS, onclick: () => void openLink("imessage") }, "Link iMessage"),
+    h("button", { class: "bot-menu-item bot-menu-link bot-menu-discord", role: "menuitem", hidden: !DISCORD_INSTALL_URL, onclick: () => void openLink("discord") }, "Link Discord"),
+    h("button", { class: "bot-menu-item bot-forget", role: "menuitem", onclick: () => { menuOpen = false; linking = null; confirming = true; update(); } }, "Forget me"));
   const top = h("div", { class: "bot-top" },
     h("button", { class: "bot-top-btn bot-back", onclick: opts.onBack, "aria-label": "Back" }, "‹ Back"),
     h("div", { class: "bot-title" }, "Help Bot"),
     h("div", { class: "bot-menu-wrap" }, menuBtn, menu));
 
-  // "Link iMessage": a one-time code the player texts to the bot ("LINK ABC123").
+  // "Link iMessage" / "Link Discord": a one-time code the player sends to the bot ("LINK ABC123" / "/link ABC123").
   const linkBody = h("div", { class: "bot-link-body" });
+  const linkTitle = h("div", { class: "bot-link-title" }, "Link iMessage");
   const linkBox = h("div", { class: "bot-link", role: "dialog", "aria-label": "Link iMessage" },
-    h("div", { class: "bot-link-title" }, "Link iMessage"),
+    linkTitle,
     linkBody,
     h("div", { class: "bot-confirm-actions" },
       h("button", { class: "btn btn-secondary btn-small", onclick: () => void Bot.createLinkCode() }, "New code"),
       h("button", { class: "btn btn-primary btn-small", onclick: () => closeLink() }, "Done")));
 
-  async function openLink() {
+  async function openLink(kind: "imessage" | "discord") {
     menuOpen = false;
     confirming = false;
-    linking = true;
+    linking = kind;
     linkTimer ??= setInterval(update, 15_000); // keep "expires in" fresh
     update();
     if (!Bot.linkCode()) await Bot.createLinkCode();
   }
 
   function closeLink() {
-    linking = false;
+    linking = null;
     if (linkTimer) { clearInterval(linkTimer); linkTimer = null; }
     update();
   }
@@ -73,19 +75,27 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   function renderLink() {
     const code = Bot.linkCode();
     const links = Bot.channelLinks();
+    const discord = linking === "discord";
+    const title = discord ? "Link Discord" : "Link iMessage";
+    linkTitle.textContent = title;
+    linkBox.setAttribute("aria-label", title);
     const kids: (HTMLElement | null)[] = [];
     if (code) {
       const mins = Math.max(1, Math.ceil(Number(code.expiresAt.microsSinceUnixEpoch / 1000n - BigInt(Date.now())) / 60_000));
       kids.push(
         h("div", { class: "bot-link-code", "aria-label": `Code ${code.code.split("").join(" ")}` }, code.code),
-        h("p", { class: "bot-link-text" }, "Text ", h("b", null, `LINK ${code.code}`), " to the Help Bot on iMessage at ", h("b", null, BOT_IMESSAGE_ADDRESS), "."),
-        h("p", { class: "bot-link-sub" }, `Your iMessage chats will then share this history and show up here. The code works once and expires in ${mins} min.`));
+        discord
+          ? h("p", { class: "bot-link-text" }, "In Discord, run ", h("b", null, `/link ${code.code}`), ".")
+          : h("p", { class: "bot-link-text" }, "Text ", h("b", null, `LINK ${code.code}`), " to the Help Bot on iMessage at ", h("b", null, BOT_IMESSAGE_ADDRESS), "."),
+        h("p", { class: "bot-link-sub" }, `Your ${discord ? "Discord checks" : "iMessage chats"} will then share this history and show up here. The code works once and expires in ${mins} min.`),
+        discord ? h("p", { class: "bot-link-sub" }, "No Help Bot in Discord yet? ",
+          h("a", { href: DISCORD_INSTALL_URL, target: "_blank", rel: "noopener noreferrer" }, "Add it to Discord"), ".") : null);
     } else {
       kids.push(h("p", { class: "bot-link-text" }, Bot.ready() ? "Making a code…" : "Connecting…"));
     }
     if (links.length) {
       kids.push(h("div", { class: "bot-link-linked" },
-        ...links.map((l) => h("div", null, `✓ Linked: ${l.platform === "imessage" ? "iMessage" : l.platform} ${l.handleHint}`)),
+        ...links.map((l) => h("div", null, `✓ Linked: ${CHANNEL_LABELS[l.platform] ?? l.platform} ${l.handleHint}`)),
         h("button", { class: "bot-link-unlink", onclick: () => void Bot.unlinkChannels() }, "Unlink")));
     }
     linkBody.replaceChildren(...kids.filter((k): k is HTMLElement => !!k));
@@ -270,7 +280,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     menu.hidden = !menuOpen;
     menuBtn.setAttribute("aria-expanded", String(menuOpen));
     menuBtn.toggleAttribute("disabled", !ready);
-    linkBox.hidden = !linking;
+    linkBox.hidden = linking === null;
     if (linking) renderLink();
     const facts = Bot.facts();
     confirmFacts.replaceChildren(...facts.map((f) => h("li", null, f.fact)));

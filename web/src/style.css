@@ -207,6 +207,7 @@ body.bot-open .header, body.bot-open .game-host { display: none; }
 }
 .bot-link-text { margin: 0 0 6px; font-size: 15px; line-height: 1.4; }
 .bot-link-sub { margin: 0 0 10px; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.bot-link-sub a { color: var(--magenta); }
 .bot-link-linked { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; font-size: 14px; color: var(--ok); }
 .bot-link-unlink { border: 0; background: transparent; color: var(--muted); text-decoration: underline; font-size: 13px; cursor: pointer; }
 .bot-via { margin-top: 4px; font-size: 11px; font-weight: 600; opacity: 0.7; text-align: right; }
