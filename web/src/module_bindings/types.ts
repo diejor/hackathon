@@ -124,6 +124,27 @@ export const MemoryFact = __t.object("MemoryFact", {
 });
 export type MemoryFact = __Infer<typeof MemoryFact>;
 
+export const MyActivity = __t.object("MyActivity", {});
+export type MyActivity = __Infer<typeof MyActivity>;
+
+export const MyChannelLinks = __t.object("MyChannelLinks", {});
+export type MyChannelLinks = __Infer<typeof MyChannelLinks>;
+
+export const MyFacts = __t.object("MyFacts", {});
+export type MyFacts = __Infer<typeof MyFacts>;
+
+export const MyLinkCode = __t.object("MyLinkCode", {});
+export type MyLinkCode = __Infer<typeof MyLinkCode>;
+
+export const MyMessages = __t.object("MyMessages", {});
+export type MyMessages = __Infer<typeof MyMessages>;
+
+export const MyRoom = __t.object("MyRoom", {});
+export type MyRoom = __Infer<typeof MyRoom>;
+
+export const MyRoomMembers = __t.object("MyRoomMembers", {});
+export type MyRoomMembers = __Infer<typeof MyRoomMembers>;
+
 export const Room = __t.object("Room", {
   id: __t.u64(),
   code: __t.string(),
