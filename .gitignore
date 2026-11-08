@@ -12,3 +12,8 @@ coverage/
 *.db-shm
 *.tsbuildinfo
 audit-temp.json
+safesignal.db
+audit-temp.json
+.env
+.env.local
+.claude/
