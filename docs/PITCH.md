@@ -51,7 +51,7 @@ Research on "inoculation" games, like Bad News for misinformation, suggests that
 
 **Is the practice text safe to send?**
 - It's opt-in, and only to your own linked phone.
-- It's clearly labeled `[Practice · SafeSense]`.
+- It ends with a clear label: "(SafeSense practice — reply REPORT if you think it's a scam)".
 - It uses fictional brands and contains no links.
 - Limits: 1 a day, 3 in total. STOP is honored, and a kill switch turns it off.
 
