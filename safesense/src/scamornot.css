@@ -255,6 +255,16 @@
   min-height: 0;
 }
 
+/* Small phones (and larger text): three nested paddings left the evidence text a narrow column. */
+@media (max-width: 400px) {
+  .son-page .son-inspect {
+    padding: 12px;
+  }
+  .son-page .son-evidence {
+    padding: 10px 12px;
+  }
+}
+
 /* After answering, the buttons scroll to the top of the screen (when the answer would not fit). */
 .son-page .verdicts {
   scroll-margin-top: 16px;
