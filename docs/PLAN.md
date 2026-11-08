@@ -2,7 +2,7 @@
 
 Written 2026-11-08 ~01:30 CST, on branch `safesense`.
 - Deadlines: Devpost submission Sun 2026-11-08 **11:00 CST**; demo video uploaded by **12:00 CST**.
-- Tracks: T-Mobile Safe Signal, Best Use of Photon API.
+- Event: HackUTD (MLH). Tracks: T-Mobile Safe Signal, Best Use of Photon API, MLH Best Use of Gemini API (prize: MLH swag kits).
 - This file is the source of truth for the build. Subagents: read it fully before starting, and stay inside your band's files.
 
 ## 1. What we're building
