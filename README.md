@@ -97,9 +97,20 @@ Prerequisites: Node 20+, the [SpacetimeDB CLI](https://spacetimedb.com/install) 
 spacetime start --listen-addr 127.0.0.1:3001     # local server (CLI nickname `local` points here)
 scripts/set-key.sh AI_API_KEY                    # hidden prompt; saved to the gitignored .env
 scripts/publish-ts.sh                            # builds spacetimedb-ts/ and publishes db safesense-local
-cd safesense && npm ci
+cd safesense && npm ci                           # also installs web/ (the site imports web/src/bot)
 VITE_STDB_SERVER=ws://127.0.0.1:3001 VITE_STDB_DB=safesense-local npx vite
 ```
+
+**Just the website, no local server:** point it at the live database instead (your browser gets its own
+identity there, so it's safe for clicking around; chat questions use the real Gemini key):
+
+```sh
+cd safesense && npm ci
+VITE_STDB_SERVER=wss://maincloud.spacetimedb.com VITE_STDB_DB=safesense-1aa18263 npx vite
+```
+
+If the build fails with `Property 'reducers' does not exist on type 'DbConnection'`, `web/` is missing its
+packages: run `npm ci` in `web/` (newer checkouts do this automatically).
 
 Any build also accepts `?server=...&db=...` in the URL. Other module settings (`AI_MODEL`,
 `AI_FALLBACK_MODEL`, `PHOTON_WEBHOOK_SECRET`, ...) are listed in [`docs/PLAN.md`](docs/PLAN.md) §5 and set the
