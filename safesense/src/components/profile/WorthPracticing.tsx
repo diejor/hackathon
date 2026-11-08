@@ -43,7 +43,7 @@ export function WorthPracticing({ items, genuineMissed }: { items: PracticeItem[
                 {sign.tell}
               </p>
               <a className="btn btn-secondary btn-block" href={href(sign.train)}>
-                <ArrowRight size={20} /> Practice with {GAME_NAME[sign.train] ?? 'a game'}
+                <ArrowRight size={20} /> Try {GAME_NAME[sign.train] ?? 'a game'}
               </a>
             </li>
           )
@@ -53,9 +53,9 @@ export function WorthPracticing({ items, genuineMissed }: { items: PracticeItem[
       {genuineMissed > 0 && (
         <div className="feedback practice-genuine">
           <p className="feedback-title">
-            <Info size={20} strokeWidth={1.5} /> You were extra careful with a genuine message — that’s okay.
+            <Info size={20} strokeWidth={1.5} /> Extra careful
           </p>
-          <p>{GENUINE_SIGN.tell}</p>
+          <p>You were extra careful with a genuine message — that’s okay. {GENUINE_SIGN.tell}</p>
         </div>
       )}
 
