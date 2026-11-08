@@ -67,6 +67,9 @@ export const MOVE_SIGNS: Sign[] = [
   move('fake-link', 'A link to “unlock” or “confirm” something.'),
   move('code-request', 'Asking you to read out a code sent to you.'),
   move('safe-account', 'Moving your money to keep it “safe”.'),
+  move('sender-name', 'A familiar company name typed at the top of a text.'),
+  move('callback-number', 'A phone number to call, printed in the message itself.'),
+  // 'prize-giveaway' is also a Long Con move; it shares the Scam or Not? tile above.
 ]
 
 const ALL = [...MESSAGE_SIGNS, GENUINE_SIGN, ...MOVE_SIGNS]
