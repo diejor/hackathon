@@ -84,6 +84,8 @@ Compare `spacetimedb-ts/src/photon.ts` with your `guard.ts` (`git show combined:
 - [ ] the bot only ever replies to someone who texted first (true on the shared line; keep it true in code)
 - [ ] a per-number daily cap on outgoing messages
 
+**Full spec for the guards and practice texts:** [`docs/KRISHNA-PUSH-ANALYSIS.md`](KRISHNA-PUSH-ANALYSIS.md) §3 ("Practice texts in our module"), built from your own `templates.js` and safety rules.
+
 **Stretch, if time allows: practice texts** (your drill idea). A linked user taps "Send me a practice text" on the web. SafeSense texts them one realistic fake scam (fictional brand, safe link), and they reply `REPORT`. The coach records whether they caught it. Limits: one per day, three in total, `STOP` honoured. It can reuse your scam scenarios (`combined:safe-signal/data/scam-archetypes.json`).
 
 ## Working rules
