@@ -177,6 +177,13 @@ Each band runs as a subagent in its own git worktree and branch, and owns only i
 
 ### B6 — Deploy · ~04:30, **needs Diego's OK**
 
+> **Done 2026-11-08 00:10 CST (Diego's OK):**
+> - TS module live on Maincloud db **`safesense-1aa18263`**. Routes are answering: an unsigned Discord request gets 401; Photon gets 503 until `PHOTON_WEBHOOK_SECRET` is set.
+> - SafeSense is at https://diejor.github.io/hackathon/; the previous arcade build is at `/arcade/`.
+> - Build command: `VITE_STDB_SERVER=wss://maincloud.spacetimedb.com VITE_STDB_DB=safesense-1aa18263 npm run build` in `safesense/`.
+> - The Pages site is assembled as `safesense/dist` plus the old gh-pages content under `arcade/`, then `scripts/deploy-pages.sh <dir>`.
+> - Still to do: point the Discord interactions URL at `https://maincloud.spacetimedb.com/v1/database/safesense-1aa18263/route/discord`, and the Photon webhook at `.../safesense-1aa18263/route/photon`.
+
 1. Publish `spacetimedb-ts` to a **new Maincloud db** (name it e.g. `safesense-<suffix>`; never touch `hackathon-1aa18263`) and set the module env with `set-key.sh`.
 2. Build `safesense/` with the new db as its default and deploy to GitHub Pages. Suggested layout: SafeSense at the root of `diejor.github.io/hackathon/`, the old arcade moved under `/arcade/`, with Diego's OK.
 3. Point the Discord interactions URL at `/v1/database/<new db>/route/discord` in the Discord developer portal (Diego).
