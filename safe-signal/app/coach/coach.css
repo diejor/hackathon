@@ -1,13 +1,32 @@
-/* Tokens + button styles the Help Bot chat expects (copied from web/src/style.css), scoped to the chat. */
+/* Tokens + button styles the Help Bot chat expects (shape copied from web/src/style.css), scoped to the chat
+   and re-themed to SafeSense's light palette (slate + indigo). */
 .coach-host {
-  --magenta: #e20074; --magenta-dark: #b0005b; --magenta-soft: rgba(226, 0, 116, 0.16);
-  --bg: #0e0e13; --surface: #1a1a22; --surface-2: #24242e; --border: #33333f;
-  --text: #ffffff; --muted: #a3a3b2; --ok: #2bd48a; --danger: #ff4d5e; --col: 480px;
-  color-scheme: dark; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text);
+  --magenta: #4f46e5; --magenta-dark: #4338ca; --magenta-soft: rgba(79, 70, 229, 0.12);
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --border: #e2e8f0;
+  --text: #0f172a; --muted: #64748b; --ok: #059669; --danger: #dc2626; --col: 448px;
+  --site-header: 57px; /* SiteHeader: h-14 + 1px border */
+  color-scheme: light; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text);
 }
 .coach-host button { font: inherit; color: inherit; touch-action: manipulation; user-select: none; }
-.coach-host .btn { min-height: 56px; width: 100%; padding: 0 20px; border: 0; border-radius: 14px; font-size: 18px; font-weight: 700; cursor: pointer; }
+.coach-host .btn { min-height: 48px; width: 100%; padding: 0 20px; border: 0; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
 .coach-host .btn:disabled { opacity: 0.4; cursor: default; }
 .coach-host .btn-primary { background: var(--magenta); color: #fff; }
-.coach-host .btn-secondary { background: var(--surface-2); border: 1px solid var(--border); }
+.coach-host .btn-secondary { background: var(--surface); border: 1px solid #cbd5e1; }
 .coach-host .btn-small { min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 15px; }
+
+/* Sit below the SafeSense header instead of covering it. The chat sets --bot-top/--bot-h from the
+   visual viewport (on-screen keyboard), so offset from those rather than replacing them. */
+.coach-host .bot-chat {
+  top: calc(var(--bot-top, 0px) + var(--site-header));
+  height: calc(var(--bot-h, 100dvh) - var(--site-header));
+  padding-top: 0;
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.coach-host .bot-top { background: var(--surface); }
+.coach-host .bot-msg-bot { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
+.coach-host .bot-menu { box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); }
+.coach-host .bot-verdict-suspicious { color: #0f172a; }
+.coach-host .bot-verdict-likely_safe { color: #fff; }
+.coach-host .bot-shot-note { border-left-color: rgba(255, 255, 255, 0.6); }
+.coach-host .bot-link-code { background: var(--surface-2); }
+@media (max-width: 448px) { .coach-host .bot-chat { border-left: 0; border-right: 0; } }

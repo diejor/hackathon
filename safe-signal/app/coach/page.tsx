@@ -1,5 +1,5 @@
 'use client';
-// Help Bot coach: the Security Arcade chat (../web/src/bot/chat.ts, plain DOM) mounted inside Safe Signal.
+// Help Bot coach: the Security Arcade chat (../web/src/bot/chat.ts, plain DOM) mounted inside SafeSense.
 // Mounted in an effect so nothing touches `window`/`location` during prerender.
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
