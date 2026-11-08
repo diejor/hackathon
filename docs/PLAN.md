@@ -31,7 +31,7 @@ Never claim certainty: the coach gives guidance with reasons. Never imply that s
 | D7 | US English for all content | T-Mobile judges are in the US | Settled |
 | D8 | The Long Con: **you play the scammer** | Matches the home card, "become more familiar with fraudulent tactics" | Settled |
 | D9 | The designer keeps their own copy. Their zips go to the `design-vendor` branch and merge into `safesense/` | Their changes merge without clobbering our wiring | Settled |
-| D10 | Discord channel stays (`/check`, right-click "Check with Help Bot", `/link`) | Already live. Another channel next to Scam Shield | Default. Needs the interactions URL updated after the switch to the new db |
+| D10 | **Discord is dropped from the product and the demo.** The code stays in the module, unused; the endpoint still points at `safesense-1aa18263` | Nice for testing, not part of the story | Settled (Diego, ~00:40) |
 | D11 | Gemini via the OpenAI-compatible API (gemini-3.5-flash, falling back to flash-lite). **Paid tier before recording** | Cents for the demo. Paid-tier content isn't used to improve Google's products | Settled (Diego). Billing not on yet |
 | D12 | `main` (Security Arcade + C# bot) and `combined` (Next.js attempt) stay as archives. Nothing is deleted or force-pushed | Fallbacks | Settled |
 
@@ -223,6 +223,23 @@ Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tool
   - It can't expose individual rows.
 - **Iteration:** v1 front end with synthetic data → Diego reviews screenshots → v2 wires real aggregates after B1 merges. About 1.5 h + 1 h.
 
+### B10 — Profile: progress, not points · ~00:45–02:15
+
+- **Decided (Diego, ~00:40):** no points, levels or sign-in. Progress is saved on this device (SpacetimeDB identity); a nickname is optional.
+- **Page `#/profile`**, linked from the header and from the games' wrap-ups. It shows:
+  - **"Signs you can spot":** tactics caught in the games, a collection that fills up;
+  - **"Worth practising":** the top 2–3 missed tactics in plain words, each linking to a game (Krishna's trait idea applied personally);
+  - **light counts:** messages looked at, words solved, Long Con stories played, days practised;
+  - a gentle empty state for new users.
+- **Data:** client-side only, from `my_activity`; no backend change. The tactic → plain-words mapping lives in one content module.
+- Calm design language, US English.
+
+### B11 — Polish audit, then fix rounds · ~00:45 onward
+
+- **Audit (read-only):** every screen at 360/390/412 px. It lists placeholder or leftover design copy, dead or fake controls, inconsistent wording, UK leftovers, layout and accessibility issues, and anything a judge would notice. The result is `docs/POLISH.md`, a prioritized punch list with screenshots.
+- **Diego picks** what to fix; fix bands run on non-overlapping files; then a second audit round.
+- **Devpost and the demo script (B8) wait** until polish settles (~06:00–07:00).
+
 ## 7. Schedule and gates (CST)
 
 | Time | What | Gate |
@@ -242,7 +259,6 @@ Handoff guide for Krishna: [`docs/PHOTON.md`](PHOTON.md). Local simulator: `tool
 
 1. Partner insights dashboard (B9, stretch).
 2. Practice texts (B4 stretch).
-3. Discord re-pointing: keep it on the old db, or leave it out of the demo.
 4. Extra Scam or Not rounds: keep the designer's 7, localized.
 5. **The TypeScript port: if it slips past ~03:30, ship on the C# module** (additive prompt change, publish to a new or the existing db).
 6. "Text SafeSense" live on an iPhone: show simulated webhooks plus a screen recording if the real line isn't ready.
