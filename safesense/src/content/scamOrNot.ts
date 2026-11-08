@@ -3,6 +3,8 @@
 // swapped for fictional ones). `tactic` uses the bank's slugs and is what the coach sees on a wrong answer.
 // Items marked "Krishna" are rewritten from his Friend or Fraud? quiz (origin/web-app 8f415eb), rebranded to
 // the fictional carrier "BrightLine Mobile". 15 rounds, 9 of them scams.
+// `inspect` (the "Check it" evidence) is adapted from Friend or Fraud?'s Inspect button, by Krishna. Sources are
+// AARP and CFPB pages checked to load on 2026-11-08 (consumer.ftc.gov blocks automated checks, so it isn't used).
 
 export type Guess = 'scam' | 'safe'
 export type Kind = 'text' | 'email' | 'social' | 'app'
@@ -30,6 +32,26 @@ export type Scenario = {
   answer: Guess
   why: string
   clues: string[]
+  /** 1–2 optional "Check it" actions, each revealing one piece of evidence before the player answers. */
+  inspect: Inspect[]
+  /** A reputable page to learn more, shown as a small link in the reveal. */
+  source?: { label: string; url: string }
+}
+
+/**
+ * Where a piece of evidence lives: the sender card, the link, the message text, or a phone number
+ * (which can be in the sender card or the message).
+ */
+export type InspectTarget = 'sender' | 'link' | 'body' | 'number'
+
+export type Inspect = {
+  /** The button text, phrased as an action: "Look at the web address". */
+  label: string
+  target: InspectTarget
+  /** One line shown once checked. It states the evidence and never gives away the answer outright. */
+  note: string
+  /** Exact text to mark within the target. Left out, the whole target is marked. */
+  highlight?: string
 }
 
 export const SCENARIOS: Scenario[] = [
@@ -46,6 +68,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'Delivery companies rarely ask for small fees by text. The tiny amount is a way to collect your card details.',
     clues: ['A small fee with a deadline', 'A link to pay', 'A random number, not a company you use'],
+    inspect: [
+      {
+        label: 'Check the sender',
+        target: 'number',
+        highlight: '+1 (833) 555-0142',
+        note: 'A number you have never saved. It isn’t your delivery company’s app or a tracking page you know.',
+      },
+      {
+        label: 'Look at the web address',
+        target: 'link',
+        highlight: 'package-redelivery.example',
+        note: 'The site is package-redelivery.example, not the website of any company delivering to you.',
+      },
+    ],
+    source: { label: 'Scam delivery texts (AARP)', url: 'https://www.aarp.org/money/scams-fraud/fake-usps-ups-smishing-texts/' },
   },
   {
     id: 'bank-account-locked-email',
@@ -62,6 +99,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'A short deadline can pressure you to act. Your bank will not ask you to confirm details through a link. Contact them using the number on the back of your card.',
     clues: ['A 30-minute deadline', 'An address that is not your bank', 'A link asking for bank details'],
+    inspect: [
+      {
+        label: 'Check the sender',
+        target: 'sender',
+        highlight: 'security@account-review.example',
+        note: 'The address ends in account-review.example, not your bank’s own website, and it has never written to you before.',
+      },
+      {
+        label: 'Read the deadline',
+        target: 'body',
+        highlight: 'locked in 30 minutes',
+        note: 'Thirty minutes leaves no time to call your bank and check.',
+      },
+    ],
+    source: { label: 'Bank impersonation scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
   },
   // Krishna (8f415eb friend-or-fraud): a code you asked for yourself
   {
@@ -77,6 +129,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'You asked for this code a moment ago, in the app you opened yourself, and it goes back into that same app. A code is only safe on the screen where you started signing in. Nobody is asking you to share it.',
     clues: ['You asked for the code yourself, seconds ago', 'It goes into the app you opened yourself', 'It warns you never to share it'],
+    inspect: [
+      {
+        label: 'Who asked for this code?',
+        target: 'sender',
+        highlight: 'You just tapped “Send code” in the BrightLine app',
+        note: 'You did. You tapped “Send code” in the app you opened yourself, and the code arrived seconds later.',
+      },
+      {
+        label: 'Where does the code go?',
+        target: 'body',
+        highlight: 'Enter it only in the BrightLine app',
+        note: 'Back into that same app. Nobody is asking you to read it out, reply with it or type it on a website.',
+      },
+    ],
+    source: { label: 'Text message scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/smishing/' },
   },
   {
     id: 'grandkid-new-number',
@@ -90,6 +157,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'A new number, an urgent request for money and a request for secrecy are classic signs. Call your grandchild on the number you already have.',
     clues: ['A new, unknown number', 'Money needed today', 'Asked to keep it secret'],
+    inspect: [
+      {
+        label: 'Who chose this phone number?',
+        target: 'number',
+        highlight: '+1 (720) 555-0146',
+        note: 'The sender did. A “new number” means you can’t tell who it is. Your grandchild’s real number is still in your contacts.',
+      },
+      {
+        label: 'Read what they ask for',
+        target: 'body',
+        highlight: 'Please don’t tell Mom',
+        note: 'Money today, and keep it secret. Secrecy stops you from checking with the rest of the family.',
+      },
+    ],
+    source: { label: 'Grandparent scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/grandparent/' },
   },
   // Krishna (8f415eb friend-or-fraud): a lookalike web address
   {
@@ -109,6 +191,21 @@ export const SCENARIOS: Scenario[] = [
       'The carrier’s name is only at the start of the address',
       'A reward timed to match something you really did',
     ],
+    inspect: [
+      {
+        label: 'Look at the web address',
+        target: 'link',
+        highlight: 'redeem.example',
+        note: 'Read it from the right. Just before the first single slash it says redeem.example: that is whose site this really is.',
+      },
+      {
+        label: 'Why does it feel real?',
+        target: 'sender',
+        highlight: 'You upgraded your phone yesterday',
+        note: 'It lines up with something you really did. Texts like this go out to many people, and some of them always just upgraded.',
+      },
+    ],
+    source: { label: 'Loyalty and rewards points fraud (AARP)', url: 'https://www.aarp.org/money/scams-fraud/loyalty-rewards-points/' },
   },
   {
     id: 'book-club-friend',
@@ -124,6 +221,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'This is a long-standing profile with many shared friends, and the message mentions something you did together. It asks for nothing: no money, no link and no details.',
     clues: ['An older profile with mutual friends', 'Mentions a real, shared event', 'Asks for nothing'],
+    inspect: [
+      {
+        label: 'Check the profile',
+        target: 'sender',
+        highlight: '18 mutual friends',
+        note: 'An account from 2014 with 18 friends you share. That is hard to fake overnight.',
+      },
+      {
+        label: 'Read what she asks for',
+        target: 'body',
+        highlight: 'So nice to see you at book club on Thursday!',
+        note: 'Nothing. She mentions something you really did together, with no link, money or code.',
+      },
+    ],
+    source: { label: 'Common social media scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/social-media/' },
   },
   // bank: geek-squad-auto-renewal
   {
@@ -140,6 +252,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'A surprise bill makes you want to call right away. The “refund desk” then asks to connect to your computer or for your bank details. Check real charges in your own bank app.',
     clues: ['A bill for something you never bought', 'Wants you to call a number in the email', 'A 24-hour deadline'],
+    inspect: [
+      {
+        label: 'Check the sender',
+        target: 'sender',
+        highlight: 'You have never bought from them',
+        note: 'You never bought anything from TechCare, so there is nothing for them to renew.',
+      },
+      {
+        label: 'Who chose this phone number?',
+        target: 'number',
+        highlight: '+1 (888) 555-0166',
+        note: 'The email did. Calling a number from a surprise bill puts you through to whoever sent it.',
+      },
+    ],
+    source: { label: 'Tech support scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/fake-online-tech-support/' },
   },
   // Krishna (8f415eb friend-or-fraud): a refund smaller than you asked for
   {
@@ -156,6 +283,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'The amount is lower than you asked for because only part of the refund was approved. The email asks for nothing: no link, no card and no reply, and it sends you to the app you already use. If a follow-up ever asks for a different card, treat that as a new message to check.',
     clues: ['Matches a request you really made', 'No link, no card and no reply needed', 'Points you to your own app to check'],
+    inspect: [
+      {
+        label: 'Compare it with your request',
+        target: 'sender',
+        highlight: 'You asked for a $28 refund last week',
+        note: 'You asked for $28 and the email says $24.18. It explains that only part of the request was approved.',
+      },
+      {
+        label: 'Read what it asks for',
+        target: 'body',
+        highlight: 'No reply or action is needed.',
+        note: 'Nothing: no link, no card and no reply. It points you to Billing in the app you already use.',
+      },
+    ],
+    source: { label: 'Fraud and scams (CFPB)', url: 'https://www.consumerfinance.gov/consumer-tools/fraud/' },
   },
   {
     id: 'romance-officer-dm',
@@ -175,6 +317,21 @@ export const SCENARIOS: Scenario[] = [
       'Strong feelings very quickly',
       'Asks to talk on another app',
     ],
+    inspect: [
+      {
+        label: 'Check the profile',
+        target: 'sender',
+        highlight: 'Joined 2 weeks ago',
+        note: 'A two-week-old account with 9 followers and no friends in common.',
+      },
+      {
+        label: 'Read what he asks for',
+        target: 'body',
+        highlight: 'Can we talk privately on another app?',
+        note: 'To move somewhere more private, away from the site that could spot him and stop him.',
+      },
+    ],
+    source: { label: 'Online romance scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/romance/' },
   },
   // bank: costco-loyalty-winner
   {
@@ -190,6 +347,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'You cannot win a contest you never entered. The small “shipping” fee is how they get your card number.',
     clues: ['You never entered a contest', 'A “free” prize that needs your card', 'A 30-minute countdown'],
+    inspect: [
+      {
+        label: 'Read the prize',
+        target: 'body',
+        highlight: 'just pay $4.95 shipping',
+        note: 'A “free” prize that needs your card. The fee is small so you won’t think twice about it.',
+      },
+      {
+        label: 'Look at the web address',
+        target: 'link',
+        highlight: 'maplemart-winners.example',
+        note: 'The site is maplemart-winners.example, not Maple Mart’s own website.',
+      },
+    ],
+    source: { label: 'Sweepstakes scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/sweepstakes/' },
   },
   // Krishna (8f415eb friend-or-fraud): a real case number, the wrong kind of code
   {
@@ -212,6 +384,21 @@ export const SCENARIOS: Scenario[] = [
       'The code is for a password reset, not what they say',
       'Real support never asks you to read out a code',
     ],
+    inspect: [
+      {
+        label: 'Read what the code is for',
+        target: 'sender',
+        highlight: 'Your newest text says “password reset code”',
+        note: 'Your newest text calls it a password reset code. This message says it cancels a transfer. Those don’t match.',
+      },
+      {
+        label: 'Who chose this phone number?',
+        target: 'number',
+        highlight: '+1 (214) 555-0131',
+        note: 'They did, and it isn’t in your contacts. The number on your bill is one you can check yourself.',
+      },
+    ],
+    source: { label: 'SIM swapping (AARP)', url: 'https://www.aarp.org/money/scams-fraud/sim-swapping/' },
   },
   {
     id: 'bank-app-purchase',
@@ -226,6 +413,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'This matches a real purchase, has no link, and sends you to your own app or card. It also reminds you they will never ask for your PIN.',
     clues: ['No link to click', 'Points you to your own app or card', 'Never asks for your PIN'],
+    inspect: [
+      {
+        label: 'Where did it arrive?',
+        target: 'sender',
+        highlight: 'Your banking app',
+        note: 'Inside the banking app you installed yourself, not in a text from a number you don’t know.',
+      },
+      {
+        label: 'Read what it asks for',
+        target: 'body',
+        highlight: 'open your banking app or call the number on the back of your card',
+        note: 'Nothing new. If the purchase isn’t yours, it sends you to your own app or card, details you already trust.',
+      },
+    ],
+    source: { label: 'Bank impersonation scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
   },
   // Krishna (8f415eb friend-or-fraud): a receipt that asks for nothing
   {
@@ -241,6 +443,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'This is a receipt, not a bill. It asks for no payment and has no link, it matches a trip you took, and you turned these texts on yourself. If a toll text ever asks you to pay, check your account on the toll agency’s own website instead.',
     clues: ['A receipt, not a demand to pay', 'No link and no payment', 'Matches a trip you took and texts you turned on'],
+    inspect: [
+      {
+        label: 'Read what it asks for',
+        target: 'body',
+        highlight: 'This is a receipt. No action needed.',
+        note: 'Nothing. It is a receipt for a trip already paid, with no link and no payment.',
+      },
+      {
+        label: 'Check the sender',
+        target: 'sender',
+        highlight: 'You turned on receipt texts',
+        note: 'You switched these texts on yourself, and it matches the trip you took yesterday.',
+      },
+    ],
+    source: { label: 'Toll road scam texts (AARP)', url: 'https://www.aarp.org/money/scams-fraud/toll-road-texts/' },
   },
   // bank: remote-task-job-text
   {
@@ -255,6 +472,21 @@ export const SCENARIOS: Scenario[] = [
     answer: 'scam',
     why: 'Real recruiters don’t text out of the blue promising daily pay. These “task” jobs end with you paying them to unlock your earnings.',
     clues: ['Pay that sounds too good to be true', 'A job you never applied for', 'Moves you to another app'],
+    inspect: [
+      {
+        label: 'Read the pay',
+        target: 'body',
+        highlight: '$300-$800/day, paid daily',
+        note: 'Up to $800 a day for about an hour of work, for a job you never applied for.',
+      },
+      {
+        label: 'Who chose this phone number?',
+        target: 'number',
+        highlight: 'Add me on WhatsApp: +1 (332) 555-0130',
+        note: 'The sender, and it moves you to another app and another number, away from any company you can check.',
+      },
+    ],
+    source: { label: 'Fake job offers (AARP)', url: 'https://www.aarp.org/money/scams-fraud/online-job-search/' },
   },
   // bank: mom-call-me-flights
   {
@@ -270,6 +502,20 @@ export const SCENARIOS: Scenario[] = [
     answer: 'safe',
     why: 'This is a saved contact you talk to often, and she asks you to call. Scammers avoid calls, because your voice check would catch them.',
     clues: ['A saved contact you know well', 'Asks for a call, not money', 'No link or code'],
+    inspect: [
+      {
+        label: 'Check the sender',
+        target: 'sender',
+        highlight: 'Saved in your contacts',
+        note: 'Mom is a contact you saved yourself, and you text every week.',
+      },
+      {
+        label: 'Read what she asks for',
+        target: 'body',
+        highlight: 'Can you call me when you get a sec?',
+        note: 'A phone call. You would hear her voice, which is how you know it is really her.',
+      },
+    ],
   },
 ]
 

@@ -1,0 +1,233 @@
+/* Scam or Not? — progress track, "Check it" evidence and reveal notes.
+   Evidence is marked the same way for scams and genuine messages, so a mark never gives the answer away. */
+
+:root {
+  --son-mark: #f8e9a1;
+  --son-mark-edge: #c9a227;
+}
+
+/* ---------- Progress: label plus a track that shares the row, so 15 rounds fit at any width ---------- */
+.son-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.son-progress-label {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--green-900);
+  white-space: nowrap;
+}
+.son-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.son-track li {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--neutral-200);
+  transition: background 0.3s;
+}
+.son-track li.done {
+  background: var(--green-700);
+}
+.son-track li.current {
+  background: var(--green-100);
+  box-shadow: inset 0 0 0 2px var(--green-600);
+}
+@media (max-width: 400px) {
+  /* Very narrow (or larger text): the label sits above a full-width track. */
+  .son-progress {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .son-track {
+    flex: none;
+  }
+}
+
+/* ---------- Marked evidence inside the sender card and message ---------- */
+.son-mark {
+  background: var(--son-mark);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+  box-shadow: 0 2px 0 var(--son-mark-edge);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  animation: son-mark-in 0.4s ease-out;
+}
+.tags li:has(.son-mark) {
+  border-color: var(--son-mark-edge);
+}
+@keyframes son-mark-in {
+  from {
+    background: transparent;
+    box-shadow: 0 2px 0 transparent;
+  }
+}
+
+/* ---------- "Check it" panel ---------- */
+.son-inspect {
+  padding: 16px 18px;
+  background: #f7f8f5;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+.son-inspect-title svg {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+}
+.son-inspect-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--green-900);
+}
+.son-inspect-hint {
+  margin-top: 2px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+.son-checks {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+}
+.son-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--green-700);
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.son-check svg {
+  flex-shrink: 0;
+}
+.son-check:hover {
+  border-color: var(--green-700);
+  background: var(--green-50);
+}
+.son-evidence {
+  height: 100%;
+  padding: 10px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--son-mark-edge);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  animation: son-evidence-in 0.3s ease-out;
+}
+.son-evidence:focus-visible {
+  outline-offset: 3px;
+}
+.son-evidence-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-900);
+}
+.son-evidence-label svg {
+  flex-shrink: 0;
+}
+.son-evidence-note {
+  margin-top: 4px;
+  color: var(--text-body);
+}
+@keyframes son-evidence-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ---------- Reveal: checked count, steady run and the learn-more link ---------- */
+.son-reveal-notes,
+.son-wrap-notes {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(36, 57, 47, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.son-reveal-notes li,
+.son-wrap-notes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-body);
+}
+.son-reveal-notes svg,
+.son-wrap-notes svg {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+  color: var(--green-700);
+}
+.son-wrap-notes {
+  margin: 0 0 16px;
+  padding: 0;
+  border-top: 0;
+  font-size: 1.05rem;
+}
+.feedback p.son-source {
+  margin-top: 12px;
+  font-size: 0.92rem;
+}
+.son-source a {
+  color: var(--green-700);
+  font-weight: 600;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.son-source svg {
+  margin-left: 4px;
+  vertical-align: -0.1em;
+}
+.son-source a:hover {
+  color: var(--green-900);
+}
+
+/* ---------- Side panel credit ---------- */
+.panel p.son-credit {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(36, 57, 47, 0.15);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .son-mark,
+  .son-evidence {
+    animation: none;
+  }
+  .son-track li {
+    transition: none;
+  }
+}
