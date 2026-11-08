@@ -54,7 +54,7 @@ export function Conversation({ bot }: { bot: BotSnapshot }) {
       tabIndex={empty ? undefined : 0}
     >
       {empty && status !== 'loading' && status !== 'connecting' && (
-        <div className="bubble chat-bubble">
+        <div className="bubble chat-bubble chat-greeting">
           <span className="meta">{ASSISTANT}</span>
           <p className="chat-text">
             Hello, I’m the SafeSense assistant. Tell me about a message, call or email that worries you, or add a

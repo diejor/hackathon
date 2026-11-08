@@ -133,11 +133,12 @@
   min-height: 48px;
   padding: 8px 16px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 24px; /* a pill on one line; a soft box (not a capsule) when a phone wraps it */
   background: var(--surface);
   color: var(--green-700);
   font-weight: 600;
   font-size: 1rem;
+  line-height: 1.35;
   text-align: left;
 }
 .chat-example:hover {
@@ -270,6 +271,33 @@
 .composer .mic-hint {
   margin-top: 10px;
 }
+/* Wide screens: Send, Speak and Add a picture share one row under the text box, so the whole composer
+   (and the example chips) sit on a laptop's first screen. */
+@media (min-width: 961px) {
+  .composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: 12px;
+  }
+  .composer > * {
+    grid-column: 1 / -1;
+  }
+  .composer > .chat-send {
+    grid-column: 1;
+  }
+  .composer > .chat-tools {
+    display: contents;
+  }
+  .chat-tools .btn {
+    margin-top: 14px;
+  }
+  .composer > .chat-preview {
+    justify-self: start;
+  }
+  .chat-page .composer textarea {
+    min-height: 96px;
+  }
+}
 
 /* ---------- Header of the card: name + the one AI disclosure ---------- */
 .chat-head {
@@ -383,7 +411,8 @@
   .chat-scroll {
     max-height: min(46svh, 520px);
   }
-  .chat-bubble.chat-answer {
+  .chat-bubble.chat-answer,
+  .chat-bubble.chat-greeting {
     max-width: 100%;
   }
   .chat-page .composer textarea {
