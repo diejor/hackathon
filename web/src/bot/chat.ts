@@ -1,0 +1,187 @@
+// Help Bot chat screen: bare DOM built with h(), styled by the "Help Bot" section of style.css
+// (all classes bot-*). The view is mounted once and updates its parts in place, so the composer
+// keeps focus and its draft. All message text goes through textContent (h() children are text
+// nodes): model output and pasted scam texts are untrusted, and URLs are deliberately not linkified.
+import { h } from "../ui";
+import * as Bot from "./bot";
+
+const VERDICTS: Record<string, string> = { scam: "Scam", suspicious: "Suspicious", likely_safe: "Likely safe" };
+
+const EXAMPLES = [
+  { label: "A text says USPS is holding my package", text: "I got this text: \"USPS: Your package is on hold due to an unpaid fee of $1.99. Pay within 24h: https://usps-redelivery-help.top/pay\" Is it real?" },
+  { label: "Is this link safe?", text: "Is this link safe? https://paypa1-account-verify.com/login" },
+  { label: "How do I set up 2FA?", text: "How do I set up two-factor authentication on my accounts?" },
+];
+
+export interface ChatView { el: HTMLElement; destroy(): void }
+
+export function mountChat(opts: { onBack: () => void }): ChatView {
+  let image: Blob | null = null;
+  let previewUrl: string | null = null;
+  let confirming = false;
+  let lastCount = -1;
+
+  // ---------- Top bar + forget-me confirm ----------
+  const forgetBtn = h("button", { class: "bot-top-btn bot-forget", onclick: () => { confirming = true; update(); } }, "Forget me");
+  const top = h("div", { class: "bot-top" },
+    h("button", { class: "bot-top-btn bot-back", onclick: opts.onBack, "aria-label": "Back" }, "‹ Back"),
+    h("div", { class: "bot-title" }, "Help Bot"),
+    forgetBtn);
+
+  const confirmFacts = h("ul", { class: "bot-confirm-facts" });
+  const confirmBox = h("div", { class: "bot-confirm", role: "alertdialog", "aria-label": "Forget me" },
+    h("p", { class: "bot-confirm-text" }, "Delete this whole conversation and everything the bot remembers about you? This can't be undone."),
+    confirmFacts,
+    h("div", { class: "bot-confirm-actions" },
+      h("button", { class: "btn btn-secondary btn-small", onclick: () => { confirming = false; update(); } }, "Cancel"),
+      h("button", { class: "btn btn-primary btn-small bot-confirm-yes", onclick: async () => { confirming = false; update(); await Bot.forgetMe(); } }, "Delete everything")));
+
+  // ---------- Message list ----------
+  const list = h("div", { class: "bot-list", role: "log", "aria-live": "polite" });
+
+  // ---------- Composer ----------
+  const status = h("div", { class: "bot-status", role: "status" });
+  const textarea = h("textarea", {
+    class: "bot-input", rows: 1, placeholder: "Ask, or paste a message…",
+    enterkeyhint: "send", "aria-label": "Message", maxlength: 4000,
+    onkeydown: (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); void submit(); }
+    },
+    oninput: () => { autosize(); Bot.clearError(); },
+    onpaste: (e: ClipboardEvent) => {
+      const files = [...(e.clipboardData?.items ?? [])].filter((i) => i.kind === "file" && i.type.startsWith("image/"));
+      const f = files[0]?.getAsFile();
+      if (!f) return;
+      setImage(f);
+      if (!e.clipboardData?.getData("text/plain")) e.preventDefault();
+    },
+  }) as HTMLTextAreaElement;
+  const fileInput = h("input", {
+    type: "file", accept: "image/*", class: "bot-file", tabindex: -1, "aria-hidden": "true",
+    onchange: () => { const f = fileInput.files?.[0]; if (f) setImage(f); fileInput.value = ""; },
+  }) as HTMLInputElement;
+  const attachBtn = h("button", { class: "bot-attach", "aria-label": "Attach screenshot", title: "Attach screenshot", onclick: () => fileInput.click() }, "📷");
+  const sendBtn = h("button", { class: "bot-send", "aria-label": "Send", onclick: () => void submit() }, "Send");
+  const micSlot = h("span", { class: "bot-mic-slot" }); // reserved for a voice button later
+  const previewImg = h("img", { class: "bot-preview-img", alt: "Screenshot to send" }) as HTMLImageElement;
+  const preview = h("div", { class: "bot-preview" },
+    previewImg,
+    h("button", { class: "bot-preview-remove", "aria-label": "Remove screenshot", onclick: () => setImage(null) }, "✕"));
+  const composer = h("div", { class: "bot-composer" },
+    status,
+    preview,
+    h("div", { class: "bot-compose-row" }, attachBtn, fileInput, textarea, micSlot, sendBtn));
+
+  const el = h("div", { class: "bot-chat" }, top, confirmBox, list, composer);
+
+  function setImage(b: Blob | null) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    image = b;
+    previewUrl = b ? URL.createObjectURL(b) : null;
+    if (previewUrl) previewImg.src = previewUrl; else previewImg.removeAttribute("src");
+    Bot.clearError();
+    update();
+  }
+
+  function autosize() {
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 140 ? "auto" : "hidden";
+  }
+
+  async function submit(text = textarea.value) {
+    if (Bot.state.sending || (!text.trim() && !image)) return;
+    const img = image;
+    const draft = textarea.value;
+    textarea.value = "";
+    autosize();
+    setImage(null);
+    const ok = await Bot.send(text, img ?? undefined);
+    if (!ok && !textarea.value && !image) { // rejected: give the draft back
+      textarea.value = draft;
+      autosize();
+      if (img) setImage(img);
+    }
+  }
+
+  // ---------- Rendering ----------
+  function messageEl(m: Bot.ChatMessage): HTMLElement {
+    const user = m.role.tag === "User";
+    const kids: (HTMLElement | null)[] = [];
+    if (user && Bot.hasScreenshot(m))
+      kids.push(h("div", { class: "bot-shot" }, "📷 screenshot",
+        m.imageNote ? h("div", { class: "bot-shot-note" }, m.imageNote) : null));
+    const label = VERDICTS[m.verdict];
+    if (!user && label)
+      kids.push(h("div", { class: `bot-verdict bot-verdict-${m.verdict}` }, label));
+    if (m.text) kids.push(h("div", { class: "bot-text" }, m.text));
+    if (!user && label) {
+      if (m.redFlags.length) kids.push(h("div", { class: "bot-section" }, h("div", { class: "bot-section-title" }, "Red flags"), h("ul", null, m.redFlags.map((f) => h("li", null, f)))));
+      if (m.nextSteps.length) kids.push(h("div", { class: "bot-section" }, h("div", { class: "bot-section-title" }, "What to do"), h("ul", null, m.nextSteps.map((s) => h("li", null, s)))));
+    }
+    const cls = `bot-msg ${user ? "bot-msg-user" : "bot-msg-bot"}${!user && label ? " bot-card" : ""}${m.isError ? " bot-msg-error" : ""}`;
+    return h("div", { class: cls }, kids);
+  }
+
+  function emptyState() {
+    return h("div", { class: "bot-empty" },
+      h("div", { class: "bot-empty-title" }, "Not sure about a text, email or link?"),
+      h("p", { class: "bot-empty-sub" }, "Paste it here or attach a screenshot. I'll tell you if it looks like a scam and what to do."),
+      h("div", { class: "bot-examples" },
+        EXAMPLES.map((ex) => h("button", { class: "bot-example", disabled: !Bot.ready(), onclick: () => void submit(ex.text) }, ex.label))));
+  }
+
+  function update() {
+    const msgs = Bot.messages();
+    const ready = Bot.ready();
+    const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+    const last = msgs[msgs.length - 1];
+    const thinking = Bot.state.sending && (!last || last.role.tag === "User");
+
+    const items: HTMLElement[] = msgs.length || !ready ? msgs.map(messageEl) : [emptyState()];
+    if (!ready) items.push(h("div", { class: "bot-note" }, "Connecting…"));
+    if (thinking) items.push(h("div", { class: "bot-msg bot-msg-bot bot-thinking" }, "thinking…"));
+    list.replaceChildren(...items);
+    if (nearBottom || msgs.length !== lastCount || thinking) list.scrollTop = list.scrollHeight;
+    lastCount = msgs.length;
+
+    status.textContent = Bot.state.error ?? "";
+    status.hidden = !Bot.state.error;
+    preview.hidden = !image;
+    const busy = Bot.state.sending || !ready;
+    sendBtn.toggleAttribute("disabled", busy);
+    attachBtn.toggleAttribute("disabled", busy);
+    sendBtn.textContent = Bot.state.sending ? "…" : "Send";
+
+    confirmBox.hidden = !confirming;
+    forgetBtn.toggleAttribute("disabled", !ready || confirming);
+    const facts = Bot.facts();
+    confirmFacts.replaceChildren(...facts.map((f) => h("li", null, f.fact)));
+    confirmFacts.hidden = !facts.length;
+  }
+
+  // Keep the composer above the on-screen keyboard: size the chat to the visual viewport.
+  const vv = window.visualViewport;
+  const fit = () => {
+    if (!vv) return;
+    el.style.setProperty("--bot-h", `${vv.height}px`);
+    el.style.setProperty("--bot-top", `${vv.offsetTop}px`);
+    if (document.activeElement === textarea) list.scrollTop = list.scrollHeight;
+  };
+  vv?.addEventListener("resize", fit);
+  vv?.addEventListener("scroll", fit);
+  fit();
+
+  const off = Bot.onChange(update);
+  update();
+  requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; }); // once attached to the page
+  return {
+    el,
+    destroy() {
+      off();
+      vv?.removeEventListener("resize", fit);
+      vv?.removeEventListener("scroll", fit);
+      setImage(null);
+    },
+  };
+}

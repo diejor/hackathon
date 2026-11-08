@@ -5,6 +5,9 @@
 // Usage: node tools/phone.mjs <url> <outDir> <profileDir> <debugPort> step...
 //   steps: wait:<ms>  shot:<name>  tap:<x>,<y>  click:<x>,<y>  swipe:<x1>,<y1>,<x2>,<y2>[,<moves>][,hold]
 //          release  wheel:<x>,<y>,<deltaY>,<count>  cmds:<file>  (poll a file for more steps; "quit" ends)
+//          tapsel:<css selector>  (tap the center of the first match)  type:<text>  (insert into the focused field)
+//          key:<Enter|Shift+Enter|Backspace|...>  file:<css selector>,<path>  (set an <input type=file>)
+//          reload
 //   env:   W, H (viewport, default 390x844), DPR (default 2), DESKTOP=1 (no mobile emulation)
 //   Use a fresh <profileDir> per simulated player (each gets its own SpacetimeDB identity).
 // Example (phone, local server):
@@ -112,6 +115,36 @@ try {
       for (const type of ["mouseMoved", "mousePressed", "mouseReleased"])
         await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 }, sessionId);
       console.log("click:", x, y);
+    } else if (kind === "tapsel") {
+      const { result } = await send("Runtime.evaluate", { returnByValue: true, expression:
+        `(() => { const r = document.querySelector(${JSON.stringify(arg)})?.getBoundingClientRect(); return r && [r.x + r.width / 2, r.y + r.height / 2]; })()` }, sessionId);
+      if (!result.value) { console.log("tapsel: no match for", arg); continue; }
+      const [x, y] = result.value;
+      await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] }, sessionId);
+      await sleep(80);
+      await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+      console.log("tapsel:", arg, Math.round(x), Math.round(y));
+    } else if (step === "reload") {
+      await send("Page.reload", {}, sessionId);
+      console.log("reload");
+    } else if (kind === "type") {
+      await send("Input.insertText", { text: arg }, sessionId);
+      console.log("type:", arg.slice(0, 60));
+    } else if (kind === "key") {
+      const shift = arg.startsWith("Shift+"), key = shift ? arg.slice(6) : arg;
+      const codes = { Enter: 13, Backspace: 8, Escape: 27, Tab: 9 };
+      const base = { key, code: key, windowsVirtualKeyCode: codes[key] ?? 0, modifiers: shift ? 8 : 0 };
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, sessionId);
+      if (key === "Enter") await send("Input.dispatchKeyEvent", { type: "char", ...base, text: "\r" }, sessionId);
+      await send("Input.dispatchKeyEvent", { type: "keyUp", ...base }, sessionId);
+      console.log("key:", arg);
+    } else if (kind === "file") {
+      const comma = arg.indexOf(","), selector = arg.slice(0, comma), path = arg.slice(comma + 1);
+      const { root } = await send("DOM.getDocument", {}, sessionId);
+      const { nodeId } = await send("DOM.querySelector", { nodeId: root.nodeId, selector }, sessionId);
+      if (!nodeId) { console.log("file: no match for", selector); continue; }
+      await send("DOM.setFileInputFiles", { nodeId, files: [path] }, sessionId);
+      console.log("file:", selector, path);
     }
   }
 } catch (e) {

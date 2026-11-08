@@ -1,0 +1,159 @@
+// Help Bot store (plain TS, no framework). Uses the lobby's SpacetimeDB connection, so the bot talks
+// to the same identity as the player. Data comes from the per-user views my_messages / my_facts
+// (subscribed in lobby.ts); sending goes through the bot_send procedure.
+//
+//   import * as Bot from "./bot/bot";
+//   Bot.onChange(render); Bot.messages(); await Bot.send("Is this a scam? ...", screenshotBlob);
+//
+// Screenshots are downscaled in the browser and only kept in memory while sending; the server
+// doesn't store them either (only the model's transcription, `imageNote`).
+import * as L from "../lobby";
+import type { DbConnection } from "../module_bindings";
+import type { ChatMessage, MemoryFact } from "../module_bindings/types";
+
+export type { ChatMessage, MemoryFact };
+
+export const MAX_IMAGE_CHARS = 2_800_000; // must match the server (Bot.cs)
+const MAX_SIDE = 1024;
+const JPEG_QUALITY = 0.8;
+
+export const state = {
+  /** A botSend call is in flight (the bot is "thinking"). */
+  sending: false,
+  /** Last send/forget error that didn't produce a chat message (validation, cooldown, network). */
+  error: null as string | null,
+};
+
+const listeners = new Set<() => void>();
+let queued = false;
+// In-memory only: ids of user messages sent with a screenshot in this session (the server keeps no
+// "had image" flag; after a reload we fall back to imageNote).
+const imageIds = new Set<bigint>();
+let pendingImage = false;
+let insertedWhileSending = false;
+
+/** Subscribe to any change (messages, facts, sending, error, connection). Returns an unsubscribe. */
+export function onChange(fn: () => void) {
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
+}
+
+function bump() {
+  if (queued) return;
+  queued = true;
+  queueMicrotask(() => { queued = false; for (const fn of listeners) fn(); });
+}
+
+L.onChange(bump);
+L.onConnection((c: DbConnection) => {
+  c.db.myMessages.onInsert((_ctx, m) => {
+    if (m.role.tag === "User" && state.sending) {
+      insertedWhileSending = true;
+      if (pendingImage) { imageIds.add(m.id); pendingImage = false; }
+    }
+    bump();
+  });
+  c.db.myMessages.onDelete(bump);
+  c.db.myFacts.onInsert(bump);
+  c.db.myFacts.onDelete(bump);
+});
+
+/** Connected and the subscription is applied. */
+export const ready = () => L.state.connected && !!L.getConn();
+
+const byTime = (a: { createdAt: { microsSinceUnixEpoch: bigint }; id: bigint }, b: typeof a) => {
+  const d = a.createdAt.microsSinceUnixEpoch - b.createdAt.microsSinceUnixEpoch;
+  return d < 0n ? -1 : d > 0n ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+};
+
+/** The player's messages, oldest first (sorted by createdAt, never by id). */
+export function messages(): ChatMessage[] {
+  const c = L.getConn();
+  if (!c || !ready()) return [];
+  return [...c.db.myMessages.iter()].sort(byTime);
+}
+
+/** What the bot remembers about the player, oldest first. */
+export function facts(): MemoryFact[] {
+  const c = L.getConn();
+  if (!c || !ready()) return [];
+  return [...c.db.myFacts.iter()].sort(byTime);
+}
+
+/** Whether a user message came with a screenshot (as far as this client can tell). */
+export const hasScreenshot = (m: ChatMessage) =>
+  m.role.tag === "User" && (imageIds.has(m.id) || m.imageNote !== "" || m.text === "");
+
+/**
+ * Send a message and/or screenshot. Resolves true if the server accepted it (the message is in the
+ * chat, even if the bot then failed and posted an error reply), false if it was rejected before
+ * that (empty, too big, cooldown, offline); then `state.error` says why and the caller can keep the draft.
+ */
+export async function send(text: string, image?: Blob): Promise<boolean> {
+  const c = L.getConn();
+  text = text.trim();
+  if (state.sending) return false;
+  if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
+  if (!text && !image) return fail("Type a message or attach a screenshot.");
+  state.sending = true;
+  state.error = null;
+  insertedWhileSending = false;
+  bump();
+  try {
+    const imageDataUrl = image ? await toJpegDataUrl(image) : "";
+    pendingImage = !!image;
+    const res = await c.procedures.botSend({ text, imageDataUrl });
+    if (!res.ok && !insertedWhileSending) return fail(res.text || "The bot couldn't take that message.");
+    return true;
+  } catch (e) {
+    return insertedWhileSending ? true : fail(e);
+  } finally {
+    state.sending = false;
+    pendingImage = false;
+    bump();
+  }
+}
+
+/** Delete all of the player's messages and remembered facts (server-side). */
+export async function forgetMe(): Promise<boolean> {
+  const c = L.getConn();
+  if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
+  try {
+    await c.reducers.forgetMe({});
+    imageIds.clear();
+    state.error = null;
+    bump();
+    return true;
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export function clearError() { if (state.error) { state.error = null; bump(); } }
+
+function fail(e: unknown): false {
+  state.error = e instanceof Error ? e.message : String(e);
+  bump();
+  return false;
+}
+
+/** Downscale to ≤ 1024 px on the long side and re-encode as JPEG (also strips EXIF/metadata). */
+export async function toJpegDataUrl(blob: Blob): Promise<string> {
+  if (!blob.type.startsWith("image/")) throw new Error("That file isn't an image.");
+  let bmp: ImageBitmap;
+  try { bmp = await createImageBitmap(blob); } catch { throw new Error("Couldn't read that image."); }
+  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const g = canvas.getContext("2d")!;
+  g.fillStyle = "#fff"; // JPEG has no alpha
+  g.fillRect(0, 0, w, h);
+  g.drawImage(bmp, 0, 0, w, h);
+  bmp.close();
+  const url = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  canvas.width = canvas.height = 0;
+  if (url.length > MAX_IMAGE_CHARS) throw new Error("That screenshot is too large, even after shrinking it.");
+  return url;
+}

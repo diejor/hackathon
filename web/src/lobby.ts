@@ -40,6 +40,8 @@ let conn: DbConnection | null = null;
 let pendingAutoJoin: string | null = null;
 let errorTimer: number | undefined;
 const listeners = new Set<() => void>();
+const connHooks = new Set<(c: DbConnection) => void>();
+let connEstablished = false;
 
 export function onChange(fn: () => void) {
   listeners.add(fn);
@@ -48,6 +50,16 @@ export function onChange(fn: () => void) {
 
 function bump() {
   for (const fn of listeners) fn();
+}
+
+// Shared connection for other features (e.g. the Help Bot), so they use the player's identity.
+// The connection object lives for the whole session; automatic reconnects keep its callbacks and
+// subscriptions, so hooks run once, on the first connect (or immediately if already connected).
+export const getConn = (): DbConnection | null => conn;
+export function onConnection(fn: (c: DbConnection) => void) {
+  connHooks.add(fn);
+  if (conn && connEstablished) fn(conn);
+  return () => connHooks.delete(fn);
 }
 
 // ---------- Derived state ----------
@@ -113,6 +125,8 @@ export function connect() {
       c.db.myRoom.onDelete(bump);
       c.db.myRoomMembers.onInsert(bump);
       c.db.myRoomMembers.onDelete(bump);
+      connEstablished = true;
+      for (const fn of connHooks) fn(c);
       c.subscriptionBuilder()
         .onApplied(() => {
           console.log("[STDB] lobby subscription applied");
@@ -121,7 +135,10 @@ export function connect() {
           bump();
           runAutoJoin();
         })
-        .subscribe(["SELECT * FROM my_room", "SELECT * FROM my_room_members"]);
+        .subscribe([
+          "SELECT * FROM my_room", "SELECT * FROM my_room_members",
+          "SELECT * FROM my_messages", "SELECT * FROM my_facts", // Help Bot (src/bot/bot.ts)
+        ]);
     })
     .onAutomaticReconnect((_c, identity, token) => {
       localStorage.setItem(TOKEN_KEY, token);

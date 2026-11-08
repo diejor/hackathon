@@ -2,6 +2,8 @@ import "./style.css";
 import * as L from "./lobby";
 import { h, render } from "./ui";
 import type { GameHandle } from "./games/types";
+import { isBotOpen, onNav, closeBot } from "./bot/nav";
+import { mountChat, type ChatView } from "./bot/chat";
 
 const screenEl = h("main", { class: "screen-host" });
 const gameEl = h("div", { class: "game-host", hidden: true });
@@ -34,18 +36,32 @@ async function syncGame() {
   game = mountGame(want, gameEl);
 }
 
+// Help Bot (#bot): a persistent chat view that replaces the lobby screen while open; it updates
+// itself from the bot store, so the lobby's re-render doesn't touch it.
+let chat: ChatView | null = null;
+
 function update() {
-  render({ screen: screenEl, toast: toastEl });
+  const bot = isBotOpen();
+  document.body.classList.toggle("bot-open", bot);
+  if (bot) {
+    chat ??= mountChat({ onBack: closeBot });
+    if (screenEl.firstChild !== chat.el) screenEl.replaceChildren(chat.el);
+    screenEl.dataset.screen = "bot";
+  } else {
+    if (chat) { chat.destroy(); chat = null; }
+    render({ screen: screenEl, toast: toastEl });
+  }
   void syncGame();
 }
 
 L.onChange(update);
+onNav(update);
 update();
 L.connect();
 
 // Desktop: type the room code on a keyboard.
 window.addEventListener("keydown", (e) => {
-  if (L.screen() !== "join" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (isBotOpen() || L.screen() !== "join" || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === "Backspace") L.backspace();
   else if (e.key === "Escape") L.backHome();
   else if (e.key.length === 1) L.typeChar(e.key);

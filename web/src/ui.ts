@@ -1,6 +1,7 @@
 // Lobby screens as plain DOM. render() rebuilds #screen from lobby state on every change.
 import QRCode from "qrcode";
 import * as L from "./lobby";
+import { openBot } from "./bot/nav";
 
 type Child = Node | string | null | undefined | false;
 type Props = Record<string, unknown> & { class?: string; onclick?: (e: MouseEvent) => void };
@@ -42,7 +43,10 @@ function home() {
     h("div", { class: "stack" },
       btn(L.state.busy === "create" ? "Creating…" : "Create room", L.createRoom, { disabled: busy }),
       btn("Join with code", L.openJoin, { variant: "secondary", disabled: busy })),
-    h("p", { class: "hint" }, "Got a QR? Just scan it with your camera."));
+    h("p", { class: "hint" }, "Got a QR? Just scan it with your camera."),
+    h("button", { class: "card bot-entry", onclick: openBot },
+      h("div", { class: "bot-entry-title" }, "Help Bot"),
+      h("div", { class: "bot-entry-sub" }, "Got a weird text, email or link? Ask if it's a scam.")));
 }
 
 function join() {

@@ -158,7 +158,109 @@ body.playing { overflow: hidden; }
   padding: 12px 16px; border-radius: 12px; z-index: 10;
 }
 
+/* Help Bot */
+.bot-entry {
+  display: block; width: 100%; margin-top: 24px; text-align: left; cursor: pointer;
+  border-color: var(--magenta);
+}
+.bot-entry:active { background: var(--surface-2); }
+.bot-entry-title { font-size: 18px; font-weight: 700; }
+.bot-entry-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+body.bot-open { overflow: hidden; }
+body.bot-open .header, body.bot-open .game-host { display: none; }
+.bot-chat [hidden] { display: none !important; }
+.bot-chat {
+  position: fixed; left: 0; right: 0; top: var(--bot-top, 0); height: var(--bot-h, 100dvh);
+  max-width: var(--col); margin: 0 auto;
+  display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  background: var(--bg);
+}
+.bot-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); flex: none; }
+.bot-title { flex: 1; text-align: center; font-weight: 700; font-size: 17px; }
+.bot-top-btn {
+  min-height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--magenta); font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.bot-top-btn:active:not(:disabled) { background: var(--magenta-soft); }
+.bot-top-btn:disabled { opacity: 0.4; }
+.bot-forget { color: var(--muted); }
+
+.bot-confirm { flex: none; margin: 10px 12px 0; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--danger); }
+.bot-confirm-text { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
+.bot-confirm-facts { margin: 0 0 10px; padding-left: 20px; font-size: 13px; color: var(--muted); max-height: 120px; overflow-y: auto; }
+.bot-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.bot-confirm-actions .btn { width: auto; }
+.bot-confirm-yes { background: var(--danger); }
+
+.bot-list {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.bot-msg {
+  max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 16px; line-height: 1.4;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.bot-msg-user { align-self: flex-end; background: var(--magenta); color: #fff; border-bottom-right-radius: 4px; }
+.bot-msg-bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.bot-card { max-width: 92%; }
+.bot-msg-error { background: transparent; border: 1px dashed var(--danger); color: var(--danger); }
+.bot-thinking { color: var(--muted); font-style: italic; animation: bot-pulse 1.2s ease-in-out infinite; }
+@keyframes bot-pulse { 50% { opacity: 0.45; } }
+.bot-shot { font-size: 14px; font-weight: 700; }
+.bot-shot-note { font-weight: 400; font-size: 13px; opacity: 0.85; margin-top: 4px; padding-left: 8px; border-left: 2px solid rgba(255, 255, 255, 0.5); }
+.bot-shot + .bot-text { margin-top: 6px; }
+.bot-verdict {
+  display: inline-block; margin-bottom: 6px; padding: 3px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+}
+.bot-verdict-scam { background: var(--danger); color: #fff; }
+.bot-verdict-suspicious { background: #ffc233; color: var(--bg); }
+.bot-verdict-likely_safe { background: var(--ok); color: var(--bg); }
+.bot-section { margin-top: 10px; white-space: normal; }
+.bot-section-title { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.bot-section ul { margin: 4px 0 0; padding-left: 20px; }
+.bot-section li { margin: 2px 0; }
+.bot-note { align-self: center; color: var(--muted); font-size: 14px; }
+
+.bot-empty { margin: auto 0; padding: 8px 4px; text-align: center; }
+.bot-empty-title { font-size: 20px; font-weight: 700; }
+.bot-empty-sub { color: var(--muted); font-size: 15px; line-height: 1.4; margin: 6px 0 16px; }
+.bot-examples { display: flex; flex-direction: column; gap: 8px; }
+.bot-example {
+  min-height: 48px; padding: 10px 14px; border-radius: 12px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); font-size: 15px;
+}
+.bot-example:active:not(:disabled) { background: var(--magenta-soft); border-color: var(--magenta); }
+.bot-example:disabled { opacity: 0.4; }
+
+.bot-composer { flex: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--bg); }
+.bot-status { color: var(--danger); font-size: 14px; font-weight: 700; margin: 0 4px 6px; }
+.bot-preview { position: relative; display: inline-block; margin: 0 0 8px 4px; }
+.bot-preview-img { display: block; max-height: 88px; max-width: 160px; border-radius: 10px; border: 1px solid var(--border); }
+.bot-preview-remove {
+  position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%;
+  border: 0; background: var(--surface-2); font-size: 14px; cursor: pointer;
+}
+.bot-compose-row { display: flex; align-items: flex-end; gap: 6px; }
+.bot-file { display: none; }
+.bot-input {
+  flex: 1 1 auto; min-width: 0; min-height: 44px; max-height: 140px; resize: none; overflow-y: hidden;
+  padding: 11px 12px; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 16px; line-height: 1.3;
+}
+.bot-input:focus { outline: none; border-color: var(--magenta); }
+.bot-attach, .bot-send {
+  flex: none; height: 44px; border: 0; border-radius: 14px; cursor: pointer; font-size: 16px; font-weight: 700;
+}
+.bot-attach { width: 44px; background: var(--surface-2); }
+.bot-send { padding: 0 16px; background: var(--magenta); color: #fff; }
+.bot-attach:disabled, .bot-send:disabled { opacity: 0.4; cursor: default; }
+.bot-mic-slot:empty { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
   .btn, .key { transition: none; }
+  .bot-thinking { animation: none; }
 }
