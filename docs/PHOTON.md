@@ -31,11 +31,11 @@ iPhone ◀──reply── Photon REST API ◀──POST /v1/projects/{id}/mess
 
 ## Safety guards (built)
 
-Every outgoing message goes through one function, `deliver()` in `photon.ts`, which checks these first. The bot only ever replies to a text it just received; nothing in the code starts a conversation.
+Every outgoing reply goes through one function, `deliver()` in `photon.ts`, which checks these first. The bot only ever replies to a text it just received. The one exception is a practice text the linked person asked for (below), which goes through `deliverProactive()` with the same checks.
 
 - **Kill switch, `PHOTON_SENDING_ENABLED`:**
 
-  | Value | Replies to an incoming text | Proactive sends (future practice texts) |
+  | Value | Replies to an incoming text | Proactive sends (practice texts) |
   |---|---|---|
   | not set (or empty) | sent | not sent |
   | `true` | sent | sent |
@@ -48,8 +48,42 @@ Every outgoing message goes through one function, `deliver()` in `photon.ts`, wh
 - **STOP:** `STOP`, `STOPALL`, `UNSUBSCRIBE`, `CANCEL`, `END` or `QUIT` (the whole message, any case) opts that phone out. It gets one reply, "You won't get messages from SafeSense. Text START to turn them back on.", and then nothing: no AI call, nothing stored. `FORGET ME` still deletes their data, silently. Private table `channel_optout`.
 - **START** removes the opt-out and says so.
 - **Daily cap:** at most 30 messages to each phone per day (UTC). The 30th reply ends with "That's my last reply for today". After that, silence until the next day. Only the STOP confirmation can go over the cap. Private table `channel_send_daily`.
-- **For practice texts later:** a successful `LINK` saves the Photon chat id (`spaceId`) and our line's user id in the private table `channel_reach`. No phone number is stored. `UNLINK`, `FORGET ME` and the web's Unlink delete it. `proactiveTarget()` in `photon-guards.ts` returns where to send, or why not: it needs the kill switch at `true`, a live link, no opt-out and room under the cap.
+- **For practice texts:** a successful `LINK` saves the Photon chat id (`spaceId`) and our line's user id in the private table `channel_reach`. No phone number is stored. `UNLINK`, `FORGET ME` and the web's Unlink delete it. `proactiveTarget()` in `photon-guards.ts` returns where to send, or why not: it needs the kill switch at `true`, a live link, no opt-out and room under the cap.
 - **Schema:** these are 3 new tables and 1 new optional env var; no existing table changed. Republishing over the existing database worked locally without wiping data.
+
+## Practice texts
+
+Krishna's drill idea, built into the module (`spacetimedb-ts/src/practice.ts`). A linked person asks for a practice text, and SafeSense texts their iPhone one realistic fake scam a minute or two later. If they reply `REPORT`, they caught it. Either way they get a short debrief, and the result shows up in their progress.
+
+**How it works:**
+1. **Ask:** on the SafeSense chat page, the "Text SafeSense" card shows **Send me a practice text** once an iMessage phone is linked (reducer `request_practice_text`). Or text `PRACTICE` from the linked phone.
+2. **Send:** a scheduled job (`practice_job`) fires 60–120 s later and sends the text through Photon, with the practice id as the idempotency key.
+3. **Grade:** the next reply from that phone within 2 hours is checked before the normal bot turn. No AI is used.
+   - `REPORT`, `scam`, `spam`, `fake` or `phishing` (the whole message) counts as **caught**: "Nice catch! … What gave it away: • … Tip: …".
+   - `YES`, `Y`, `OK`, `PAY`, `CONFIRM`, a 4–8 digit number, card-like digits or "I'll pay" counts as **fooled**: "That was a SafeSense practice text — no harm done. Here's what to watch for: … Next time: …". The reply itself isn't stored.
+   - Anything else gets a normal bot answer, and the practice text stays open. After 2 hours it expires.
+   - The result is logged as game `practice-text`, `answer_correct` or `answer_wrong`, with `{template, tactic}`. The coach and the profile count it like a Scam or Not? answer.
+4. **Which scam:** the tactic they miss most in the games, if there's a template for it; otherwise one they haven't had yet.
+
+**The texts:** 8 templates with fictional brands (Parcelo, SwiftShip, TollPay, GlacierBank, Meridian Trust, BrightLine Mobile, StreamNest, BrightNet), `.example` addresses shown as plain text and 555-01xx numbers. Each is at most 320 characters and ends with "(SafeSense practice — reply REPORT if you think it's a scam)". No real links, and no text asks anyone to read out or send a code. Krishna's `code_relay` template was left out for that reason.
+
+**Limits and guards:**
+- 1 practice text a day (rolling 24 h) and 3 in total per person. A text that couldn't be sent doesn't count.
+- Sending needs `PHOTON_SENDING_ENABLED` = `"true"`. With it unset, replies still work, but practice texts are refused ("switched off right now").
+- It also needs a linked iPhone (saved at `LINK`), no `STOP`, and room under the 30-a-day cap. These are checked when it's asked for and again when it's sent.
+- `UNLINK`, `FORGET ME` and the web's Unlink and Forget me delete the person's practice rows and queued jobs.
+- **Schema:** 2 new private tables, `practice_send` and `practice_job`, plus the view `my_practice_texts`. No existing table changed, so Maincloud republishes without a wipe; this was tested locally by upgrading a database built from `safesense`.
+
+**Shared line:** Photon only lets the line message the registered iPhone after it has texted the line. If the send is refused (for example 403 `SHARED_LINE_INBOUND_REQUIRED`), the practice row is marked `failed` and the logs say why. Text the line once (anything, or `PRACTICE`), then ask again.
+
+**Demo:**
+1. Republish with `PHOTON_SENDING_ENABLED=true` (see "Going live").
+2. Link the iPhone (`LINK <code>`), then select **Send me a practice text** (or text `PRACTICE`).
+3. Wait about a minute for the text, reply `REPORT`, and show the debrief and the card's "You caught the last one".
+4. To demo again on the same day, the database owner can clear the limits:
+   `spacetime sql --no-config -s maincloud safesense-1aa18263 "DELETE FROM practice_send"`.
+
+**Testing locally:** follow "Testing locally" below with `PHOTON_SENDING_ENABLED=true` exported. Use `spacetime call --no-config -s local <db> create_link_code` and read the code with `spacetime sql … "SELECT code FROM link_code"`, then sim `LINK <code>` and `spacetime call … request_practice_text`. The job's log line shows the rendered text. A local send always fails, so the row ends `failed`. To test grading, mark it sent with `spacetime sql … "UPDATE practice_send SET status = 'pending'"`, then sim `REPORT` or `YES`.
 
 ## The important limitation
 
@@ -79,7 +113,7 @@ The project, API key and Maincloud database are **Diego's**: only he can publish
    - **Never paste the secret** into chat, a commit or a log.
    - Then Diego, or Claude with Diego's OK, republishes (this also brings the guards and their 3 new tables; no wipe):
      `STDB_TS_SERVER=maincloud STDB_TS_DB=safesense-1aa18263 scripts/publish-ts.sh`.
-   - Leave `PHOTON_SENDING_ENABLED` unset for the demo: replies work and nothing else is sent.
+   - `PHOTON_SENDING_ENABLED`: leave it unset for replies only. To demo practice texts, publish with `PHOTON_SENDING_ENABLED=true` (prefix the command above with it).
 4. **Put the number in the app.** Set `BOT_IMESSAGE_ADDRESS` in `web/src/bot/config.ts` to the assigned number, e.g. `"+1 555 123 4567"`. That shows the "Text SafeSense" card on the SafeSense chat page and "Link iMessage" in the arcade's Help Bot.
    - Then build and deploy the SafeSense site as usual.
 5. **Real test from your iPhone:**
@@ -123,7 +157,7 @@ Compare `spacetimedb-ts/src/photon.ts` with your `guard.ts` (`git show combined:
 
 **Full spec for the guards and practice texts:** [`docs/KRISHNA-PUSH-ANALYSIS.md`](KRISHNA-PUSH-ANALYSIS.md) §3 ("Practice texts in our module"), built from your own `templates.js` and safety rules.
 
-**Stretch, if time allows: practice texts** (your drill idea). A linked user taps "Send me a practice text" on the web. SafeSense texts them one realistic fake scam (fictional brand, safe link), and they reply `REPORT`. The coach records whether they caught it. Limits: one per day, three in total, `STOP` honoured. It can reuse your scam scenarios (`combined:safe-signal/data/scam-archetypes.json`).
+**Practice texts** (your drill idea) are built: see "Practice texts" above.
 
 ## Working rules
 

@@ -246,7 +246,7 @@ export const PracticeNotLinked =
 export const PracticeOptedOut = "You texted STOP, so SafeSense won't text you. Text START to SafeSense first.";
 export const PracticeBusyToday = 'SafeSense has sent your phone a lot of messages today. Please try again tomorrow.';
 export const PracticeDailyLimit = "You've had today's practice text. You can ask for another one tomorrow.";
-export const PracticeTotalLimit = `You've had all ${MaxPracticeTotal} practice texts. You can keep practicing with Scam or Not?.`;
+export const PracticeTotalLimit = `You've had all ${MaxPracticeTotal} practice texts. Scam or Not? has plenty more to practice with.`;
 export const PracticeQueuedReply = 'Got it. A practice text is on its way in a minute or two. Treat it like any other text.';
 
 /** Mark the owner's practice texts that went unanswered for 2 h as expired. */
