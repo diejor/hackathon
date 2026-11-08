@@ -192,3 +192,143 @@
     padding: 0;
   }
 }
+
+/* ================= FRAUDLE (game feel) =================
+   Calm motion: a soft pop as a letter lands, tiles turning over one by one after
+   "Check word", a small shake for a short word and one gentle lift for a solved word.
+   Timing must match STAGGER and FLIP in Fraudle.tsx. All of it is off with reduced motion. */
+
+/* A letter lands in the row being typed */
+.fraudle-card .tile.active {
+  animation: fraudle-pop 140ms ease-out;
+}
+@keyframes fraudle-pop {
+  0% {
+    transform: scale(0.92);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Tiles turn over left to right. Until a tile is edge-on, a second animation keeps it looking
+   unchecked (its fill-mode also covers the wait before its turn); then its mark shows. */
+.fraudle-card .board-row.revealing .tile {
+  --delay: calc(var(--i) * 200ms);
+  animation:
+    fraudle-flip 440ms ease-in-out var(--delay) both,
+    fraudle-unchecked 220ms linear var(--delay) backwards;
+}
+.fraudle-card .board-row.revealing .tile .mark {
+  animation: fraudle-hide 220ms linear var(--delay) backwards;
+}
+@keyframes fraudle-flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+@keyframes fraudle-unchecked {
+  from,
+  to {
+    background: var(--surface);
+    border-color: var(--green-700);
+    color: var(--green-900);
+  }
+}
+@keyframes fraudle-hide {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+
+/* Too short: a small, calm side-to-side */
+.fraudle-card .board-row.shake {
+  animation: fraudle-shake 400ms ease-in-out;
+}
+@keyframes fraudle-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Solved: each tile lifts once, in turn */
+.fraudle-card .board-row.solved .tile {
+  animation: fraudle-lift 420ms ease-out calc(var(--i) * 80ms) both;
+}
+@keyframes fraudle-lift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Keys ease into their new mark once a reveal ends */
+.fraudle-card .key {
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fraudle-card .tile,
+  .fraudle-card .tile .mark,
+  .fraudle-card .board-row {
+    animation: none !important;
+  }
+  .fraudle-card .key {
+    transition: none;
+  }
+}
+
+/* ---------- Session counters (side panel, and under the lesson after a solved word) ---------- */
+.fraudle-today {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fraudle-today p {
+  margin: 0;
+}
+.fraudle-today-count {
+  font-size: 1.1rem;
+  color: var(--green-900);
+}
+.fraudle-today-count strong {
+  font-weight: 700;
+}
+.fraudle-today-note {
+  color: var(--text-muted);
+}
+.fraudle-lesson > p.fraudle-session-note {
+  margin-top: -6px;
+  color: var(--green-700);
+  font-weight: 500;
+}
+.fraudle-credit {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}

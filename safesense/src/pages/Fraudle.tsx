@@ -21,8 +21,13 @@ const MARK_NAME: Record<Mark, string> = {
   absent: 'not in the word',
 }
 
-const scrollBehavior = (): ScrollBehavior =>
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const scrollBehavior = (): ScrollBehavior => (reducedMotion() ? 'auto' : 'smooth')
+
+// Reveal timing (ms). Each tile starts turning STAGGER after the one before; FLIP must match
+// the fraudle-flip animation in fraudle.css. With reduced motion there is no reveal at all.
+const STAGGER = 200
+const FLIP = 440
 
 function score(guess: string, answer: string): Mark[] {
   const marks: Mark[] = Array(answer.length).fill('absent')
@@ -55,7 +60,26 @@ function MarkIcon({ mark }: { mark?: Mark }) {
 
 type RowKind = 'played' | 'active' | 'future'
 
-function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; onNext: () => void }) {
+type Session = { solved: number; streak: number }
+
+// Gentle, per-visit encouragement: no pressure, nothing lost on a miss.
+function steadyNote(streak: number) {
+  return streak >= 2 ? `${streak} in a row — nice and steady.` : ''
+}
+
+function Board({
+  puzzle,
+  isLast,
+  onNext,
+  onResult,
+  session,
+}: {
+  puzzle: Puzzle
+  isLast: boolean
+  onNext: () => void
+  onResult: (solved: boolean) => void
+  session: Session
+}) {
   const answer = puzzle.word
   const length = answer.length
   const [guesses, setGuesses] = useState<string[]>([])
@@ -65,44 +89,105 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
   const dockRef = useRef<HTMLDivElement>(null)
   const activeRowRef = useRef<HTMLDivElement>(null)
   const lessonRef = useRef<HTMLParagraphElement>(null)
+  // True while the last guess's tiles are turning over. Typing waits; the keyboard, the message
+  // and the lesson only change once every tile has shown its mark.
+  const [revealing, setRevealing] = useState(false)
+  const [shake, setShake] = useState(false)
+  const revealTimer = useRef<number | undefined>(undefined)
+  const shakeTimer = useRef<number | undefined>(undefined)
+  // The result waiting for the reveal to end, so it still counts if the board goes away mid-reveal.
+  const pendingResult = useRef<boolean | null>(null)
+  const onResultRef = useRef(onResult)
+  useEffect(() => {
+    onResultRef.current = onResult
+  })
 
-  const won = guesses.includes(answer)
-  const over = won || guesses.length >= TRIES
+  useEffect(
+    () => () => {
+      window.clearTimeout(revealTimer.current)
+      window.clearTimeout(shakeTimer.current)
+      if (pendingResult.current !== null) onResultRef.current(pendingResult.current)
+    },
+    [],
+  )
+
+  // Guesses whose marks are showing (the one being revealed is not settled yet).
+  const settled = revealing ? guesses.slice(0, -1) : guesses
+  const won = settled.includes(answer)
+  const over = won || settled.length >= TRIES
+  // Whether the game ends with the guesses made so far (used for the board layout during a reveal).
+  const ending = guesses.includes(answer) || guesses.length >= TRIES
 
   const keyMarks: Record<string, Mark> = {}
-  guesses.forEach((g) =>
+  settled.forEach((g) =>
     score(g, answer).forEach((m, i) => {
       const prev = keyMarks[g[i]]
       if (!prev || RANK[m] > RANK[prev]) keyMarks[g[i]] = m
     }),
   )
 
+  const locked = over || revealing
   const type = (ch: string) => {
-    if (over) return
+    if (locked) return
     setCurrent((c) => (c.length >= length ? c : c + ch))
   }
   const erase = () => {
-    if (!over) setCurrent((c) => c.slice(0, -1))
+    if (!locked) setCurrent((c) => c.slice(0, -1))
   }
 
   const check = () => {
+    if (locked) return
     if (current.length < length) {
       setMessage(`Your word needs ${length} letters.`)
+      if (!reducedMotion()) {
+        window.clearTimeout(shakeTimer.current)
+        setShake(true)
+        shakeTimer.current = window.setTimeout(() => setShake(false), 420)
+      }
       return
     }
-    const next = [...guesses, current]
+    const guess = current
+    const next = [...guesses, guess]
     setGuesses(next)
     setCurrent('')
-    if (current === answer) {
-      setMessage(`Well done — the word was ${answer}.`)
-      void logActivity('fraudle', 'word_solved', { word: answer, tries: next.length })
+
+    // Logged straight away (points come from activity); the words on screen wait for the reveal.
+    let result: boolean | null = null
+    let text: string
+    if (guess === answer) {
+      result = true
+      text = `Well spotted — the word was ${answer}.`
+      void logActivity('fraudle', 'word_solved', {
+        word: answer,
+        tries: next.length,
+      })
     } else if (next.length >= TRIES) {
-      setMessage(`The word was ${answer}. Thank you for playing.`)
-      void logActivity('fraudle', 'word_missed', { word: answer, tries: next.length })
+      result = false
+      text = `The word was ${answer}. Thank you for playing.`
+      void logActivity('fraudle', 'word_missed', {
+        word: answer,
+        tries: next.length,
+      })
     } else {
-      const right = score(current, answer).filter((m) => m === 'correct').length
-      setMessage(`${right} letter${right === 1 ? ' is' : 's are'} in the right place. Try again.`)
+      const right = score(guess, answer).filter((m) => m === 'correct').length
+      text = `${right} letter${right === 1 ? ' is' : 's are'} in the right place. Try again.`
     }
+
+    const settle = () => {
+      setRevealing(false)
+      setMessage(text)
+      if (result !== null) onResultRef.current(result)
+      pendingResult.current = null
+    }
+    if (reducedMotion()) {
+      settle()
+      return
+    }
+    // Clear the line while the tiles turn, so the result is announced once, after the reveal.
+    setMessage('')
+    setRevealing(true)
+    pendingResult.current = result
+    revealTimer.current = window.setTimeout(settle, (length - 1) * STAGGER + FLIP)
   }
 
   // Physical keyboard: letters type, Backspace deletes, Enter checks (or moves on once the word is done).
@@ -116,7 +201,7 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
         // Stop a focused on-screen button from also being "clicked" by Enter.
         e.preventDefault()
         if (over) onNext()
-        else check()
+        else if (!revealing) check()
       } else if (e.key === 'Backspace') {
         e.preventDefault()
         erase()
@@ -143,7 +228,10 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
   const typing = current.length > 0
   useEffect(() => {
     if (over || (!typing && guesses.length === 0)) return
-    activeRowRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() })
+    activeRowRef.current?.scrollIntoView({
+      block: 'nearest',
+      behavior: scrollBehavior(),
+    })
   }, [typing, guesses.length, over])
 
   // When the word is done the Check button goes away, so move focus to the lesson.
@@ -153,8 +241,13 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
 
   // Played rows, the row being typed, then the tries left as thin placeholders.
   const rows = Array.from({ length: TRIES }, (_, r): { letters: string; marks: Mark[]; kind: RowKind } => {
-    if (r < guesses.length) return { letters: guesses[r], marks: score(guesses[r], answer), kind: 'played' }
-    if (r === guesses.length && !over) return { letters: current, marks: [], kind: 'active' }
+    if (r < guesses.length)
+      return {
+        letters: guesses[r],
+        marks: score(guesses[r], answer),
+        kind: 'played',
+      }
+    if (r === guesses.length && !ending) return { letters: current, marks: [], kind: 'active' }
     return { letters: '', marks: [], kind: 'future' }
   })
 
@@ -179,36 +272,48 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
       </div>
 
       <div className="board" role="grid" aria-label="Your guesses" style={{ '--n': length } as CSSProperties}>
-        {rows.map((row, r) => (
-          <div
-            className={`board-row ${row.kind}`}
-            role="row"
-            key={r}
-            ref={row.kind === 'active' ? activeRowRef : undefined}
-            aria-hidden={row.kind === 'future' ? true : undefined}
-          >
-            {Array.from({ length }, (_, c) => {
-              const mark = row.marks[c]
-              const ch = row.letters[c]
-              const cls = ['tile', mark, row.kind === 'active' && ch ? 'active' : ''].join(' ')
-              return (
-                <div
-                  className={cls}
-                  role="gridcell"
-                  key={c}
-                  aria-label={ch ? `${ch}${mark ? `, ${MARK_NAME[mark]}` : ''}` : 'empty'}
-                >
-                  {ch ?? ''}
-                  {mark && (
-                    <span className="mark" aria-hidden="true">
-                      <MarkIcon mark={mark} />
-                    </span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ))}
+        {rows.map((row, r) => {
+          const isRevealing = revealing && r === guesses.length - 1
+          const rowCls = [
+            'board-row',
+            row.kind,
+            isRevealing ? 'revealing' : '',
+            won && row.letters === answer ? 'solved' : '',
+            row.kind === 'active' && shake ? 'shake' : '',
+          ]
+          return (
+            <div
+              className={rowCls.join(' ')}
+              role="row"
+              key={r}
+              ref={row.kind === 'active' ? activeRowRef : undefined}
+              aria-hidden={row.kind === 'future' ? true : undefined}
+            >
+              {Array.from({ length }, (_, c) => {
+                const mark = row.marks[c]
+                const ch = row.letters[c]
+                const cls = ['tile', mark, row.kind === 'active' && ch ? 'active' : ''].join(' ')
+                // --i staggers the flip (and the win bounce) from left to right.
+                return (
+                  <div
+                    className={cls}
+                    role="gridcell"
+                    key={c}
+                    style={{ '--i': c } as CSSProperties}
+                    aria-label={ch ? `${ch}${mark && !isRevealing ? `, ${MARK_NAME[mark]}` : ''}` : 'empty'}
+                  >
+                    {ch ?? ''}
+                    {mark && (
+                      <span className="mark" aria-hidden="true">
+                        <MarkIcon mark={mark} />
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
       </div>
 
       {/* One dock for the status line and either the letters (sticky while playing) or the lesson.
@@ -217,63 +322,69 @@ function Board({ puzzle, isLast, onNext }: { puzzle: Puzzle; isLast: boolean; on
         <p className="status-line" role="status">
           {message}
         </p>
-      {over ? (
-        <div className="fraudle-lesson">
-          <p className="feedback-title" tabIndex={-1} ref={lessonRef}>
-            <Lightbulb size={20} strokeWidth={1.5} aria-hidden="true" /> Worth remembering
-          </p>
-          <p>{puzzle.lesson}</p>
-          {isLast && (
-            <p className="fraudle-all-done">
-              That was the last of the {PUZZLES.length} words. You can start again from the first one.
+        {over ? (
+          <div className="fraudle-lesson">
+            <p className="feedback-title" tabIndex={-1} ref={lessonRef}>
+              <Lightbulb size={20} strokeWidth={1.5} aria-hidden="true" /> Worth remembering
             </p>
-          )}
-          <button className="btn btn-primary btn-block" onClick={onNext}>
-            {isLast ? <RotateCcw size={20} aria-hidden="true" /> : <ArrowRight size={20} aria-hidden="true" />}
-            {isLast ? 'Start again' : 'Next word'}
-          </button>
-          <p className="see-progress-row">
-            <a className="see-progress" href={href('profile')}>
-              <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
-            </a>
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="keyboard" role="group" aria-label="Letters">
-            {ROWS.map((row) => (
-              <div className="key-row" key={row}>
-                {row.split('').map((ch) => {
-                  const mark = keyMarks[ch]
-                  return (
-                    <button
-                      key={ch}
-                      className={`key ${mark ?? ''}`}
-                      onClick={() => type(ch)}
-                      aria-label={mark ? `${ch}, ${MARK_NAME[mark]}` : ch}
-                    >
-                      {ch}
-                      {mark && (
-                        <span className="mark" aria-hidden="true">
-                          <MarkIcon mark={mark} />
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-          <div className="two-btns">
-            <button className="btn btn-secondary" onClick={erase}>
-              Delete
+            <p>{puzzle.lesson}</p>
+            {won && (
+              <p className="fraudle-session-note">
+                Words solved today: {session.solved}
+                {steadyNote(session.streak) && <> · {steadyNote(session.streak)}</>}
+              </p>
+            )}
+            {isLast && (
+              <p className="fraudle-all-done">
+                That was the last of the {PUZZLES.length} words. You can start again from the first one.
+              </p>
+            )}
+            <button className="btn btn-primary btn-block" onClick={onNext}>
+              {isLast ? <RotateCcw size={20} aria-hidden="true" /> : <ArrowRight size={20} aria-hidden="true" />}
+              {isLast ? 'Start again' : 'Next word'}
             </button>
-            <button className="btn btn-primary" onClick={check}>
-              Check word
-            </button>
+            <p className="see-progress-row">
+              <a className="see-progress" href={href('profile')}>
+                <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress
+              </a>
+            </p>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            <div className="keyboard" role="group" aria-label="Letters">
+              {ROWS.map((row) => (
+                <div className="key-row" key={row}>
+                  {row.split('').map((ch) => {
+                    const mark = keyMarks[ch]
+                    return (
+                      <button
+                        key={ch}
+                        className={`key ${mark ?? ''}`}
+                        onClick={() => type(ch)}
+                        aria-label={mark ? `${ch}, ${MARK_NAME[mark]}` : ch}
+                      >
+                        {ch}
+                        {mark && (
+                          <span className="mark" aria-hidden="true">
+                            <MarkIcon mark={mark} />
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="two-btns">
+              <button className="btn btn-secondary" onClick={erase}>
+                Delete
+              </button>
+              <button className="btn btn-primary" onClick={check}>
+                Check word
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </section>
   )
@@ -283,6 +394,10 @@ export default function Fraudle() {
   const [index, setIndex] = useState(0)
   const puzzle = PUZZLES[index]
   const isLast = index === PUZZLES.length - 1
+  // Per visit only: nothing is stored, and a missed word just starts a new run.
+  const [session, setSession] = useState<Session>({ solved: 0, streak: 0 })
+  const onResult = (solved: boolean) =>
+    setSession((s) => (solved ? { solved: s.solved + 1, streak: s.streak + 1 } : { ...s, streak: 0 }))
   const nextWord = () => {
     setIndex((i) => (i + 1) % PUZZLES.length)
     window.scrollTo(0, 0)
@@ -297,7 +412,14 @@ export default function Fraudle() {
       />
       <div className="page-grid">
         <div className="stack">
-          <Board key={puzzle.word} puzzle={puzzle} isLast={isLast} onNext={nextWord} />
+          <Board
+            key={puzzle.word}
+            puzzle={puzzle}
+            isLast={isLast}
+            onNext={nextWord}
+            onResult={onResult}
+            session={session}
+          />
         </div>
 
         <div className="stack">
@@ -315,6 +437,14 @@ export default function Fraudle() {
               </li>
             </ul>
           </section>
+          <section className="card fraudle-today" aria-label="This visit">
+            <p className="fraudle-today-count">
+              Words solved today: <strong>{session.solved}</strong>
+            </p>
+            <p className="fraudle-today-note">
+              {steadyNote(session.streak) || 'No rush. Every word is a small habit worth keeping.'}
+            </p>
+          </section>
           <p className="muted">A useful habit: you don’t have to answer a message right away.</p>
           <button className="btn btn-secondary btn-block" onClick={nextWord}>
             {isLast ? (
@@ -330,6 +460,7 @@ export default function Fraudle() {
           <a className="btn btn-secondary btn-block" href={href('home')}>
             Back to home
           </a>
+          <p className="fraudle-credit">Inspired by Scam Wordle by Krishna (SafeSense team).</p>
         </div>
       </div>
     </div>
