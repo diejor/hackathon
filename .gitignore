@@ -13,3 +13,6 @@ client/.vs/
 spacetimedb/bin/
 spacetimedb/obj/
 client/Builds/
+
+# Secrets (API keys) — never commit
+.env
