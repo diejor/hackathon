@@ -572,13 +572,13 @@ main {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--green-700);
-  margin-top: 24px;
+  margin-top: 20px;
 }
 .game-card .h3 {
-  margin-top: 18px;
+  margin-top: 6px;
 }
 .game-card .desc {
-  margin-top: 18px;
+  margin-top: 12px;
   font-size: 1.1rem;
   flex: 1;
 }
@@ -586,7 +586,7 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 18px;
+  margin-top: 16px;
   color: var(--text-muted);
   font-size: 0.95rem;
 }
@@ -597,6 +597,44 @@ main {
 .game-card.is-pressed .go,
 .game-card:focus-visible .go {
   color: #fff;
+}
+/* Short laptop screens (1366×768 and the like): the icon sits beside the kind and title, as on phones,
+   so the whole row of game cards fits on the first screen under the hero. */
+@media (min-width: 961px) and (max-height: 900px) {
+  .games-title {
+    margin: 28px 0 16px;
+  }
+  .game-card {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      'icon kind'
+      'icon title'
+      'desc desc'
+      'info info';
+    column-gap: 16px;
+  }
+  .game-card .icon-tile {
+    grid-area: icon;
+    width: 52px;
+    height: 52px;
+    align-self: center;
+  }
+  .game-card .kind {
+    grid-area: kind;
+    margin-top: 0;
+  }
+  .game-card .h3 {
+    grid-area: title;
+    margin-top: 0;
+  }
+  .game-card .desc {
+    grid-area: desc;
+  }
+  .game-card .info {
+    grid-area: info;
+  }
 }
 /* The next game, locked: muted, full width under the three games, never the green hover of a playable card. */
 .locked-card {
