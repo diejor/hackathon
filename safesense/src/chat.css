@@ -463,10 +463,6 @@
   .chat-page:has(.chat-scroll:not(.chat-scroll-empty)) .page-head {
     margin-bottom: 20px;
   }
-  .chat-page:has(.chat-scroll:not(.chat-scroll-empty)) .chat-card {
-    min-height: min(640px, calc(100vh - 120px));
-    max-height: max(560px, calc(100vh - 120px));
-  }
 }
 @media (max-width: 720px) {
   .chat-scroll:not(.chat-scroll-empty) {
@@ -507,5 +503,14 @@
 @media (min-width: 961px) {
   .chat-card:has(.chat-scroll-empty) {
     max-height: none;
+  }
+}
+
+/* Desktop with a conversation: follow the side panel all the way down (Diego: use the space beside the long
+   right column). The page opens scrolled to the text box (Chat.tsx), and the messages fill the card. */
+@media (min-width: 961px) {
+  .chat-card:has(.chat-scroll:not(.chat-scroll-empty)) {
+    min-height: var(--chat-base, 560px);
+    max-height: var(--chat-base, none);
   }
 }
