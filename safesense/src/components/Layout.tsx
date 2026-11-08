@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { MessageCircle, ShieldCheck } from 'lucide-react'
+import { MessageCircle, ShieldCheck, Sprout } from 'lucide-react'
 import { href, type Route } from '../router'
+import { useProgress } from '../lib/useProgress'
+import '../profile.css'
 
 const SIZES = ['normal', 'large', 'larger'] as const
 type Size = (typeof SIZES)[number]
@@ -27,8 +29,30 @@ function TextSizeButton() {
 
   return (
     <button className="text-size" onClick={next} aria-label={`Text size: ${size}. Select to change.`}>
-      <span className="aa">Aa</span> Text size
+      <span className="aa">Aa</span> <span className="text-size-label">Text size</span>
     </button>
+  )
+}
+
+/** "Your progress", with a quiet points chip once the player has some. */
+function ProgressLink({ route }: { route: Route }) {
+  const { status, progress } = useProgress()
+  const points = status === 'ready' && progress.points > 0 ? progress.points : null
+  return (
+    <a
+      className="progress-link"
+      href={href('profile')}
+      aria-current={route === 'profile' ? 'page' : undefined}
+      aria-label={points === null ? 'Your progress' : `Your progress, ${points} points`}
+    >
+      <Sprout size={20} strokeWidth={1.75} aria-hidden="true" />
+      <span className="progress-label">Your progress</span>
+      {points !== null && (
+        <span className="points-chip" aria-hidden="true">
+          {points}
+        </span>
+      )}
+    </a>
   )
 }
 
@@ -45,6 +69,7 @@ function Header({ route }: { route: Route }) {
         </a>
         <div className="header-actions">
           <TextSizeButton />
+          <ProgressLink route={route} />
           <a
             className="chat-link"
             href={href('chat')}

@@ -1,0 +1,348 @@
+/* "Your progress" (B10): header link, profile page, and the small "See your progress" links.
+   Uses the designer's tokens from index.css; kept in its own file so design zips merge cleanly. */
+
+/* ---------- Header link ---------- */
+.progress-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--green-700);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.progress-link:hover,
+.progress-link[aria-current='page'] {
+  border-color: var(--green-700);
+}
+.points-chip {
+  display: inline-block;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--green-100);
+  color: var(--green-900);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* ---------- "See your progress" links ---------- */
+.see-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--green-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.see-progress:hover {
+  color: var(--green-900);
+}
+.see-progress-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ---------- Profile page ---------- */
+.profile-section .h2 + .profile-intro,
+.profile-section .h3 + .profile-intro {
+  margin-top: 6px;
+}
+.profile-empty .h2 {
+  margin-top: 12px;
+}
+.profile-empty > .muted {
+  margin-top: 8px;
+}
+.profile-empty-actions {
+  margin-top: 24px;
+  gap: 12px;
+}
+
+.points-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+.points-total {
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
+  color: var(--green-900);
+  line-height: 1.2;
+}
+.count-list {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.count-item {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--green-50);
+}
+.count-n {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--green-900);
+  line-height: 1.3;
+}
+.count-label {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.sign-group-title {
+  margin-top: 24px;
+  font-size: 1.15rem;
+}
+.sign-group-title + .small {
+  margin-top: 2px;
+}
+.sign-grid {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 12px;
+}
+.sign-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+}
+.sign-tile.is-caught {
+  background: var(--green-100);
+  border: 1px solid var(--green-100);
+}
+.sign-tile.is-unseen {
+  border: 1px dashed var(--border);
+  background: transparent;
+}
+.sign-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--green-700);
+}
+.is-unseen .sign-icon {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.sign-name {
+  font-weight: 600;
+  color: var(--green-900);
+  line-height: 1.35;
+}
+.is-unseen .sign-name {
+  color: var(--text-muted);
+}
+.sign-line {
+  margin-top: 2px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.is-unseen .sign-line {
+  color: var(--text-muted);
+}
+.sign-where {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--green-700);
+}
+
+.practice-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.practice-item {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+}
+.practice-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--green-900);
+}
+.practice-tell {
+  margin: 8px 0 14px;
+}
+.practice-genuine {
+  margin-top: 16px;
+}
+.practice-calm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-family: var(--font-serif);
+  color: var(--green-900);
+}
+
+.word-chips {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.word-chips .chip {
+  letter-spacing: 0.06em;
+}
+
+.nickname-panel .h3 {
+  margin-top: 12px;
+}
+.nickname-form {
+  margin-top: 12px;
+}
+.nickname-label {
+  display: block;
+  margin-top: 0 !important;
+  font-size: 1.15rem;
+}
+.nickname-form .small {
+  margin-top: 2px;
+}
+.nickname-input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 1.05rem;
+}
+.nickname-actions,
+.recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.nickname-actions .btn,
+.recovery-actions .btn {
+  min-height: 48px;
+  flex: 1 1 auto;
+}
+.nickname-panel > .btn {
+  margin-top: 16px;
+}
+.link-button {
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--green-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profile-bottom {
+  margin-top: 28px;
+}
+.recovery-body {
+  margin-top: 16px;
+  gap: 16px;
+}
+.recovery-save .feedback {
+  margin-top: 0;
+}
+.recovery-label {
+  display: block;
+  margin-top: 14px;
+  font-weight: 600;
+  color: var(--green-900);
+}
+.recovery-use .recovery-label {
+  margin-top: 0;
+}
+.recovery-field {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.9rem;
+  word-break: break-all;
+  resize: vertical;
+}
+.recovery-masked {
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.recovery-error {
+  margin-top: 8px;
+  color: var(--scam-dark);
+  font-weight: 600;
+}
+.recovery-use .feedback {
+  margin-top: 12px;
+}
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 960px) {
+  .count-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .progress-link {
+    height: 46px;
+    min-width: 46px;
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .progress-label {
+    display: none;
+  }
+  .points-total {
+    font-size: 1.6rem;
+  }
+}
+/* Very narrow phones: the header keeps "Aa" (the button keeps its full label for screen readers),
+   the points number moves to the profile page only, and the logo stops growing with the text size. */
+@media (max-width: 420px) {
+  .text-size-label {
+    display: none;
+  }
+  .brand-name {
+    font-size: 24px;
+  }
+}
+@media (max-width: 374px) {
+  .points-chip {
+    display: none;
+  }
+}

@@ -5,6 +5,7 @@ import Fraudle from './pages/Fraudle'
 import ScamOrNot from './pages/ScamOrNot'
 import LongCon from './pages/LongCon'
 import Chat from './pages/Chat'
+import Profile from './pages/Profile'
 
 const PAGES = {
   home: Home,
@@ -12,6 +13,7 @@ const PAGES = {
   'scam-or-not': ScamOrNot,
   'long-con': LongCon,
   chat: Chat,
+  profile: Profile,
 }
 
 export default function App() {
