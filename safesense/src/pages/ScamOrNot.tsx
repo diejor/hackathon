@@ -124,7 +124,7 @@ function WrapUp({ missed, onAgain }: { missed: Scenario[]; onAgain: () => void }
           <RotateCcw size={20} /> Play again
         </button>
         <a className="btn btn-secondary btn-block" href={href('chat')}>
-          <MessageCircle size={20} /> Talk it through with us
+          <MessageCircle size={20} /> Ask SafeSense about a message
         </a>
         <p className="see-progress-row">
           <a className="see-progress" href={href('profile')}>

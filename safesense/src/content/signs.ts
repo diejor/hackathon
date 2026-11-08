@@ -35,7 +35,7 @@ const move = (slug: TacticId, line: string): Sign => ({
 
 /** Kinds of scam message (Scam or Not?). */
 export const MESSAGE_SIGNS: Sign[] = [
-  message('fake-delivery', 'Fake delivery fees', 'A text about a parcel that asks for a small fee.'),
+  message('fake-delivery', 'Fake delivery fees', 'A text about a package that asks for a small fee.'),
   message('bank-impersonation', 'Fake bank alerts', 'A “bank” message with a deadline and a link.'),
   message('family-emergency', '“Family” in trouble', 'A loved one on a new number who needs money fast.'),
   message('tech-support', 'Surprise bills to call about', 'An unexpected charge with a number to ring.'),

@@ -96,7 +96,7 @@ function Debrief({
 
       <div className="stack lc-actions">
         <a className="btn btn-primary btn-block" href={href('chat')}>
-          <MessageCircle size={20} /> Talk it through with us
+          <MessageCircle size={20} /> Ask SafeSense about a message
         </a>
         <button className="btn btn-secondary btn-block" onClick={onAgain}>
           <RotateCcw size={20} /> Play this scenario again
@@ -293,7 +293,7 @@ export default function LongCon() {
               step.
             </p>
             <a className="btn btn-secondary btn-block" href={href('chat')} style={{ marginTop: 20 }}>
-              Chat with us
+              Ask SafeSense
             </a>
           </div>
         </aside>
