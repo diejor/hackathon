@@ -35,6 +35,7 @@ import {
 
 // Import all reducer arg schemas
 import ChooseGameReducer from "./choose_game_reducer";
+import CreateLinkCodeReducer from "./create_link_code_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import ForgetMeReducer from "./forget_me_reducer";
 import JoinRoomReducer from "./join_room_reducer";
@@ -45,6 +46,7 @@ import SeedDemoActivityReducer from "./seed_demo_activity_reducer";
 import SetNameReducer from "./set_name_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
+import UnlinkChannelsReducer from "./unlink_channels_reducer";
 
 // Import all procedure arg schemas
 import * as AiAskProcedure from "./ai_ask_procedure";
@@ -53,7 +55,9 @@ import * as BotSendProcedure from "./bot_send_procedure";
 
 // Import all table schema definitions
 import MyActivityRow from "./my_activity_table";
+import MyChannelLinksRow from "./my_channel_links_table";
 import MyFactsRow from "./my_facts_table";
+import MyLinkCodeRow from "./my_link_code_table";
 import MyMessagesRow from "./my_messages_table";
 import MyRoomRow from "./my_room_table";
 import MyRoomMembersRow from "./my_room_members_table";
@@ -69,6 +73,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyActivityRow),
+  myChannelLinks: __table({
+    name: 'my_channel_links',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyChannelLinksRow),
   myFacts: __table({
     name: 'my_facts',
     indexes: [
@@ -76,6 +87,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyFactsRow),
+  myLinkCode: __table({
+    name: 'my_link_code',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyLinkCodeRow),
   myMessages: __table({
     name: 'my_messages',
     indexes: [
@@ -102,6 +120,7 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("choose_game", ChooseGameReducer),
+  __reducerSchema("create_link_code", CreateLinkCodeReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("forget_me", ForgetMeReducer),
   __reducerSchema("join_room", JoinRoomReducer),
@@ -112,6 +131,7 @@ const reducersSchema = __reducers(
   __reducerSchema("set_name", SetNameReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
+  __reducerSchema("unlink_channels", UnlinkChannelsReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
@@ -125,8 +145,12 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
   tables: typeof tablesSchema.schemaType.tables & {
     /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
     readonly "MyActivity": Omit<typeof tablesSchema.schemaType.tables["myActivity"], "accessorName"> & { readonly accessorName: "MyActivity" };
+    /** @deprecated Use `myChannelLinks` instead. This alias will be removed in the next major version. */
+    readonly "MyChannelLinks": Omit<typeof tablesSchema.schemaType.tables["myChannelLinks"], "accessorName"> & { readonly accessorName: "MyChannelLinks" };
     /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
     readonly "MyFacts": Omit<typeof tablesSchema.schemaType.tables["myFacts"], "accessorName"> & { readonly accessorName: "MyFacts" };
+    /** @deprecated Use `myLinkCode` instead. This alias will be removed in the next major version. */
+    readonly "MyLinkCode": Omit<typeof tablesSchema.schemaType.tables["myLinkCode"], "accessorName"> & { readonly accessorName: "MyLinkCode" };
     /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
     readonly "MyMessages": Omit<typeof tablesSchema.schemaType.tables["myMessages"], "accessorName"> & { readonly accessorName: "MyMessages" };
     /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */
@@ -152,7 +176,9 @@ const REMOTE_MODULE = {
 
 const tableAccessorAliases = {
   "MyActivity": "myActivity",
+  "MyChannelLinks": "myChannelLinks",
   "MyFacts": "myFacts",
+  "MyLinkCode": "myLinkCode",
   "MyMessages": "myMessages",
   "MyRoom": "myRoom",
   "MyRoomMembers": "myRoomMembers",
@@ -178,8 +204,12 @@ type __DbViewBase = __DbConnectionImpl<typeof REMOTE_MODULE>["db"];
 export type DbView = __DbViewBase & {
   /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
   readonly "MyActivity": __DbViewBase["myActivity"];
+  /** @deprecated Use `myChannelLinks` instead. This alias will be removed in the next major version. */
+  readonly "MyChannelLinks": __DbViewBase["myChannelLinks"];
   /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
   readonly "MyFacts": __DbViewBase["myFacts"];
+  /** @deprecated Use `myLinkCode` instead. This alias will be removed in the next major version. */
+  readonly "MyLinkCode": __DbViewBase["myLinkCode"];
   /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
   readonly "MyMessages": __DbViewBase["myMessages"];
   /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */
@@ -192,8 +222,12 @@ type __TablesBase = __QueryBuilder<typeof tablesSchema.schemaType>;
 export type Tables = __TablesBase & {
   /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
   readonly "MyActivity": __TablesBase["myActivity"];
+  /** @deprecated Use `myChannelLinks` instead. This alias will be removed in the next major version. */
+  readonly "MyChannelLinks": __TablesBase["myChannelLinks"];
   /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
   readonly "MyFacts": __TablesBase["myFacts"];
+  /** @deprecated Use `myLinkCode` instead. This alias will be removed in the next major version. */
+  readonly "MyLinkCode": __TablesBase["myLinkCode"];
   /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
   readonly "MyMessages": __TablesBase["myMessages"];
   /** @deprecated Use `myRoom` instead. This alias will be removed in the next major version. */

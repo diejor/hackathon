@@ -4,6 +4,7 @@
 // nodes): model output and pasted scam texts are untrusted, and URLs are deliberately not linkified.
 import { h } from "../ui";
 import * as Bot from "./bot";
+import { BOT_IMESSAGE_ADDRESS } from "./config";
 import { createDictation, voiceSupported } from "./voice";
 
 const VERDICTS: Record<string, string> = { scam: "Scam", suspicious: "Suspicious", likely_safe: "Likely safe" };
@@ -23,15 +24,69 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   let image: Blob | null = null;
   let previewUrl: string | null = null;
   let confirming = false;
+  let menuOpen = false;
+  let linking = false; // "Link iMessage" panel open
+  let linkTimer: ReturnType<typeof setInterval> | null = null;
   let lastCount = -1;
   let seeding = false;
 
-  // ---------- Top bar + forget-me confirm ----------
-  const forgetBtn = h("button", { class: "bot-top-btn bot-forget", onclick: () => { confirming = true; update(); } }, "Forget me");
+  // ---------- Top bar (⋯ menu: Link iMessage, Forget me) + panels ----------
+  const menuBtn = h("button", {
+    class: "bot-top-btn bot-menu-btn", "aria-label": "Menu", "aria-haspopup": "menu", "aria-expanded": "false",
+    onclick: () => { menuOpen = !menuOpen; update(); },
+  }, "⋯");
+  const menu = h("div", { class: "bot-menu", role: "menu" },
+    h("button", { class: "bot-menu-item bot-menu-link", role: "menuitem", onclick: () => void openLink() }, "Link iMessage"),
+    h("button", { class: "bot-menu-item bot-forget", role: "menuitem", onclick: () => { menuOpen = false; linking = false; confirming = true; update(); } }, "Forget me"));
   const top = h("div", { class: "bot-top" },
     h("button", { class: "bot-top-btn bot-back", onclick: opts.onBack, "aria-label": "Back" }, "‹ Back"),
     h("div", { class: "bot-title" }, "Help Bot"),
-    forgetBtn);
+    h("div", { class: "bot-menu-wrap" }, menuBtn, menu));
+
+  // "Link iMessage": a one-time code the player texts to the bot ("LINK ABC123").
+  const linkBody = h("div", { class: "bot-link-body" });
+  const linkBox = h("div", { class: "bot-link", role: "dialog", "aria-label": "Link iMessage" },
+    h("div", { class: "bot-link-title" }, "Link iMessage"),
+    linkBody,
+    h("div", { class: "bot-confirm-actions" },
+      h("button", { class: "btn btn-secondary btn-small", onclick: () => void Bot.createLinkCode() }, "New code"),
+      h("button", { class: "btn btn-primary btn-small", onclick: () => closeLink() }, "Done")));
+
+  async function openLink() {
+    menuOpen = false;
+    confirming = false;
+    linking = true;
+    linkTimer ??= setInterval(update, 15_000); // keep "expires in" fresh
+    update();
+    if (!Bot.linkCode()) await Bot.createLinkCode();
+  }
+
+  function closeLink() {
+    linking = false;
+    if (linkTimer) { clearInterval(linkTimer); linkTimer = null; }
+    update();
+  }
+
+  function renderLink() {
+    const code = Bot.linkCode();
+    const links = Bot.channelLinks();
+    const kids: (HTMLElement | null)[] = [];
+    if (code) {
+      const mins = Math.max(1, Math.ceil(Number(code.expiresAt.microsSinceUnixEpoch / 1000n - BigInt(Date.now())) / 60_000));
+      kids.push(
+        h("div", { class: "bot-link-code", "aria-label": `Code ${code.code.split("").join(" ")}` }, code.code),
+        h("p", { class: "bot-link-text" }, "Text ", h("b", null, `LINK ${code.code}`), " to the Help Bot on iMessage at ", h("b", null, BOT_IMESSAGE_ADDRESS), "."),
+        h("p", { class: "bot-link-sub" }, `Your iMessage chats will then share this history and show up here. The code works once and expires in ${mins} min.`));
+    } else {
+      kids.push(h("p", { class: "bot-link-text" }, Bot.ready() ? "Making a code…" : "Connecting…"));
+    }
+    if (links.length) {
+      kids.push(h("div", { class: "bot-link-linked" },
+        ...links.map((l) => h("div", null, `✓ Linked: ${l.platform === "imessage" ? "iMessage" : l.platform} ${l.handleHint}`)),
+        h("button", { class: "bot-link-unlink", onclick: () => void Bot.unlinkChannels() }, "Unlink")));
+    }
+    linkBody.replaceChildren(...kids.filter((k): k is HTMLElement => !!k));
+  }
 
   const confirmFacts = h("ul", { class: "bot-confirm-facts" });
   const confirmBox = h("div", { class: "bot-confirm", role: "alertdialog", "aria-label": "Forget me" },
@@ -87,7 +142,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     preview,
     h("div", { class: "bot-compose-row" }, attachBtn, fileInput, textarea, micSlot, sendBtn));
 
-  const el = h("div", { class: "bot-chat" }, top, confirmBox, list, composer);
+  const el = h("div", { class: "bot-chat" }, top, linkBox, confirmBox, list, composer);
 
   function setImage(b: Blob | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -133,10 +188,12 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     if (!user && label)
       kids.push(h("div", { class: `bot-verdict bot-verdict-${m.verdict}` }, label));
     if (m.text) kids.push(h("div", { class: "bot-text" }, m.text));
+    const via = Bot.channelLabel(m);
     if (!user && label) {
       if (m.redFlags.length) kids.push(h("div", { class: "bot-section" }, h("div", { class: "bot-section-title" }, "Red flags"), h("ul", null, m.redFlags.map((f) => h("li", null, f)))));
       if (m.nextSteps.length) kids.push(h("div", { class: "bot-section" }, h("div", { class: "bot-section-title" }, "What to do"), h("ul", null, m.nextSteps.map((s) => h("li", null, s)))));
     }
+    if (via) kids.push(h("div", { class: "bot-via" }, `via ${via}`));
     const cls = `bot-msg ${user ? "bot-msg-user" : "bot-msg-bot"}${!user && label ? " bot-card" : ""}${m.isError ? " bot-msg-error" : ""}`;
     return h("div", { class: cls }, kids);
   }
@@ -195,7 +252,11 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     }
 
     confirmBox.hidden = !confirming;
-    forgetBtn.toggleAttribute("disabled", !ready || confirming);
+    menu.hidden = !menuOpen;
+    menuBtn.setAttribute("aria-expanded", String(menuOpen));
+    menuBtn.toggleAttribute("disabled", !ready);
+    linkBox.hidden = !linking;
+    if (linking) renderLink();
     const facts = Bot.facts();
     confirmFacts.replaceChildren(...facts.map((f) => h("li", null, f.fact)));
     confirmFacts.hidden = !facts.length;
@@ -220,6 +281,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     el,
     destroy() {
       off();
+      if (linkTimer) clearInterval(linkTimer);
       dictation.cancel();
       vv?.removeEventListener("resize", fit);
       vv?.removeEventListener("scroll", fit);

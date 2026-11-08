@@ -35,6 +35,15 @@ export const AiUsage = __t.object("AiUsage", {
 });
 export type AiUsage = __Infer<typeof AiUsage>;
 
+export const ChannelLink = __t.object("ChannelLink", {
+  senderKey: __t.string(),
+  owner: __t.identity(),
+  platform: __t.string(),
+  handleHint: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type ChannelLink = __Infer<typeof ChannelLink>;
+
 export const ChatMessage = __t.object("ChatMessage", {
   id: __t.u64(),
   owner: __t.identity(),
@@ -74,6 +83,20 @@ export const JoinAttempt = __t.object("JoinAttempt", {
 });
 export type JoinAttempt = __Infer<typeof JoinAttempt>;
 
+export const LinkAttempt = __t.object("LinkAttempt", {
+  senderKey: __t.string(),
+  failures: __t.u32(),
+  windowStart: __t.timestamp(),
+});
+export type LinkAttempt = __Infer<typeof LinkAttempt>;
+
+export const LinkCode = __t.object("LinkCode", {
+  owner: __t.identity(),
+  code: __t.string(),
+  expiresAt: __t.timestamp(),
+});
+export type LinkCode = __Infer<typeof LinkCode>;
+
 export const MemoryFact = __t.object("MemoryFact", {
   id: __t.u64(),
   owner: __t.identity(),
@@ -112,4 +135,10 @@ export const RoomState = __t.enum("RoomState", {
   Playing: __t.unit(),
 });
 export type RoomState = __Infer<typeof RoomState>;
+
+export const WebhookSeen = __t.object("WebhookSeen", {
+  id: __t.string(),
+  seenAt: __t.timestamp(),
+});
+export type WebhookSeen = __Infer<typeof WebhookSeen>;
 

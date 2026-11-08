@@ -54,6 +54,12 @@ conn.reducers.logActivity({ game: "friend-or-fraud", kind: "answer_wrong",
 - `send(text, image?)`: ask the bot (`bot_send`); `state.sending` / `state.error` show progress.
 - `forgetMe()`: delete everything; `seedDemo()`: replace the player's demo game history (~15 events).
 
+**iMessage (Photon Beta):** `spacetimedb/Photon.cs` serves a signed webhook at `/v1/database/<db>/route/photon`
+(env `PHOTON_WEBHOOK_SECRET`, `PHOTON_API_KEY`, optional `PHOTON_PROJECT_ID`, `PHOTON_BASE_URL`; see `.env.example`).
+It runs the same bot pipeline as the web and replies in plain text. Senders get their own pseudo identity until they text
+`LINK <code>` (Help Bot → ⋯ → Link iMessage); after that, their chats share the player's history and show up in the web chat as "via iMessage".
+Other commands: `UNLINK`, `FORGET ME`. Set the bot's number in `web/src/bot/config.ts`.
+
 **Privacy:** chat messages, memory facts and game activity live in private tables; each player sees only their own
 rows through per-user views (`my_messages`, `my_facts`, `my_activity`), and screenshots are never stored.
 "Forget me" deletes the player's messages, facts and game activity.

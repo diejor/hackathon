@@ -15,6 +15,11 @@ public partial struct EnvironmentSchema
     public string? AI_MODEL;        // chat model id (run ai_ping to list what your key can use)
     public string? AI_VISION_MODEL; // model for screenshots; defaults to AI_MODEL
     public string? AI_FALLBACK_MODEL; // used once if the main model is overloaded (5xx/429)
+    // Messaging channels via Photon (Photon.cs); all optional, the webhook answers 503 without a secret.
+    public string? PHOTON_API_KEY;        // pho_sk_... (sends replies, downloads screenshots)
+    public string? PHOTON_PROJECT_ID;     // defaults to the projectId in each webhook event
+    public string? PHOTON_WEBHOOK_SECRET; // whsec_... signing secret of the webhook destination
+    public string? PHOTON_BASE_URL;       // default https://api.photon.codes
 }
 
 public static partial class Module
@@ -45,14 +50,18 @@ public static partial class Module
 
     readonly record struct AiConfig(string Key, string BaseUrl, string Model, string VisionModel, string FallbackModel);
 
-    static AiConfig? LoadAiConfig(ProcedureContext ctx)
+    // The database environment (same values for every context type).
+    static ModuleEnvironment Env => default;
+
+    static AiConfig? LoadAiConfig()
     {
-        var key = ctx.Env.AI_API_KEY;
+        var env = Env;
+        var key = env.AI_API_KEY;
         if (string.IsNullOrEmpty(key)) return null;
-        var baseUrl = (string.IsNullOrEmpty(ctx.Env.AI_BASE_URL) ? DefaultBaseUrl : ctx.Env.AI_BASE_URL!).TrimEnd('/');
-        var model = string.IsNullOrEmpty(ctx.Env.AI_MODEL) ? DefaultModel : ctx.Env.AI_MODEL!;
-        var vision = string.IsNullOrEmpty(ctx.Env.AI_VISION_MODEL) ? model : ctx.Env.AI_VISION_MODEL!;
-        var fallback = string.IsNullOrEmpty(ctx.Env.AI_FALLBACK_MODEL) ? DefaultFallbackModel : ctx.Env.AI_FALLBACK_MODEL!;
+        var baseUrl = (string.IsNullOrEmpty(env.AI_BASE_URL) ? DefaultBaseUrl : env.AI_BASE_URL!).TrimEnd('/');
+        var model = string.IsNullOrEmpty(env.AI_MODEL) ? DefaultModel : env.AI_MODEL!;
+        var vision = string.IsNullOrEmpty(env.AI_VISION_MODEL) ? model : env.AI_VISION_MODEL!;
+        var fallback = string.IsNullOrEmpty(env.AI_FALLBACK_MODEL) ? DefaultFallbackModel : env.AI_FALLBACK_MODEL!;
         return new AiConfig(key, baseUrl, model, vision, fallback);
     }
 
@@ -60,7 +69,7 @@ public static partial class Module
     [SpacetimeDB.Procedure]
     public static AiResult AiPing(ProcedureContext ctx)
     {
-        if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
+        if (LoadAiConfig() is not { } cfg) return NotConfigured();
         var result = ctx.Http.Send(new HttpRequest
         {
             Uri = $"{cfg.BaseUrl}/models",
@@ -89,40 +98,39 @@ public static partial class Module
     {
         if (string.IsNullOrWhiteSpace(prompt)) return Fail("Empty prompt");
         if (prompt.Length > MaxPromptChars || (system ?? "").Length > MaxPromptChars) return Fail("Prompt too long");
-        if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
-        if (!TakeAiQuota(ctx)) return Fail("Slow down a little — try again in a few seconds");
-        return Complete(ctx, cfg, cfg.Model, m => ChatPayload(m, system ?? "", prompt));
-    }
-
-    // Rate limit: a short transaction before any network I/O.
-    static bool TakeAiQuota(ProcedureContext ctx)
-    {
+        if (LoadAiConfig() is not { } cfg) return NotConfigured();
         var sender = ctx.Sender;
-        var now = ctx.Timestamp;
-        return ctx.WithTx(tx =>
-        {
-            var usage = tx.Db.AiUsage.Identity.Find(sender);
-            if (usage is { } u && now.MicrosecondsSinceUnixEpoch - u.LastCall.MicrosecondsSinceUnixEpoch < AiCooldownMicros)
-                return false;
-            if (usage is { } existing) tx.Db.AiUsage.Identity.Update(existing with { LastCall = now, Calls = existing.Calls + 1 });
-            else tx.Db.AiUsage.Insert(new AiUsage { Identity = sender, LastCall = now, Calls = 1 });
-            return true;
-        });
+        if (!ctx.WithTx(tx => TakeAiQuota(tx.Db, sender, tx.Timestamp))) return Fail("Slow down a little — try again in a few seconds");
+        return Complete(ctx.Http, cfg, cfg.Model, m => ChatPayload(m, system ?? "", prompt));
     }
 
-    // Calls the model; if it's overloaded (429/5xx), retries once with the fallback model.
-    static AiResult Complete(ProcedureContext ctx, AiConfig cfg, string model, Func<string, string> payloadFor)
+    // Rate limit (one AI call per identity every few seconds). Run it in a short transaction before any network I/O.
+    static bool TakeAiQuota(Local db, Identity who, Timestamp now)
     {
-        var first = CompleteOnce(ctx, cfg, model, payloadFor(model), TimeSpan.FromSeconds(12), out var retryable);
-        if (first.Ok || !retryable || cfg.FallbackModel == model) return first;
-        Log.Info($"AI: {model} unavailable, falling back to {cfg.FallbackModel}");
-        return CompleteOnce(ctx, cfg, cfg.FallbackModel, payloadFor(cfg.FallbackModel), TimeSpan.FromSeconds(20), out _);
+        var usage = db.AiUsage.Identity.Find(who);
+        if (usage is { } u && now.MicrosecondsSinceUnixEpoch - u.LastCall.MicrosecondsSinceUnixEpoch < AiCooldownMicros)
+            return false;
+        if (usage is { } existing) db.AiUsage.Identity.Update(existing with { LastCall = now, Calls = existing.Calls + 1 });
+        else db.AiUsage.Insert(new AiUsage { Identity = who, LastCall = now, Calls = 1 });
+        return true;
     }
 
-    static AiResult CompleteOnce(ProcedureContext ctx, AiConfig cfg, string model, string payload, TimeSpan timeout, out bool retryable)
+    // Calls the model; if it's overloaded (429/5xx), retries once with the fallback model
+    // (skipped when fallbackTimeout is zero, e.g. when the webhook has no time left).
+    static AiResult Complete(SpacetimeDB.HttpClient http, AiConfig cfg, string model, Func<string, string> payloadFor,
+        TimeSpan? firstTimeout = null, TimeSpan? fallbackTimeout = null)
+    {
+        var first = CompleteOnce(http, cfg, model, payloadFor(model), firstTimeout ?? TimeSpan.FromSeconds(12), out var retryable);
+        var fallback = fallbackTimeout ?? TimeSpan.FromSeconds(20);
+        if (first.Ok || !retryable || cfg.FallbackModel == model || fallback <= TimeSpan.Zero) return first;
+        Log.Info($"AI: {model} unavailable, falling back to {cfg.FallbackModel}");
+        return CompleteOnce(http, cfg, cfg.FallbackModel, payloadFor(cfg.FallbackModel), fallback, out _);
+    }
+
+    static AiResult CompleteOnce(SpacetimeDB.HttpClient http, AiConfig cfg, string model, string payload, TimeSpan timeout, out bool retryable)
     {
         var overloaded = false;
-        var result = ctx.Http.Send(new HttpRequest
+        var result = http.Send(new HttpRequest
         {
             Uri = $"{cfg.BaseUrl}/chat/completions",
             Method = SpacetimeDB.HttpMethod.Post,

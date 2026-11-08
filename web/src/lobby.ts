@@ -138,6 +138,7 @@ export function connect() {
         .subscribe([
           "SELECT * FROM my_room", "SELECT * FROM my_room_members",
           "SELECT * FROM my_messages", "SELECT * FROM my_facts", "SELECT * FROM my_activity", // Help Bot (src/bot/bot.ts)
+          "SELECT * FROM my_link_code", "SELECT * FROM my_channel_links", // Help Bot messaging-app linking
         ]);
     })
     .onAutomaticReconnect((_c, identity, token) => {

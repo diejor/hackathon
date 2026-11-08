@@ -12,7 +12,8 @@ using SpacetimeDB;
 //  - Pasted content and screenshots are wrapped in delimiters and treated as data, never instructions.
 //  - Facts never include secrets (the prompt forbids it and SafeFact filters obvious ones).
 //  - ActivityEvent (Activity.cs) is private too (MyActivity); its summary reaches the model as data.
-//  - ForgetMe deletes everything the bot stored about the caller, game activity included.
+//  - ForgetMe deletes everything the bot stored about the caller, game activity and channel links included.
+//  - Messaging apps (Photon.cs) run the same pipeline (RunBotTurn) for the linked player or a pseudo identity.
 public static partial class Module
 {
     const string BotName = "Help Bot";
@@ -117,7 +118,7 @@ Respond ONLY with a JSON object of this shape:
         public List<string> NextSteps;
         public string ImageNote;        // user msg with a screenshot: the model's transcription ("" otherwise)
         public bool IsError;            // bot msg reporting a failure
-        public string Channel;          // "web" (later "imessage")
+        public string Channel;          // "web", or the messaging platform ("imessage", "whatsapp", ...; Photon.cs)
         public Timestamp CreatedAt;     // order by this, never by Id
         [Default(false)]
         public bool HadImage;           // user msg sent with a screenshot (keep last: added by migration)
@@ -141,16 +142,119 @@ Respond ONLY with a JSON object of this shape:
     public static List<MemoryFact> MyFacts(ViewContext ctx) =>
         ctx.Db.MemoryFact.Owner.Filter(ctx.Sender).ToList();
 
-    // Privacy: delete everything the bot stored about the caller (messages, facts, game activity).
+    // Privacy: delete everything the bot stored about the caller (messages, facts, game activity,
+    // messaging-app links and a pending link code).
     [SpacetimeDB.Reducer]
-    public static void ForgetMe(ReducerContext ctx)
+    public static void ForgetMe(ReducerContext ctx) => ForgetAll(ctx.Db, ctx.Sender);
+
+    static void ForgetAll(Local db, Identity owner)
     {
-        foreach (var m in ctx.Db.ChatMessage.Owner.Filter(ctx.Sender).ToList()) ctx.Db.ChatMessage.Id.Delete(m.Id);
-        foreach (var f in ctx.Db.MemoryFact.Owner.Filter(ctx.Sender).ToList()) ctx.Db.MemoryFact.Id.Delete(f.Id);
-        foreach (var a in ctx.Db.ActivityEvent.Owner.Filter(ctx.Sender).ToList()) ctx.Db.ActivityEvent.Id.Delete(a.Id);
+        foreach (var m in db.ChatMessage.Owner.Filter(owner).ToList()) db.ChatMessage.Id.Delete(m.Id);
+        foreach (var f in db.MemoryFact.Owner.Filter(owner).ToList()) db.MemoryFact.Id.Delete(f.Id);
+        foreach (var a in db.ActivityEvent.Owner.Filter(owner).ToList()) db.ActivityEvent.Id.Delete(a.Id);
+        foreach (var l in db.ChannelLink.Owner.Filter(owner).ToList()) db.ChannelLink.SenderKey.Delete(l.SenderKey);
+        db.LinkCode.Owner.Delete(owner);
     }
 
     readonly record struct BotReply(string Reply, string Verdict, List<string> RedFlags, List<string> NextSteps, string ImageText, List<string> NewFacts);
+
+    // The bot pipeline runs from a procedure (web, bot_send) and from an HTTP handler (Photon webhook).
+    // Their contexts are different classes, so the core goes through this small adapter.
+    interface IBotHost
+    {
+        SpacetimeDB.HttpClient Http { get; }
+        T Tx<T>(Func<Local, Timestamp, T> body);
+    }
+
+    sealed class ProcedureBotHost(ProcedureContext ctx) : IBotHost
+    {
+        public SpacetimeDB.HttpClient Http => ctx.Http;
+        public T Tx<T>(Func<Local, Timestamp, T> body) => ctx.WithTx(tx => body(tx.Db, tx.Timestamp));
+    }
+
+    sealed class HandlerBotHost(HandlerContext ctx) : IBotHost
+    {
+        public SpacetimeDB.HttpClient Http => ctx.Http;
+        public T Tx<T>(Func<Local, Timestamp, T> body) => ctx.WithTx(tx => body(tx.Db, tx.Timestamp));
+    }
+
+    const string BotApology = "Sorry, I couldn't reach my brain just now. Please try again in a moment. " +
+        "Until then: don't tap links or share codes from a message you're unsure about.";
+
+    // Outcome of one bot turn. Stored=false: rejected before anything was stored (rate limit).
+    readonly record struct BotTurn(bool Stored, AiResult Ai, BotReply Reply, uint LatencyMs);
+
+    // The shared bot pipeline: rate limit, store the user's message, load context (facts, history, game
+    // activity), one model call, then store the reply, the screenshot note and new facts. `owner` is the
+    // identity whose chat this is (web: ctx.Sender; messaging apps: the linked player or a pseudo identity).
+    // Inputs must be validated by the caller.
+    static BotTurn RunBotTurn(IBotHost host, AiConfig cfg, Identity owner, string channel, string text, string imageDataUrl,
+        TimeSpan? aiTimeout = null, TimeSpan? fallbackTimeout = null)
+    {
+        if (!host.Tx((db, now) => TakeAiQuota(db, owner, now)))
+            return new BotTurn(false, Fail("Slow down a little — try again in a few seconds"), default, 0);
+        var hasImage = imageDataUrl.Length > 0;
+
+        // 1) Store the user's message (appears live) and load context.
+        var (userMsg, facts, history, activity) = host.Tx((db, now) =>
+        {
+            var prior = db.ChatMessage.Owner.Filter(owner)
+                .Where(m => !m.IsError)
+                .OrderBy(m => m.CreatedAt.MicrosecondsSinceUnixEpoch)
+                .ToList();
+            var recent = prior.Skip(Math.Max(0, prior.Count - BotHistoryMessages)).ToList();
+            var known = db.MemoryFact.Owner.Filter(owner)
+                .OrderBy(f => f.CreatedAt.MicrosecondsSinceUnixEpoch)
+                .Select(f => f.Fact).ToList();
+            var games = ActivitySummary(db.ActivityEvent.Owner.Filter(owner).ToList(), now);
+            var msg = db.ChatMessage.Insert(new ChatMessage
+            {
+                Id = 0,
+                Owner = owner,
+                Role = ChatRole.User,
+                Text = text,
+                Verdict = "",
+                RedFlags = new(),
+                NextSteps = new(),
+                ImageNote = "",
+                IsError = false,
+                Channel = channel,
+                CreatedAt = now,
+                HadImage = hasImage,
+            });
+            return (msg, known, recent, games);
+        });
+
+        // 2) One model call (vision model when there's a screenshot).
+        var model = hasImage ? cfg.VisionModel : cfg.Model;
+        var ai = Complete(host.Http, cfg, model, m => BotPayload(m, facts, history, activity, text, imageDataUrl, strictSchema: true), aiTimeout, fallbackTimeout);
+        if (!ai.Ok && ai.Text.Contains("HTTP 400"))
+        {
+            Log.Warn("Bot: json_schema request rejected, retrying with json_object");
+            ai = Complete(host.Http, cfg, model, m => BotPayload(m, facts, history, activity, text, imageDataUrl, strictSchema: false), aiTimeout, fallbackTimeout);
+        }
+        var reply = ai.Ok ? ParseBotReply(ai.Text) : default;
+
+        // 3) Store the bot's reply (or a friendly error), the screenshot note and new facts.
+        var latency = host.Tx((db, now) =>
+        {
+            var created = now.MicrosecondsSinceUnixEpoch > userMsg.CreatedAt.MicrosecondsSinceUnixEpoch
+                ? now : new Timestamp(userMsg.CreatedAt.MicrosecondsSinceUnixEpoch + 1);
+            if (!ai.Ok)
+            {
+                db.ChatMessage.Insert(NewBotMessage(owner, created, BotApology, "", new(), new(), isError: true, channel));
+            }
+            else
+            {
+                db.ChatMessage.Insert(NewBotMessage(owner, created, reply.Reply, reply.Verdict, reply.RedFlags, reply.NextSteps, isError: false, channel));
+                if (hasImage && reply.ImageText.Length > 0 && db.ChatMessage.Id.Find(userMsg.Id) is { } um)
+                    db.ChatMessage.Id.Update(um with { ImageNote = reply.ImageText });
+                UpsertFacts(db, owner, reply.NewFacts, now);
+            }
+            return (uint)Math.Max(0, (now.MicrosecondsSinceUnixEpoch - userMsg.CreatedAt.MicrosecondsSinceUnixEpoch) / 1000);
+        });
+        return new BotTurn(true, ai, reply, latency);
+    }
 
     // Send a chat message (text and/or a screenshot as a data URL; "" = none). The user message
     // shows up live via MyMessages, then the bot's reply. Returns Ok=false on validation/rate-limit/AI errors.
@@ -162,77 +266,12 @@ Respond ONLY with a JSON object of this shape:
         if (text.Length > MaxBotTextChars) return Fail($"Message too long (max {MaxBotTextChars} characters)");
         if (text.Length == 0 && imageDataUrl.Length == 0) return Fail("Type a message or attach a screenshot");
         if (imageDataUrl.Length > 0 && !ValidImageDataUrl(imageDataUrl)) return Fail("Screenshot must be a JPEG, PNG or WebP image under ~2 MB");
-        if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
-        if (!TakeAiQuota(ctx)) return Fail("Slow down a little — try again in a few seconds");
+        if (LoadAiConfig() is not { } cfg) return NotConfigured();
 
-        var sender = ctx.Sender;
-        var hasImage = imageDataUrl.Length > 0;
-
-        // 1) Store the user's message (appears live) and load context.
-        var (userMsg, facts, history, activity) = ctx.WithTx(tx =>
-        {
-            var prior = tx.Db.ChatMessage.Owner.Filter(sender)
-                .Where(m => !m.IsError)
-                .OrderBy(m => m.CreatedAt.MicrosecondsSinceUnixEpoch)
-                .ToList();
-            var recent = prior.Skip(Math.Max(0, prior.Count - BotHistoryMessages)).ToList();
-            var known = tx.Db.MemoryFact.Owner.Filter(sender)
-                .OrderBy(f => f.CreatedAt.MicrosecondsSinceUnixEpoch)
-                .Select(f => f.Fact).ToList();
-            var games = ActivitySummary(tx.Db.ActivityEvent.Owner.Filter(sender).ToList(), tx.Timestamp);
-            var msg = tx.Db.ChatMessage.Insert(new ChatMessage
-            {
-                Id = 0,
-                Owner = sender,
-                Role = ChatRole.User,
-                Text = text,
-                Verdict = "",
-                RedFlags = new(),
-                NextSteps = new(),
-                ImageNote = "",
-                IsError = false,
-                Channel = "web",
-                CreatedAt = tx.Timestamp,
-                HadImage = hasImage,
-            });
-            return (msg, known, recent, games);
-        });
-
-        // 2) One model call (vision model when there's a screenshot).
-        var model = hasImage ? cfg.VisionModel : cfg.Model;
-        var ai = Complete(ctx, cfg, model, m => BotPayload(m, facts, history, activity, text, imageDataUrl, strictSchema: true));
-        if (!ai.Ok && ai.Text.Contains("HTTP 400"))
-        {
-            Log.Warn("Bot: json_schema request rejected, retrying with json_object");
-            ai = Complete(ctx, cfg, model, m => BotPayload(m, facts, history, activity, text, imageDataUrl, strictSchema: false));
-        }
-        var reply = ai.Ok ? ParseBotReply(ai.Text) : default;
-
-        // 3) Store the bot's reply (or a friendly error), the screenshot note and new facts.
-        var latency = ctx.WithTx(tx =>
-        {
-            var now = tx.Timestamp;
-            var created = now.MicrosecondsSinceUnixEpoch > userMsg.CreatedAt.MicrosecondsSinceUnixEpoch
-                ? now : new Timestamp(userMsg.CreatedAt.MicrosecondsSinceUnixEpoch + 1);
-            if (!ai.Ok)
-            {
-                tx.Db.ChatMessage.Insert(NewBotMessage(sender, created,
-                    "Sorry, I couldn't reach my brain just now. Please try again in a moment. " +
-                    "Until then: don't tap links or share codes from a message you're unsure about.",
-                    "", new(), new(), isError: true));
-            }
-            else
-            {
-                tx.Db.ChatMessage.Insert(NewBotMessage(sender, created, reply.Reply, reply.Verdict, reply.RedFlags, reply.NextSteps, isError: false));
-                if (hasImage && reply.ImageText.Length > 0 && tx.Db.ChatMessage.Id.Find(userMsg.Id) is { } um)
-                    tx.Db.ChatMessage.Id.Update(um with { ImageNote = reply.ImageText });
-                UpsertFacts(tx, sender, reply.NewFacts, now);
-            }
-            return (uint)Math.Max(0, (now.MicrosecondsSinceUnixEpoch - userMsg.CreatedAt.MicrosecondsSinceUnixEpoch) / 1000);
-        });
-
-        if (!ai.Ok) return ai with { Text = FriendlyAiError(ai.Text), LatencyMs = latency };
-        return new AiResult { Ok = true, Text = Trim(reply.Reply, 300), Model = ai.Model, LatencyMs = latency };
+        var turn = RunBotTurn(new ProcedureBotHost(ctx), cfg, ctx.Sender, "web", text, imageDataUrl);
+        if (!turn.Stored) return turn.Ai;
+        if (!turn.Ai.Ok) return turn.Ai with { Text = FriendlyAiError(turn.Ai.Text), LatencyMs = turn.LatencyMs };
+        return new AiResult { Ok = true, Text = Trim(turn.Reply.Reply, 300), Model = turn.Ai.Model, LatencyMs = turn.LatencyMs };
     }
 
     // Short, user-facing version of an AI failure (shown in the web app's error toast).
@@ -241,7 +280,7 @@ Respond ONLY with a JSON object of this shape:
         : err.Contains("HTTP 5") ? $"The AI service is having trouble ({err.Replace("AI service error ", "").Trim('(', ')')}). Try again in a minute."
         : err;
 
-    static ChatMessage NewBotMessage(Identity owner, Timestamp at, string text, string verdict, List<string> flags, List<string> steps, bool isError) => new()
+    static ChatMessage NewBotMessage(Identity owner, Timestamp at, string text, string verdict, List<string> flags, List<string> steps, bool isError, string channel) => new()
     {
         Id = 0,
         Owner = owner,
@@ -252,7 +291,7 @@ Respond ONLY with a JSON object of this shape:
         NextSteps = steps,
         ImageNote = "",
         IsError = isError,
-        Channel = "web",
+        Channel = channel,
         CreatedAt = at,
         HadImage = false,
     };
@@ -409,10 +448,10 @@ Respond ONLY with a JSON object of this shape:
         return true;
     }
 
-    static void UpsertFacts(ProcedureTxContext tx, Identity owner, List<string> newFacts, Timestamp now)
+    static void UpsertFacts(Local db, Identity owner, List<string> newFacts, Timestamp now)
     {
         if (newFacts.Count == 0) return;
-        var existing = tx.Db.MemoryFact.Owner.Filter(owner).ToList();
+        var existing = db.MemoryFact.Owner.Filter(owner).ToList();
         var seen = new HashSet<string>(existing.Select(f => f.Fact.Trim().ToLowerInvariant()));
         foreach (var raw in newFacts)
         {
@@ -420,9 +459,9 @@ Respond ONLY with a JSON object of this shape:
             if (fact.Length > MaxFactChars) fact = fact[..MaxFactChars].TrimEnd();
             if (fact.Length == 0 || fact.Any(char.IsControl) || !SafeFact(fact)) continue;
             if (!seen.Add(fact.ToLowerInvariant())) continue;
-            existing.Add(tx.Db.MemoryFact.Insert(new MemoryFact { Id = 0, Owner = owner, Fact = fact, Source = "chat", CreatedAt = now }));
+            existing.Add(db.MemoryFact.Insert(new MemoryFact { Id = 0, Owner = owner, Fact = fact, Source = "chat", CreatedAt = now }));
         }
         foreach (var old in existing.OrderBy(f => f.CreatedAt.MicrosecondsSinceUnixEpoch).Take(Math.Max(0, existing.Count - MaxFactsPerUser)))
-            tx.Db.MemoryFact.Id.Delete(old.Id);
+            db.MemoryFact.Id.Delete(old.Id);
     }
 }

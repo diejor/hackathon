@@ -10,9 +10,10 @@
 // doesn't store them either (only the model's transcription, `imageNote`).
 import * as L from "../lobby";
 import type { DbConnection } from "../module_bindings";
-import type { ActivityEvent, ChatMessage, MemoryFact } from "../module_bindings/types";
+import type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact } from "../module_bindings/types";
+import { CHANNEL_LABELS } from "./config";
 
-export type { ActivityEvent, ChatMessage, MemoryFact };
+export type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact };
 
 export const MAX_IMAGE_CHARS = 2_800_000; // must match the server (Bot.cs)
 const MAX_SIDE = 1024;
@@ -52,6 +53,10 @@ L.onConnection((c: DbConnection) => {
   c.db.myFacts.onDelete(bump);
   c.db.myActivity.onInsert(bump);
   c.db.myActivity.onDelete(bump);
+  c.db.myLinkCode.onInsert(bump);
+  c.db.myLinkCode.onDelete(bump);
+  c.db.myChannelLinks.onInsert(bump);
+  c.db.myChannelLinks.onDelete(bump);
 });
 
 /** Connected and the subscription is applied. */
@@ -97,6 +102,52 @@ export async function seedDemo(): Promise<boolean> {
   }
 }
 
+/** Messaging app a message came through ("iMessage", ...), or null for the web chat. */
+export const channelLabel = (m: ChatMessage): string | null =>
+  !m.channel || m.channel === "web" ? null : CHANNEL_LABELS[m.channel] ?? m.channel;
+
+/** The player's pending one-time link code (texting "LINK <code>" links that phone), if still valid. */
+export function linkCode(): LinkCode | null {
+  const c = L.getConn();
+  if (!c || !ready()) return null;
+  const now = BigInt(Date.now()) * 1000n;
+  return [...c.db.myLinkCode.iter()].find((l) => l.expiresAt.microsSinceUnixEpoch > now) ?? null;
+}
+
+/** Messaging-app senders linked to this player. */
+export function channelLinks(): ChannelLink[] {
+  const c = L.getConn();
+  if (!c || !ready()) return [];
+  return [...c.db.myChannelLinks.iter()];
+}
+
+/** Make a fresh 6-character link code, valid 10 minutes (shows up in linkCode()). */
+export async function createLinkCode(): Promise<boolean> {
+  const c = L.getConn();
+  if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
+  try {
+    await c.reducers.createLinkCode({});
+    state.error = null;
+    bump();
+    return true;
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Remove all messaging-app links (the phone can also text UNLINK). */
+export async function unlinkChannels(): Promise<boolean> {
+  const c = L.getConn();
+  if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
+  try {
+    await c.reducers.unlinkChannels({});
+    bump();
+    return true;
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 /** Whether a user message came with a screenshot (the server's HadImage flag). */
 export const hasScreenshot = (m: ChatMessage) => m.role.tag === "User" && m.hadImage;
 
@@ -131,7 +182,7 @@ export async function send(text: string, image?: Blob): Promise<boolean> {
   }
 }
 
-/** Delete all of the player's messages, remembered facts and game activity (server-side). */
+/** Delete all of the player's messages, remembered facts, game activity and messaging-app links (server-side). */
 export async function forgetMe(): Promise<boolean> {
   const c = L.getConn();
   if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");

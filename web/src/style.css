@@ -185,7 +185,31 @@ body.bot-open .header, body.bot-open .game-host { display: none; }
 }
 .bot-top-btn:active:not(:disabled) { background: var(--magenta-soft); }
 .bot-top-btn:disabled { opacity: 0.4; }
-.bot-forget { color: var(--muted); }
+.bot-menu-wrap { position: relative; }
+.bot-menu-btn { font-size: 22px; line-height: 1; min-width: 44px; }
+.bot-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; min-width: 180px; padding: 6px;
+  display: flex; flex-direction: column; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.bot-menu-item {
+  min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left;
+  color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.bot-menu-item:active { background: var(--magenta-soft); }
+.bot-forget { color: var(--danger); }
+
+.bot-link { flex: none; margin: 10px 12px 0; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--magenta); }
+.bot-link-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+.bot-link-code {
+  font: 800 32px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 6px; text-align: center;
+  padding: 8px 0; margin: 4px 0 8px; border-radius: 10px; background: var(--bg); user-select: all;
+}
+.bot-link-text { margin: 0 0 6px; font-size: 15px; line-height: 1.4; }
+.bot-link-sub { margin: 0 0 10px; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.bot-link-linked { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; font-size: 14px; color: var(--ok); }
+.bot-link-unlink { border: 0; background: transparent; color: var(--muted); text-decoration: underline; font-size: 13px; cursor: pointer; }
+.bot-via { margin-top: 4px; font-size: 11px; font-weight: 600; opacity: 0.7; text-align: right; }
 
 .bot-confirm { flex: none; margin: 10px 12px 0; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--danger); }
 .bot-confirm-text { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
