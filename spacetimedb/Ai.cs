@@ -14,12 +14,14 @@ public partial struct EnvironmentSchema
     public string? AI_BASE_URL;     // default: Gemini's OpenAI-compatible endpoint
     public string? AI_MODEL;        // chat model id (run ai_ping to list what your key can use)
     public string? AI_VISION_MODEL; // model for screenshots; defaults to AI_MODEL
+    public string? AI_FALLBACK_MODEL; // used once if the main model is overloaded (5xx/429)
 }
 
 public static partial class Module
 {
     const string DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
-    const string DefaultModel = "gemini-flash-latest";
+    const string DefaultModel = "gemini-3.5-flash";          // accurate, ~3 s
+    const string DefaultFallbackModel = "gemini-3.5-flash-lite"; // ~1 s, used when the main model is overloaded
     const int MaxPromptChars = 4000;
     const long AiCooldownMicros = 3_000_000; // one AI call per player every 3 s (protects API credits)
 
@@ -41,7 +43,7 @@ public static partial class Module
         public uint LatencyMs;
     }
 
-    readonly record struct AiConfig(string Key, string BaseUrl, string Model, string VisionModel);
+    readonly record struct AiConfig(string Key, string BaseUrl, string Model, string VisionModel, string FallbackModel);
 
     static AiConfig? LoadAiConfig(ProcedureContext ctx)
     {
@@ -50,7 +52,8 @@ public static partial class Module
         var baseUrl = (string.IsNullOrEmpty(ctx.Env.AI_BASE_URL) ? DefaultBaseUrl : ctx.Env.AI_BASE_URL!).TrimEnd('/');
         var model = string.IsNullOrEmpty(ctx.Env.AI_MODEL) ? DefaultModel : ctx.Env.AI_MODEL!;
         var vision = string.IsNullOrEmpty(ctx.Env.AI_VISION_MODEL) ? model : ctx.Env.AI_VISION_MODEL!;
-        return new AiConfig(key, baseUrl, model, vision);
+        var fallback = string.IsNullOrEmpty(ctx.Env.AI_FALLBACK_MODEL) ? DefaultFallbackModel : ctx.Env.AI_FALLBACK_MODEL!;
+        return new AiConfig(key, baseUrl, model, vision, fallback);
     }
 
     // Connectivity + key check: lists the models this key can use.
@@ -88,7 +91,7 @@ public static partial class Module
         if (prompt.Length > MaxPromptChars || (system ?? "").Length > MaxPromptChars) return Fail("Prompt too long");
         if (LoadAiConfig(ctx) is not { } cfg) return NotConfigured();
         if (!TakeAiQuota(ctx)) return Fail("Slow down a little — try again in a few seconds");
-        return Complete(ctx, cfg, cfg.Model, ChatPayload(cfg.Model, system ?? "", prompt));
+        return Complete(ctx, cfg, cfg.Model, m => ChatPayload(m, system ?? "", prompt));
     }
 
     // Rate limit: a short transaction before any network I/O.
@@ -107,13 +110,23 @@ public static partial class Module
         });
     }
 
-    static AiResult Complete(ProcedureContext ctx, AiConfig cfg, string model, string payload)
+    // Calls the model; if it's overloaded (429/5xx), retries once with the fallback model.
+    static AiResult Complete(ProcedureContext ctx, AiConfig cfg, string model, Func<string, string> payloadFor)
     {
-        var started = ctx.Timestamp;
+        var first = CompleteOnce(ctx, cfg, model, payloadFor(model), TimeSpan.FromSeconds(12), out var retryable);
+        if (first.Ok || !retryable || cfg.FallbackModel == model) return first;
+        Log.Info($"AI: {model} unavailable, falling back to {cfg.FallbackModel}");
+        return CompleteOnce(ctx, cfg, cfg.FallbackModel, payloadFor(cfg.FallbackModel), TimeSpan.FromSeconds(20), out _);
+    }
+
+    static AiResult CompleteOnce(ProcedureContext ctx, AiConfig cfg, string model, string payload, TimeSpan timeout, out bool retryable)
+    {
+        var overloaded = false;
         var result = ctx.Http.Send(new HttpRequest
         {
             Uri = $"{cfg.BaseUrl}/chat/completions",
             Method = SpacetimeDB.HttpMethod.Post,
+            Timeout = timeout,
             Headers = new()
             {
                 new HttpHeader("content-type", "application/json"),
@@ -121,20 +134,23 @@ public static partial class Module
             },
             Body = HttpBody.FromString(payload),
         });
-        return result.Match(
+        var outcome = result.Match(
             response =>
             {
                 var body = response.Body.ToStringUtf8Lossy();
                 if (response.StatusCode != 200)
                 {
-                    Log.Warn($"AI HTTP {response.StatusCode}: {Trim(body, 500)}");
+                    overloaded = response.StatusCode == 429 || response.StatusCode >= 500;
+                    Log.Warn($"AI HTTP {response.StatusCode} ({model}): {Trim(System.Text.RegularExpressions.Regex.Replace(body, @"\s+", " "), 600)}");
                     return Fail($"AI service error (HTTP {response.StatusCode})");
                 }
                 using var doc = JsonDocument.Parse(body);
                 var text = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
                 return new AiResult { Ok = true, Text = text.Trim(), Model = model, LatencyMs = 0 };
             },
-            error => Fail($"AI request failed: {error.Message}"));
+            error => { overloaded = true; return Fail($"AI request failed: {error.Message}"); });
+        retryable = overloaded;
+        return outcome;
     }
 
     static string ChatPayload(string model, string system, string prompt)
