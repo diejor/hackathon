@@ -13,6 +13,7 @@
 .coach-host .btn-primary { background: var(--magenta); color: #fff; }
 .coach-host .btn-secondary { background: var(--surface); border: 1px solid #cbd5e1; }
 .coach-host .btn-small { min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 15px; }
+.coach-host .bot-send { color: #fff; } /* `.coach-host button { color: inherit }` above would win otherwise */
 
 /* Sit below the SafeSense header instead of covering it. The chat sets --bot-top/--bot-h from the
    visual viewport (on-screen keyboard), so offset from those rather than replacing them. */
