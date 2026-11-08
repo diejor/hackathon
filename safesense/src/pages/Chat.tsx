@@ -5,6 +5,7 @@ import { Composer } from '../components/chat/Composer'
 import { Conversation, ExampleChips } from '../components/chat/Conversation'
 import { ASK_LABEL, ASSISTANT, THE_ASSISTANT } from '../components/chat/copy'
 import { ForgetMe } from '../components/chat/ForgetMe'
+import { TextSafeSense } from '../components/chat/TextSafeSense'
 import { useBot } from '../lib/useBot'
 import { href } from '../router'
 import '../chat.css'
@@ -58,6 +59,7 @@ export default function Chat() {
             <h2 className="h3">You are not alone.</h2>
             <p>Scams can happen to anyone. Ask in your own words, and take it one step at a time.</p>
           </div>
+          <TextSafeSense bot={bot} />
           <div className="plain">
             <LockKeyhole size={24} strokeWidth={1.4} className="icon-muted" />
             <h2 className="h3" style={{ fontSize: '1.3rem' }}>

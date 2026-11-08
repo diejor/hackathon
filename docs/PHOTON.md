@@ -2,9 +2,10 @@
 
 **Goal:** someone texts a suspicious message to the SafeSense iMessage number and gets the same calm verdict as the web chat back. This is our entry for the **Best Use of Photon API** track.
 
-- **Code:** built and tested locally with simulated signed webhooks.
-- **Live database:** deployed, but switched off: it answers 503 until it has a webhook secret.
-- **What's left:** the Photon dashboard setup, one real test from an iPhone, and your review of the safety rules.
+- **Code:** built and tested locally with simulated signed webhooks, including the safety guards (kill switch, STOP/START, a daily cap).
+- **Web:** the SafeSense chat page has a "Text SafeSense" card (number, **Link my phone**, Unlink). It stays hidden until the number is set.
+- **Live database:** deployed, but switched off: it answers 503 until it has a webhook secret. The guards reach Maincloud with the next republish.
+- **What's left:** the Photon dashboard setup, one real test from an iPhone, and the steps under "Going live" below.
 
 Read [`docs/PLAN.md`](PLAN.md) first (sections 1–5 and B4) for the whole picture.
 
@@ -17,15 +18,38 @@ iPhone ──text──▶ Photon shared line ──signed webhook (POST)──�
 iPhone ◀──reply── Photon REST API ◀──POST /v1/projects/{id}/messages─┘
 ```
 
-- **Code:** `spacetimedb-ts/src/photon.ts`, in TypeScript. The header comment explains the security model.
+- **Code:** `spacetimedb-ts/src/photon.ts`, in TypeScript. The header comment explains the security model. The outbound guards are in `spacetimedb-ts/src/photon-guards.ts`.
 - **Route:** `https://maincloud.spacetimedb.com/v1/database/safesense-1aa18263/route/photon`.
   - This is a webhook address for Photon. Opening it in a browser shows "no handler", which is expected.
 - **Settings (module env):**
   - `PHOTON_WEBHOOK_SECRET` (`whsec_…`, from the webhook destination);
   - `PHOTON_API_KEY` and `PHOTON_PROJECT_ID`, which Diego already has;
-  - optionally `PHOTON_BASE_URL`.
+  - optionally `PHOTON_BASE_URL`;
+  - optionally `PHOTON_SENDING_ENABLED`, the kill switch (see below).
 - **Senders:** each phone gets its own private stand-in identity until it texts `LINK <code>`. The code comes from the SafeSense web chat, and linking shares memory with the web chat. `UNLINK` and `FORGET ME` also work by text.
 - **Screenshots:** sent to the AI and never stored. Each sender is allowed 8 AI replies per minute.
+
+## Safety guards (built)
+
+Every outgoing message goes through one function, `deliver()` in `photon.ts`, which checks these first. The bot only ever replies to a text it just received; nothing in the code starts a conversation.
+
+- **Kill switch, `PHOTON_SENDING_ENABLED`:**
+
+  | Value | Replies to an incoming text | Proactive sends (future practice texts) |
+  |---|---|---|
+  | not set (or empty) | sent | not sent |
+  | `true` | sent | sent |
+  | anything else (`false`, `off`, ...) | **not sent** | not sent |
+
+  With sending off, webhooks are still verified, deduplicated and acknowledged, and `LINK`, `UNLINK`, `FORGET ME` and `STOP` still take effect. No AI call is made for a reply nobody would get.
+  - Turn it off without rebuilding: `PHOTON_SENDING_ENABLED=false spacetime publish --no-config -s maincloud --env-only -y safesense-1aa18263`.
+  - Back to the default: `spacetime publish --no-config -s maincloud --env-only --unset-env PHOTON_SENDING_ENABLED -y safesense-1aa18263`.
+  - Publishing keeps env values you don't pass, so a value stays set until you change or unset it.
+- **STOP:** `STOP`, `STOPALL`, `UNSUBSCRIBE`, `CANCEL`, `END` or `QUIT` (the whole message, any case) opts that phone out. It gets one reply, "You won't get messages from SafeSense. Text START to turn them back on.", and then nothing: no AI call, nothing stored. `FORGET ME` still deletes their data, silently. Private table `channel_optout`.
+- **START** removes the opt-out and says so.
+- **Daily cap:** at most 30 messages to each phone per day (UTC). The 30th reply ends with "That's my last reply for today". After that, silence until the next day. Only the STOP confirmation can go over the cap. Private table `channel_send_daily`.
+- **For practice texts later:** a successful `LINK` saves the Photon chat id (`spaceId`) and our line's user id in the private table `channel_reach`. No phone number is stored. `UNLINK`, `FORGET ME` and the web's Unlink delete it. `proactiveTarget()` in `photon-guards.ts` returns where to send, or why not: it needs the kill switch at `true`, a live link, no opt-out and room under the cap.
+- **Schema:** these are 3 new tables and 1 new optional env var; no existing table changed. Republishing over the existing database worked locally without wiping data.
 
 ## The important limitation
 
@@ -35,7 +59,9 @@ On Photon's **free shared line**:
 
 So for the demo, the registered sender is your iPhone, and judges can't text it themselves. Say this honestly in the video and on Devpost. A dedicated line removes the limit.
 
-## Setup steps (Photon dashboard: https://app.beta.photon.codes)
+## Going live (Diego's steps)
+
+Photon dashboard: https://app.beta.photon.codes
 
 The project, API key and Maincloud database are **Diego's**: only he can publish to `safesense-1aa18263`. Either he adds you to the Photon project, or you do steps 1–2 together on a call.
 
@@ -51,15 +77,18 @@ The project, API key and Maincloud database are **Diego's**: only he can publish
    - Save, then copy the **`whsec_…` signing secret**. It's shown only once.
 3. **Diego stores the secret.** He runs `scripts/set-key.sh PHOTON_WEBHOOK_SECRET` (hidden prompt) on his laptop.
    - **Never paste the secret** into chat, a commit or a log.
-   - Then Diego, or Claude with Diego's OK, republishes:
+   - Then Diego, or Claude with Diego's OK, republishes (this also brings the guards and their 3 new tables; no wipe):
      `STDB_TS_SERVER=maincloud STDB_TS_DB=safesense-1aa18263 scripts/publish-ts.sh`.
-4. **Put the number in the app.** Send the assigned number to Diego. It goes in `web/src/bot/config.ts` (`BOT_IMESSAGE_ADDRESS`) and on the SafeSense chat page.
+   - Leave `PHOTON_SENDING_ENABLED` unset for the demo: replies work and nothing else is sent.
+4. **Put the number in the app.** Set `BOT_IMESSAGE_ADDRESS` in `web/src/bot/config.ts` to the assigned number, e.g. `"+1 555 123 4567"`. That shows the "Text SafeSense" card on the SafeSense chat page and "Link iMessage" in the arcade's Help Bot.
+   - Then build and deploy the SafeSense site as usual.
 5. **Real test from your iPhone:**
    1. Text the number: *Is this a scam? "USPS: your parcel is on hold, pay $1.99 at usps-redelivery.example"*. Expect a verdict, signs to notice and what to do.
    2. Send a screenshot of a scam text. Expect it to be read and judged.
-   3. In the SafeSense web chat, get a link code, then text `LINK <code>`. Expect "linked"; the web chat then shows these messages as "via iMessage".
-   4. Text `FORGET ME`. Expect your data to be deleted.
-   5. If nothing arrives, check the **delivery logs** for the destination in Photon's dashboard and `spacetime logs --no-config -s maincloud safesense-1aa18263 -n 50`.
+   3. In the SafeSense web chat, select **Link my phone** on the "Text SafeSense" card, then text `LINK <code>`. Expect "Linked!"; the card then shows "Linked: iMessage", and the chat shows your texts.
+   4. Text `STOP`. Expect one confirmation; a text after that gets no answer. Text `START` to turn replies back on.
+   5. Text `FORGET ME`. Expect your data to be deleted.
+   6. If nothing arrives, check the **delivery logs** for the destination in Photon's dashboard and `spacetime logs --no-config -s maincloud safesense-1aa18263 -n 50`.
 
 ## Testing locally, without the real line
 
@@ -67,22 +96,30 @@ The project, API key and Maincloud database are **Diego's**: only he can publish
 # one-time: SpacetimeDB CLI + local server (see CLAUDE.md), then:
 spacetime start --listen-addr 127.0.0.1:3001 &
 export PHOTON_WEBHOOK_SECRET=whsec_$(node -e "console.log(require('crypto').randomBytes(24).toString('base64'))")  # FAKE test secret
-scripts/publish-ts.sh                                  # publishes spacetimedb-ts to local db safesense-local
-node tools/photon-sim.mjs safesense-local --checks     # signed 200, unsigned/tampered/stale 401, duplicate skipped
-node tools/photon-sim.mjs safesense-local "Is this real? Your Apple ID is locked, verify at apple-id-help.example"
-spacetime logs --no-config -s local safesense-local -n 30
+export STDB_TS_DB=photon-test                          # a throwaway db (or leave unset for safesense-local)
+scripts/publish-ts.sh
+node tools/photon-sim.mjs photon-test --checks         # PASS/FAIL per check; exits 1 on any failure
+node tools/photon-sim.mjs photon-test "Is this real? Your Apple ID is locked, verify at apple-id-help.example"
+spacetime logs --no-config -s local photon-test -n 30
+spacetime delete --no-config -s local photon-test -y   # clean up
 ```
 
-Replies to the phone can't leave a local server, but the logs show what the bot decided. Each bot turn costs one AI call, so keep tests few.
+`--checks` sends only commands from fresh random senders, so it makes **no AI calls**. It covers:
+- signatures: signed 200, duplicate skipped, unsigned / tampered / stale 401;
+- STOP: one confirmation, then silence for texts, commands and a second STOP;
+- START: replies again;
+- daily cap: replies 1–29, the 30th marked "last today", the 31st silent, and STOP still confirmed when capped.
+
+For signed requests, the webhook's 200 body says what happened (`ok: sent`, `ok: send failed`, `ok: silent (opted out)`, `ok: skipped (sending disabled)`, ...). A local server refuses outgoing requests to private addresses and can't reach a real phone, so locally every attempted reply reads `send failed`; the logs and the `chat_message` table show what the bot decided. To check the kill switch, publish with `PHOTON_SENDING_ENABLED=false` and expect `skipped (sending disabled)`. Each normal text costs one AI call, so keep those few.
 
 ## Your review: safety rules from Safe Signal
 
 Compare `spacetimedb-ts/src/photon.ts` with your `guard.ts` (`git show combined:safe-signal/src/lib/guard.ts`) and add what's missing:
 
-- [ ] `STOP` (and your stop words) opts a number out; nothing is sent to it afterwards
-- [ ] a kill-switch env var (e.g. `PHOTON_SENDING_ENABLED=false`) stops all outgoing messages
-- [ ] the bot only ever replies to someone who texted first (true on the shared line; keep it true in code)
-- [ ] a per-number daily cap on outgoing messages
+- [x] `STOP` (and your stop words) opts a number out; nothing is sent to it afterwards
+- [x] a kill-switch env var (`PHOTON_SENDING_ENABLED=false`) stops all outgoing messages
+- [x] the bot only ever replies to someone who texted first (true on the shared line; kept true in code)
+- [x] a per-number daily cap on outgoing messages (30 a day)
 
 **Full spec for the guards and practice texts:** [`docs/KRISHNA-PUSH-ANALYSIS.md`](KRISHNA-PUSH-ANALYSIS.md) §3 ("Practice texts in our module"), built from your own `templates.js` and safety rules.
 

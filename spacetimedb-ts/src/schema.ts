@@ -187,6 +187,43 @@ const webhookSeen = table(
   }
 );
 
+// ---------- Photon guards (photon-guards.ts) ----------
+// New tables only (no changes to the ones above), so an existing database republishes without a wipe.
+
+// Senders who texted STOP (or another stop word). Nothing is sent to them until they text START. Private.
+const channelOptout = table(
+  { name: 'channel_optout' },
+  {
+    senderKey: t.string().primaryKey(), // "<platform>:<Photon user id>", like channel_link
+    optedOutAt: t.timestamp(),
+  }
+);
+
+// Outbound messages per sender per UTC day (hard cap MaxDailySends). Private.
+const channelSendDaily = table(
+  { name: 'channel_send_daily' },
+  {
+    senderKey: t.string().primaryKey(),
+    day: t.i64(), // days since the Unix epoch (UTC)
+    sent: t.u32(),
+  }
+);
+
+// What a future proactive send (practice texts) needs, saved when a sender LINKs: Photon's chat (space)
+// id and our line's user id from that inbound event. No phone numbers. Private; only used while the
+// matching channel_link still exists with the same owner.
+const channelReach = table(
+  { name: 'channel_reach' },
+  {
+    senderKey: t.string().primaryKey(),
+    owner: t.identity().index('btree'),
+    platform: t.string(),
+    spaceId: t.string(),
+    agentUserId: t.string(),
+    savedAt: t.timestamp(),
+  }
+);
+
 // ---------- Schema + environment ----------
 
 // Secrets live in the database environment (supplied at publish time from the gitignored .env,
@@ -207,6 +244,9 @@ const spacetimedb = schema(
     linkAttempt,
     channelAiUsage,
     webhookSeen,
+    channelOptout,
+    channelSendDaily,
+    channelReach,
   },
   {
     env: {
@@ -220,6 +260,9 @@ const spacetimedb = schema(
       PHOTON_PROJECT_ID: t.option(t.string()), // defaults to the projectId in each webhook event
       PHOTON_WEBHOOK_SECRET: t.option(t.string()), // whsec_... signing secret of the webhook destination
       PHOTON_BASE_URL: t.option(t.string()), // default https://api.photon.codes
+      // Outbound kill switch (photon-guards.ts): unset = replies to an inbound text only; "true" = replies and
+      // proactive sends; anything else = send nothing (webhooks are still verified and acknowledged).
+      PHOTON_SENDING_ENABLED: t.option(t.string()),
       // Discord HTTP interactions (discord.ts); optional, the endpoint answers 503 without a public key.
       // The bot token is NOT declared here on purpose: only scripts/discord-register.sh uses it.
       DISCORD_PUBLIC_KEY: t.option(t.string()), // app public key (hex), verifies X-Signature-Ed25519

@@ -16,12 +16,31 @@
 //    HEIC/HEIF are accepted (Content-Type, else magic bytes); other attachments get a fixed reply, no model call.
 //  - AI turns are budgeted per sender (channel_ai_usage: 8 per rolling minute), not the web's 3 s cooldown.
 //  - channel_link / link_code / link_attempt / webhook_seen are private; players see only their own rows.
+//  - Outbound guards (photon-guards.ts): kill switch PHOTON_SENDING_ENABLED, STOP/START opt-out, a daily
+//    cap per sender; every outbound message goes through deliver(). The bot only ever replies to a text.
 import { t, SenderError, SyncResponse, type Headers, type Request } from 'spacetimedb/server';
 import { Identity, Timestamp, TimeDuration } from 'spacetimedb';
 import spacetimedb, { tables, viewRow, type Db, type Env, type Handler } from './schema';
 import { errorMessage, loadAiConfig, trim, trimEndChar, type HttpClient } from './ai';
 import { BotApology, MaxBotTextChars, forgetAll, runBotTurn, upsertFacts, type BotReply } from './bot';
 import { CodeAlphabet } from './lib';
+import {
+  LastSendNote,
+  OptInReply,
+  OptOutReply,
+  StartReply,
+  dailyCapReached,
+  dropReachOfOwner,
+  dropReachOfSender,
+  isOptedOut,
+  isStartWord,
+  isStopWord,
+  killSwitchBlock,
+  optIn,
+  optOut,
+  reserveSend,
+  saveReach,
+} from './photon-guards';
 import { base64Decode, base64Encode, concat, fixedTimeEquals, fromUtf8, hmacSha256, sha256, toHex, utf8 } from './crypto';
 
 const DefaultPhotonBaseUrl = 'https://api.photon.codes';
@@ -81,6 +100,7 @@ export const createLinkCode = spacetimedb.reducer(ctx => {
 export const unlinkChannels = spacetimedb.reducer(ctx => {
   for (const l of [...ctx.db.channelLink.owner.filter(ctx.sender)]) ctx.db.channelLink.senderKey.delete(l.senderKey);
   ctx.db.linkCode.owner.delete(ctx.sender);
+  dropReachOfOwner(ctx.db, ctx.sender);
 });
 
 // The router (POST /photon, POST /discord) is declared in index.ts, after both handlers exist.
@@ -125,19 +145,75 @@ export const photonWebhook = spacetimedb.httpHandler((ctx, request) => {
     return respond(200, 'ignored');
   }
 
+  // The 200 body says what happened (only signed requests get this far); tools/photon-sim.mjs checks it.
+  let outcome = 'nothing to send';
   try {
-    const reply = handleInbound(ctx, msg);
-    if (reply.length > 0) sendChannelReply(ctx.http, ctx.env, msg, reply, id);
+    const reply = guardedInbound(ctx, msg);
+    if (reply.text.length > 0) outcome = deliver(ctx, msg, reply, id);
+    else if (reply.why) outcome = `silent (${reply.why})`;
   } catch (e) {
     console.error(`Photon: handling ${id} failed: ${errorName(e)}: ${errorMessage(e)}`);
     try {
-      sendChannelReply(ctx.http, ctx.env, msg, BotApology, id);
+      outcome = deliver(ctx, msg, { text: BotApology }, id);
     } catch {
       /* ignore */
     }
   }
-  return respond(200, 'ok');
+  return respond(200, `ok: ${outcome}`);
 });
+
+type Reply = { text: string; optOutNotice?: boolean; why?: string };
+
+const senderKeyOf = (msg: InboundMessage) => `${msg.platform}:${msg.senderUserId}`;
+
+// STOP/START, opt-out silence, the daily cap and the kill switch, around handleInbound.
+function guardedInbound(ctx: Handler, msg: InboundMessage): Reply {
+  const senderKey = senderKeyOf(msg);
+  const command = msg.attachmentId.length === 0 ? msg.text : '';
+  if (isStopWord(command))
+    return ctx.withTx(tx =>
+      optOut(tx.db, senderKey, tx.timestamp) ? { text: OptOutReply, optOutNotice: true } : { text: '', why: 'already opted out' }
+    );
+  if (isStartWord(command)) return { text: ctx.withTx(tx => (optIn(tx.db, senderKey) ? OptInReply : StartReply)) };
+
+  const [out, capped] = ctx.withTx(tx => [isOptedOut(tx.db, senderKey), dailyCapReached(tx.db, senderKey, tx.timestamp)]);
+  if (out) {
+    // Opted out: never answer. FORGET ME still deletes their data, silently.
+    if (/^FORGET ?ME[.!]*$/.test(command.trim().toUpperCase())) handleInbound(ctx, msg, false);
+    console.log('Photon: sender opted out; not answering');
+    return { text: '', why: 'opted out' };
+  }
+  if (capped) {
+    console.log('Photon: sender reached the daily cap; not answering');
+    return { text: '', why: 'daily cap reached' };
+  }
+  // Kill switch on: commands still work (LINK, UNLINK, FORGET ME), but no AI turn for a reply nobody gets.
+  const sending = killSwitchBlock(ctx.env, 'reply') === null;
+  const text = handleInbound(ctx, msg, sending);
+  return sending || text.length > 0 ? { text } : { text: '', why: 'sending disabled' };
+}
+
+// The only way out to a phone: kill switch, opt-out and daily cap, then Photon's REST API.
+function deliver(ctx: Handler, msg: InboundMessage, reply: Reply, idempotencyKey: string): string {
+  const blocked = killSwitchBlock(ctx.env, 'reply');
+  if (blocked) {
+    console.log(`Photon: not sending (${blocked})`);
+    return 'skipped (sending disabled)';
+  }
+  const senderKey = senderKeyOf(msg);
+  const gate = ctx.withTx(tx => {
+    if (!reply.optOutNotice && isOptedOut(tx.db, senderKey)) return 'opted out';
+    const r = reserveSend(tx.db, senderKey, tx.timestamp, reply.optOutNotice === true);
+    return !r.ok ? 'daily cap reached' : r.last ? 'last' : 'ok';
+  });
+  if (gate !== 'ok' && gate !== 'last') {
+    console.log(`Photon: not sending (${gate})`);
+    return `skipped (${gate})`;
+  }
+  const text = gate === 'last' ? trim(reply.text, MaxChannelReplyChars - LastSendNote.length) + LastSendNote : reply.text;
+  const sent = sendChannelReply(ctx.http, ctx.env, msg, text, idempotencyKey);
+  return (sent ? 'sent' : 'send failed') + (gate === 'last' ? ' (last today)' : '') + (reply.optOutNotice ? ' (opt-out confirmation)' : '');
+}
 
 // Record a webhook / interaction id; false when it was already handled. Keeps at most MaxWebhookSeen ids.
 export function markSeen(db: Db, id: string, now: Timestamp): boolean {
@@ -226,9 +302,9 @@ function parseInbound(body: Uint8Array): InboundMessage | null {
   };
 }
 
-// Returns the text to send back ("" = nothing).
-function handleInbound(ctx: Handler, msg: InboundMessage): string {
-  const senderKey = `${msg.platform}:${msg.senderUserId}`;
+// Returns the text to send back ("" = nothing). aiAllowed=false: commands only (no AI turn).
+function handleInbound(ctx: Handler, msg: InboundMessage, aiAllowed: boolean): string {
+  const senderKey = senderKeyOf(msg);
   const pseudo = pseudoIdentity(msg.platform, msg.senderUserId);
   const text = msg.text.length > MaxBotTextChars ? msg.text.slice(0, MaxBotTextChars) : msg.text;
   const command = msg.attachmentId.length === 0 ? text.trim().toUpperCase() : '';
@@ -237,13 +313,18 @@ function handleInbound(ctx: Handler, msg: InboundMessage): string {
   // "LINK ABC123" (also "link abc-123"); a longer text that merely starts with "link" is a normal message.
   const link = /^LINK[\s:]+([A-Z0-9][A-Z0-9 \-]{0,10})$/.exec(command);
   if (link)
-    return ctx.withTx(tx =>
-      linkSender(tx.db, tx.timestamp, senderKey, pseudo, msg.platform, maskHandle(msg.senderHandle), link[1])
-    );
+    return ctx.withTx(tx => {
+      const reply = linkSender(tx.db, tx.timestamp, senderKey, pseudo, msg.platform, maskHandle(msg.senderHandle), link[1]);
+      // Linked: keep where a future proactive send (practice text) would go. No phone number.
+      const linked = tx.db.channelLink.senderKey.find(senderKey);
+      if (linked) saveReach(tx.db, senderKey, linked.owner, msg.platform, msg.spaceId, msg.agentUserId, tx.timestamp);
+      return reply;
+    });
   if (command === 'UNLINK')
     return ctx.withTx(tx => {
       if (!tx.db.channelLink.senderKey.find(senderKey)) return "This chat isn't linked to a Security Arcade account.";
       tx.db.channelLink.senderKey.delete(senderKey);
+      dropReachOfSender(tx.db, senderKey);
       return "Unlinked. I'll keep chatting with you here, but separately from your Security Arcade account.";
     });
   if (command === 'FORGET ME' || command === 'FORGETME')
@@ -252,9 +333,12 @@ function handleInbound(ctx: Handler, msg: InboundMessage): string {
       forgetAll(tx.db, owner);
       forgetAll(tx.db, pseudo);
       tx.db.channelLink.senderKey.delete(senderKey);
+      dropReachOfSender(tx.db, senderKey);
+      dropReachOfOwner(tx.db, owner);
       return 'Done. I deleted our conversation and everything I remembered about you.';
     });
 
+  if (!aiAllowed) return '';
   if (msg.hasVoice && text.length === 0 && msg.attachmentId.length === 0)
     return "I can't listen to voice notes yet. Please type your question, paste the message, or send a screenshot.";
   const cfg = loadAiConfig(ctx.env);
@@ -384,12 +468,13 @@ function photonProject(env: Env, msg: InboundMessage): string {
   return env.PHOTON_PROJECT_ID || msg.projectId;
 }
 
-function sendChannelReply(http: HttpClient, env: Env, msg: InboundMessage, text: string, idempotencyKey: string) {
+// Call only through deliver() (guards). true = Photon accepted it.
+function sendChannelReply(http: HttpClient, env: Env, msg: InboundMessage, text: string, idempotencyKey: string): boolean {
   const key = env.PHOTON_API_KEY;
   const project = photonProject(env, msg);
   if (!key || project.length === 0) {
     console.warn("Photon: PHOTON_API_KEY or project id missing; can't send the reply");
-    return;
+    return false;
   }
   const payload = JSON.stringify({
     spaceId: msg.spaceId,
@@ -403,11 +488,12 @@ function sendChannelReply(http: HttpClient, env: Env, msg: InboundMessage, text:
       headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`, 'idempotency-key': idempotencyKey },
       body: utf8(payload),
     });
-    if (response.status < 200 || response.status >= 300)
-      console.warn(`Photon: send failed HTTP ${response.status}: ${trim(response.text(), 300)}`);
+    if (response.status >= 200 && response.status < 300) return true;
+    console.warn(`Photon: send failed HTTP ${response.status}: ${trim(response.text(), 300)}`);
   } catch (e) {
     console.warn(`Photon: send failed: ${errorMessage(e)}`);
   }
+  return false;
 }
 
 // One attempt (Photon itself waits up to ~10 s for the bytes). Returns [dataUrl, ""] or ["", reply to send].

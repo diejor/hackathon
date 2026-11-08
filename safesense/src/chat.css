@@ -390,3 +390,27 @@
     min-height: 96px;
   }
 }
+
+/* ---------- Text SafeSense (iMessage through Photon) ---------- */
+.text-safesense-number {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.text-safesense-number a {
+  color: var(--green-900);
+  text-underline-offset: 4px;
+}
+.text-safesense-link {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.text-safesense-link .btn {
+  margin-top: 12px;
+}
+.text-safesense-code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
