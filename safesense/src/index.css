@@ -667,6 +667,12 @@ main {
   border-style: solid;
   background: var(--green-50);
 }
+.locked-card.is-unlocked .h3 {
+  color: var(--text);
+}
+.locked-card.is-unlocked .kind {
+  color: var(--green-700);
+}
 .locked-card.is-unlocked .icon-tile {
   background: var(--green-100);
   color: var(--green-700);
@@ -697,7 +703,7 @@ main {
   font-size: 0.95rem;
   color: var(--text-muted);
 }
-.pc-text + .pc-text {
+.pc-text {
   margin-top: 12px;
 }
 .pc-unlock .unlock-progress {
