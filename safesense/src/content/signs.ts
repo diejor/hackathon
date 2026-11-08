@@ -38,7 +38,7 @@ export const MESSAGE_SIGNS: Sign[] = [
   message('fake-delivery', 'Fake delivery fees', 'A text about a package that asks for a small fee.'),
   message('bank-impersonation', 'Fake bank alerts', 'A “bank” message with a deadline and a link.'),
   message('family-emergency', '“Family” in trouble', 'A loved one on a new number who needs money fast.'),
-  message('tech-support', 'Surprise bills to call about', 'An unexpected charge with a number to ring.'),
+  message('tech-support', 'Surprise bills to call about', 'An unexpected charge with a number to call.'),
   message('prize-giveaway', 'Prizes you pay for', 'A win that needs a fee or your card first.'),
   message('romance', 'Fast online romance', 'A new admirer who wants to move to another app.'),
   message('job-offer', 'Too-good-to-be-true jobs', 'Easy money offered out of the blue.'),
