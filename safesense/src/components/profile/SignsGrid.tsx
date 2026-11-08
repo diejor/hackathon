@@ -1,4 +1,5 @@
-import { CheckCircle2, Circle, HeartHandshake } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle2, ChevronDown, ChevronUp, Circle, HeartHandshake } from 'lucide-react'
 import type { Caught } from '../../lib/progress'
 import { GENUINE_SIGN, MESSAGE_SIGNS, MOVE_SIGNS, isKnownSign, signFor, type Sign } from '../../content/signs'
 
@@ -8,10 +9,23 @@ function where(c: Caught): string {
   return 'Spotted in Scam or Not?'
 }
 
-function Tile({ sign, caught, strength }: { sign: Sign; caught?: Caught; strength?: boolean }) {
+/** On phones, each group shows the caught signs plus this many not-seen-yet ones until "Show all signs". */
+const UNSEEN_PREVIEW = 2
+
+function Tile({
+  sign,
+  caught,
+  strength,
+  extra,
+}: {
+  sign: Sign
+  caught?: Caught
+  strength?: boolean
+  extra?: boolean
+}) {
   const Icon = !caught ? Circle : strength ? HeartHandshake : CheckCircle2
   return (
-    <li className={`sign-tile ${caught ? 'is-caught' : 'is-unseen'}`}>
+    <li className={`sign-tile ${caught ? 'is-caught' : 'is-unseen'}${extra ? ' is-extra' : ''}`}>
       <Icon size={22} strokeWidth={1.75} className="sign-icon" aria-hidden="true" />
       <div>
         <p className="sign-name">
@@ -33,11 +47,22 @@ function Tile({ sign, caught, strength }: { sign: Sign; caught?: Caught; strengt
   )
 }
 
+/** Marks the not-seen-yet tiles past the first few, which phones hide until "Show all signs". */
+function withExtras(signs: Sign[], caught: Map<string, Caught>): [Sign, boolean][] {
+  let unseen = 0
+  return signs.map((s) => [s, !caught.has(s.slug) && ++unseen > UNSEEN_PREVIEW])
+}
+
 /** The collection of signs: caught ones filled in, the rest softly outlined. */
 export function SignsGrid({ caught }: { caught: Map<string, Caught> }) {
+  const [all, setAll] = useState(false)
   const extra = [...caught.keys()].filter((slug) => !isKnownSign(slug)).map(signFor)
+  const messageTiles = withExtras([...MESSAGE_SIGNS, ...extra, GENUINE_SIGN], caught)
+  const moveTiles = withExtras(MOVE_SIGNS, caught)
+  const hidden = [...messageTiles, ...moveTiles].filter(([, isExtra]) => isExtra).length
+
   return (
-    <section className="card profile-section" aria-labelledby="signs-title">
+    <section className={`card profile-section signs${all ? ' show-all' : ''}`} aria-labelledby="signs-title">
       <h2 id="signs-title" className="h2">
         Signs you can spot
       </h2>
@@ -47,19 +72,31 @@ export function SignsGrid({ caught }: { caught: Map<string, Caught> }) {
 
       <h3 className="h3 sign-group-title">Scam messages</h3>
       <ul className="sign-grid">
-        {[...MESSAGE_SIGNS, ...extra].map((s) => (
-          <Tile key={s.slug} sign={s} caught={caught.get(s.slug)} />
+        {messageTiles.map(([s, isExtra]) => (
+          <Tile
+            key={s.slug}
+            sign={s}
+            caught={caught.get(s.slug)}
+            strength={s.slug === GENUINE_SIGN.slug}
+            extra={isExtra}
+          />
         ))}
-        <Tile sign={GENUINE_SIGN} caught={caught.get(GENUINE_SIGN.slug)} strength />
       </ul>
 
       <h3 className="h3 sign-group-title">Scammer moves</h3>
       <p className="muted small">From The Long Con, where you play the scammer.</p>
       <ul className="sign-grid">
-        {MOVE_SIGNS.map((s) => (
-          <Tile key={s.slug} sign={s} caught={caught.get(s.slug)} />
+        {moveTiles.map(([s, isExtra]) => (
+          <Tile key={s.slug} sign={s} caught={caught.get(s.slug)} extra={isExtra} />
         ))}
       </ul>
+
+      {hidden > 0 && (
+        <button className="btn btn-secondary btn-block signs-toggle" onClick={() => setAll(!all)} aria-expanded={all}>
+          {all ? <ChevronUp size={20} aria-hidden="true" /> : <ChevronDown size={20} aria-hidden="true" />}
+          {all ? 'Show fewer signs' : `Show all signs (${hidden} more to find)`}
+        </button>
+      )}
     </section>
   )
 }

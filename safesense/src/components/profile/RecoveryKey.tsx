@@ -3,7 +3,7 @@
 // sent, never put in a URL. Pasting a key on another device swaps the token and reloads, so the app
 // connects as that identity and shows its progress.
 import { useEffect, useState, type FormEvent } from 'react'
-import { AlertTriangle, Copy, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { AlertTriangle, Copy, Eye, EyeOff, KeyRound, Undo2 } from 'lucide-react'
 import { helpBot } from '../../lib/stdb'
 
 const tokenKey = (db: string) => `stdb.token.${db}`
@@ -221,6 +221,60 @@ function UseKey({ db }: { db: string }) {
   )
 }
 
+/** Undo a key swap: switch back to the key this device used before. The two keys trade places, so it can be undone too. */
+function RestorePrevious({ db }: { db: string }) {
+  const [previous] = useState(() => readStore(backupKey(db)))
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState('')
+
+  if (!previous || !looksLikeKey(previous) || previous === readStore(tokenKey(db))) return null
+
+  const restore = () => {
+    const current = readStore(tokenKey(db))
+    if (!writeStore(tokenKey(db), previous)) {
+      setConfirming(false)
+      setError('This browser won’t let us switch keys. Check that it isn’t in private mode, then try again.')
+      return
+    }
+    if (current) writeStore(backupKey(db), current)
+    window.location.reload()
+  }
+
+  if (!confirming)
+    return (
+      <div>
+        <button className="btn btn-secondary btn-block" onClick={() => setConfirming(true)}>
+          <Undo2 size={20} aria-hidden="true" /> Restore my previous key
+        </button>
+        {error && (
+          <p className="recovery-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    )
+
+  return (
+    <div className="feedback caution" role="alert">
+      <p className="feedback-title">
+        <AlertTriangle size={20} strokeWidth={1.5} /> Go back to the progress this device had before?
+      </p>
+      <p>
+        The page will reload and show the progress saved with your previous key. The key you’re using now is kept,
+        so you can switch back the same way.
+      </p>
+      <div className="recovery-actions">
+        <button type="button" className="btn btn-primary" onClick={restore}>
+          Yes, restore it
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={() => setConfirming(false)} autoFocus>
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /** Bottom of the profile page: save a recovery key, or bring progress over from another device. */
 export function RecoveryKey() {
   const db = useDbName()
@@ -237,6 +291,7 @@ export function RecoveryKey() {
         <div className="stack recovery-body">
           <SaveKey db={db} />
           <UseKey db={db} />
+          <RestorePrevious db={db} />
         </div>
       ) : (
         <p className="muted" role="status">
