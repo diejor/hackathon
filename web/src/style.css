@@ -277,9 +277,19 @@ body.bot-open .header, body.bot-open .game-host { display: none; }
 .bot-chip:active:not(:disabled) { background: var(--magenta-soft); border-color: var(--magenta); }
 .bot-chip:disabled { opacity: 0.4; cursor: default; }
 .bot-composer { flex: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--bg); }
-.bot-status { color: var(--danger); font-size: 14px; font-weight: 700; margin: 0 4px 6px; }
+.bot-status {
+  color: var(--danger); font-size: 14px; font-weight: 700; line-height: 1.35; margin: 0 0 8px;
+  padding: 8px 10px; border-radius: 10px; border: 1px solid var(--danger); background: rgba(255, 77, 94, 0.12);
+  max-height: 30vh; overflow-y: auto;
+}
 .bot-preview { position: relative; display: inline-block; margin: 0 0 8px 4px; }
 .bot-preview-img { display: block; max-height: 88px; max-width: 160px; border-radius: 10px; border: 1px solid var(--border); }
+.bot-preview-note {
+  padding: 10px 40px 10px 12px; border-radius: 10px; border: 1px dashed var(--border);
+  background: var(--surface); font-size: 14px; font-weight: 600;
+}
+.bot-preview-busy .bot-preview-note { opacity: 0.8; animation: bot-pulse 1.2s ease-in-out infinite; }
+.bot-preview-failed .bot-preview-note { color: var(--danger); border-color: var(--danger); }
 .bot-preview-remove {
   position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%;
   border: 0; background: var(--surface-2); font-size: 14px; cursor: pointer;

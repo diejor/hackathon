@@ -23,8 +23,13 @@ const DEMO = new URLSearchParams(location.search).get("demo") === "1"; // ?demo=
 export interface ChatView { el: HTMLElement; destroy(): void }
 
 export function mountChat(opts: { onBack: () => void }): ChatView {
-  let image: Blob | null = null;
-  let previewUrl: string | null = null;
+  // The attached screenshot is converted as soon as it's picked or pasted, so `image` is the exact JPEG
+  // data URL that will be sent (and the preview shows it). Phones can hand out files that later become
+  // unreadable or that the browser can't decode (HEIC), so problems surface right away, not on Send.
+  let image: string | null = null;
+  let preparing = false;
+  let imageFailed = false; // last attach failed: the preview area says so (the reason is in the error line)
+  let imageSeq = 0; // drops a conversion that finished after a newer pick/remove
   let confirming = false;
   let menuOpen = false;
   let linking: "imessage" | "discord" | null = null; // "Link iMessage" / "Link Discord" panel open
@@ -120,18 +125,18 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     onkeydown: (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); void submit(); }
     },
-    oninput: () => { autosize(); Bot.clearError(); },
+    oninput: () => { autosize(); Bot.clearError(); if (imageFailed) { imageFailed = false; update(); } },
     onpaste: (e: ClipboardEvent) => {
-      const files = [...(e.clipboardData?.items ?? [])].filter((i) => i.kind === "file" && i.type.startsWith("image/"));
+      const files = [...(e.clipboardData?.items ?? [])].filter((i) => i.kind === "file" && (!i.type || i.type.startsWith("image/")));
       const f = files[0]?.getAsFile();
       if (!f) return;
-      setImage(f);
+      void setImage(f);
       if (!e.clipboardData?.getData("text/plain")) e.preventDefault();
     },
   }) as HTMLTextAreaElement;
   const fileInput = h("input", {
     type: "file", accept: "image/*", class: "bot-file", tabindex: -1, "aria-hidden": "true",
-    onchange: () => { const f = fileInput.files?.[0]; if (f) setImage(f); fileInput.value = ""; },
+    onchange: () => { const f = fileInput.files?.[0]; if (f) void setImage(f); fileInput.value = ""; },
   }) as HTMLInputElement;
   const attachBtn = h("button", { class: "bot-attach", "aria-label": "Attach screenshot", title: "Attach screenshot", onclick: () => fileInput.click() }, "📷");
   const sendBtn = h("button", { class: "bot-send", "aria-label": "Send", onclick: () => void submit() }, "Send");
@@ -147,9 +152,11 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     : null;
   if (micBtn) micSlot.append(micBtn);
   const previewImg = h("img", { class: "bot-preview-img", alt: "Screenshot to send" }) as HTMLImageElement;
+  const previewNote = h("div", { class: "bot-preview-note" });
   const preview = h("div", { class: "bot-preview" },
     previewImg,
-    h("button", { class: "bot-preview-remove", "aria-label": "Remove screenshot", onclick: () => setImage(null) }, "✕"));
+    previewNote,
+    h("button", { class: "bot-preview-remove", "aria-label": "Remove screenshot", onclick: () => void setImage(null) }, "✕"));
   // Quick chips above the input once a conversation exists (the empty state has its own examples).
   const howChip = h("button", { class: "bot-chip", onclick: () => void submit(HOW_AM_I_DOING.text) }, HOW_AM_I_DOING.label);
   const checkChip = h("button", {
@@ -165,13 +172,32 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
 
   const el = h("div", { class: "bot-chat" }, top, linkBox, confirmBox, list, composer);
 
-  function setImage(b: Blob | null) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    image = b;
-    previewUrl = b ? URL.createObjectURL(b) : null;
-    if (previewUrl) previewImg.src = previewUrl; else previewImg.removeAttribute("src");
+  /** Attach a picked/pasted file (converted to JPEG right away) or clear the attachment (null). */
+  async function setImage(file: Blob | null) {
+    const seq = ++imageSeq;
+    showImage(null);
+    imageFailed = false;
+    preparing = !!file;
     Bot.clearError();
     update();
+    if (!file) return;
+    try {
+      const url = await Bot.toJpegDataUrl(file); // reads the bytes before anything else awaits
+      if (seq !== imageSeq) return;
+      showImage(url);
+    } catch (e) {
+      if (seq !== imageSeq) return;
+      imageFailed = true;
+      Bot.showError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (seq === imageSeq) { preparing = false; update(); }
+    }
+  }
+
+  /** Set the attachment to an already-prepared data URL (no error reset; used to give a draft back). */
+  function showImage(url: string | null) {
+    image = url;
+    if (url) previewImg.src = url; else previewImg.removeAttribute("src");
   }
 
   function autosize() {
@@ -183,19 +209,20 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   }
 
   async function submit(text = textarea.value) {
-    if (Bot.state.sending || (!text.trim() && !image)) return;
+    if (Bot.state.sending || preparing || (!text.trim() && !image)) return;
     dictation.cancel(); // don't let late speech results land in the cleared box
     hint = false;
     const img = image;
     const draft = textarea.value;
     textarea.value = "";
     autosize();
-    setImage(null);
+    void setImage(null);
     const ok = await Bot.send(text, img ?? undefined);
-    if (!ok && !textarea.value && !image) { // rejected: give the draft back
+    if (!ok && !textarea.value && !image && !preparing) { // rejected: give the draft back, keep the error showing
       textarea.value = draft;
       autosize();
-      if (img) setImage(img);
+      if (img) showImage(img);
+      update();
     }
   }
 
@@ -257,9 +284,14 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
 
     status.textContent = Bot.state.error ?? "";
     status.hidden = !Bot.state.error;
-    preview.hidden = !image;
+    preview.hidden = !image && !preparing && !imageFailed;
+    preview.classList.toggle("bot-preview-busy", preparing);
+    preview.classList.toggle("bot-preview-failed", imageFailed && !image && !preparing);
+    previewImg.hidden = !image;
+    previewNote.hidden = !!image;
+    previewNote.textContent = preparing ? "Preparing screenshot…" : imageFailed ? "⚠ Screenshot not attached" : "";
     const busy = Bot.state.sending || !ready;
-    sendBtn.toggleAttribute("disabled", busy);
+    sendBtn.toggleAttribute("disabled", busy || preparing);
     attachBtn.toggleAttribute("disabled", busy);
     sendBtn.textContent = Bot.state.sending ? "…" : "Send";
     if (micBtn) {
@@ -310,7 +342,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
       dictation.cancel();
       vv?.removeEventListener("resize", fit);
       vv?.removeEventListener("scroll", fit);
-      setImage(null);
+      void setImage(null);
     },
   };
 }

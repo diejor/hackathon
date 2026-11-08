@@ -155,8 +155,9 @@ export const hasScreenshot = (m: ChatMessage) => m.role.tag === "User" && m.hadI
  * Send a message and/or screenshot. Resolves true if the server accepted it (the message is in the
  * chat, even if the bot then failed and posted an error reply), false if it was rejected before
  * that (empty, too big, cooldown, offline); then `state.error` says why and the caller can keep the draft.
+ * `image` is a screenshot Blob or a JPEG data URL from `toJpegDataUrl`.
  */
-export async function send(text: string, image?: Blob): Promise<boolean> {
+export async function send(text: string, image?: Blob | string): Promise<boolean> {
   const c = L.getConn();
   text = text.trim();
   if (state.sending) return false;
@@ -167,7 +168,8 @@ export async function send(text: string, image?: Blob): Promise<boolean> {
   insertedWhileSending = false;
   bump();
   try {
-    const imageDataUrl = image ? await toJpegDataUrl(image) : "";
+    // A string is a data URL already made by toJpegDataUrl (the chat prepares it when the file is picked).
+    const imageDataUrl = typeof image === "string" ? image : image ? await toJpegDataUrl(image) : "";
     const res = await c.procedures.botSend({ text, imageDataUrl });
     if (res.ok) return true;
     // Always surface the server's reason (cooldown, quota, validation...). If the message was already
@@ -207,23 +209,109 @@ function fail(e: unknown): false {
   return false;
 }
 
-/** Downscale to ≤ 1024 px on the long side and re-encode as JPEG (also strips EXIF/metadata). */
+/** Image kinds recognised from the file's first bytes (phones sometimes give an empty or odd `type`). */
+type Sniffed = "png" | "jpeg" | "webp" | "gif" | "heic" | "avif" | "unknown";
+const SNIFF_MIME: Record<Sniffed, string> = {
+  png: "image/png", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", heic: "image/heic", avif: "image/avif", unknown: "",
+};
+const HEIC_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs"]);
+
+function sniff(b: Uint8Array): Sniffed {
+  const ascii = (from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
+  if (b.length >= 8 && b[0] === 0x89 && ascii(1, 4) === "PNG") return "png";
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpeg";
+  if (b.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
+  if (b.length >= 6 && ascii(0, 4) === "GIF8") return "gif";
+  if (b.length >= 12 && ascii(4, 8) === "ftyp") { // ISO-BMFF: major brand, then compatible brands
+    const size = Math.min(b.length, Math.max(16, (b[0] << 24 | b[1] << 16 | b[2] << 8 | b[3]) >>> 0), 64);
+    const brands = [ascii(8, 12)];
+    for (let i = 16; i + 4 <= size; i += 4) brands.push(ascii(i, i + 4));
+    if (brands.some((x) => x === "avif" || x === "avis")) return "avif";
+    if (brands.some((x) => HEIC_BRANDS.has(x)) || brands[0] === "mif1" || brands[0] === "msf1") return "heic";
+  }
+  return "unknown";
+}
+
+const HEIC_MSG = "This photo is in HEIC format, which this browser can't open. Take a screenshot of it instead (screenshots are PNG).";
+const UNREADABLE_MSG = "Couldn't read that file from your phone. If it's in Google Photos, download it first or take a screenshot.";
+
+/** Decode with fallbacks: createImageBitmap, a downscaling createImageBitmap, then an <img> element. */
+async function decode(blob: Blob, errors: string[]): Promise<{ src: CanvasImageSource; w: number; h: number; done(): void }> {
+  const why = (step: string, e: unknown) => errors.push(`${step}: ${e instanceof Error ? `${e.name} ${e.message}` : String(e)}`);
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bmp = await createImageBitmap(blob);
+      return { src: bmp, w: bmp.width, h: bmp.height, done: () => bmp.close() };
+    } catch (e) { why("createImageBitmap", e); }
+    try { // a big photo may fail at full size (memory); let the decoder shrink it (height keeps the aspect ratio)
+      const bmp = await createImageBitmap(blob, { resizeWidth: MAX_SIDE, resizeQuality: "high" });
+      return { src: bmp, w: bmp.width, h: bmp.height, done: () => bmp.close() };
+    } catch (e) { why("createImageBitmap(resize)", e); }
+  }
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    if (!img.naturalWidth || !img.naturalHeight) throw new Error("zero size");
+    return { src: img, w: img.naturalWidth, h: img.naturalHeight, done: () => URL.revokeObjectURL(url) };
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    why("img.decode", e);
+    throw new Error("decode failed");
+  }
+}
+
+/**
+ * Turn a picked/pasted file into the JPEG data URL that `send` uploads: read its bytes right away
+ * (phone pickers can hand out files that stop being readable later), decode with fallbacks, downscale
+ * to ≤ 1024 px on the long side and re-encode as JPEG (also strips EXIF/metadata). Throws an Error
+ * whose message is meant for the user.
+ */
 export async function toJpegDataUrl(blob: Blob): Promise<string> {
-  if (!blob.type.startsWith("image/")) throw new Error("That file isn't an image.");
-  let bmp: ImageBitmap;
-  try { bmp = await createImageBitmap(blob); } catch { throw new Error("Couldn't read that image."); }
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
-  const w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const g = canvas.getContext("2d")!;
-  g.fillStyle = "#fff"; // JPEG has no alpha
-  g.fillRect(0, 0, w, h);
-  g.drawImage(bmp, 0, 0, w, h);
-  bmp.close();
-  const url = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-  canvas.width = canvas.height = 0;
+  const info = { name: (blob as File).name, type: blob.type || "(empty)", size: blob.size } as Record<string, unknown>;
+  let bytes: ArrayBuffer;
+  try {
+    bytes = await blob.arrayBuffer();
+  } catch (e) {
+    console.warn("[bot] image", { ...info, error: e instanceof Error ? `${e.name} ${e.message}` : String(e) });
+    throw new Error(UNREADABLE_MSG);
+  }
+  if (!bytes.byteLength) {
+    console.warn("[bot] image", { ...info, error: "0 bytes" });
+    throw new Error(UNREADABLE_MSG);
+  }
+  const kind = sniff(new Uint8Array(bytes, 0, Math.min(64, bytes.byteLength)));
+  const declaredHeic = /hei[cf]/i.test(blob.type) || /\.hei[cf]$/i.test(String(info.name ?? ""));
+  const mime = SNIFF_MIME[kind] || (blob.type.startsWith("image/") ? blob.type : "");
+  const mem = new Blob([bytes], mime ? { type: mime } : {}); // in memory: no longer tied to the picker's file
+  const errors: string[] = [];
+  let url = "";
+  try {
+    const d = await decode(mem, errors);
+    try {
+      const scale = Math.min(1, MAX_SIDE / Math.max(d.w, d.h));
+      const w = Math.max(1, Math.round(d.w * scale)), h = Math.max(1, Math.round(d.h * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const g = canvas.getContext("2d");
+      if (!g) throw new Error("no 2d context");
+      g.fillStyle = "#fff"; // JPEG has no alpha
+      g.fillRect(0, 0, w, h);
+      g.drawImage(d.src, 0, 0, w, h);
+      url = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      canvas.width = canvas.height = 0;
+      if (!url.startsWith("data:image/jpeg;base64,")) throw new Error(`encode gave ${url.slice(0, 30)}`);
+    } finally { d.done(); }
+  } catch (e) {
+    if (e instanceof Error && e.message !== "decode failed") errors.push(`encode: ${e.message}`);
+    console.warn("[bot] image", { ...info, sniffed: kind, errors });
+    if (kind === "heic" || (declaredHeic && kind === "unknown")) throw new Error(HEIC_MSG);
+    const t = blob.type || (mime ? `${mime} (guessed)` : "unknown");
+    const n = bytes.byteLength, size = n < 100_000 ? `${Math.max(1, Math.round(n / 1000))} KB` : `${(n / 1e6).toFixed(1)} MB`;
+    throw new Error(`Couldn't open that image (type ${t}, ${size}). Try a screenshot.`);
+  }
   if (url.length > MAX_IMAGE_CHARS) throw new Error("That screenshot is too large, even after shrinking it.");
   return url;
 }
