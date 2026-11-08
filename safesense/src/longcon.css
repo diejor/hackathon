@@ -647,8 +647,10 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
   }
-  .con-row {
-    scroll-margin-top: 120px;
+  /* Clear the sticky bar, which grows with the text size */
+  .con-row,
+  .con-ending {
+    scroll-margin-top: calc(6rem + 24px);
   }
   .con-post,
   .con-sent {
@@ -667,6 +669,66 @@
   }
   .con-serif-title {
     font-size: 1.5rem;
+  }
+}
+
+/* ---------- Laptops: a tighter feed and panel ----------
+   At 1366x768 a scene's new lines filled the screen and "Your move" landed below the fold, and the
+   side panel (dial plus four people) only just fit. Same text size, less padding. */
+@media (min-width: 961px) {
+  .con-feed {
+    gap: 10px;
+  }
+  .con-say {
+    padding: 12px 18px;
+  }
+  .con-row p {
+    line-height: 1.5;
+  }
+  .con-who-line {
+    margin-bottom: 2px;
+  }
+  .con-post,
+  .con-sent {
+    padding: 10px 16px;
+  }
+  .con-who {
+    margin-bottom: 6px;
+  }
+  .con-receipt {
+    margin-top: 6px;
+  }
+  .con-choices {
+    margin-top: 20px;
+  }
+  .con-move-title {
+    margin-bottom: 10px;
+  }
+  .con-choices .choices {
+    gap: 10px;
+  }
+  .con-choice {
+    min-height: 52px;
+    padding: 10px 18px;
+  }
+}
+@media (min-width: 961px) and (max-height: 900px) {
+  .con-hud {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+  .con-stats {
+    gap: 12px;
+  }
+  .con-count-num {
+    font-size: 2.2rem;
+  }
+  .con-dial {
+    max-width: 180px;
+    margin-top: 2px;
+  }
+  .con-people ul {
+    gap: 8px;
   }
 }
 

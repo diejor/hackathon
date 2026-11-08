@@ -367,3 +367,101 @@
     font-size: 1.05rem;
   }
 }
+
+/* ---------- Wide cards: board on the left, letters (or the lesson) beside it ----------
+   Stacked, a laptop screen (1366x768) only shows the board: the letters and "Check word" sit
+   below the fold while you type. Side by side, clue, board and letters all fit on one screen.
+   Only where the card is wide enough for an 8-letter board next to the letters. */
+@media (min-width: 840px) and (max-width: 960px), (min-width: 1240px) {
+  .fraudle-page .page-head {
+    margin-bottom: 20px;
+  }
+  .fraudle-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 28px;
+    align-items: start;
+  }
+  .fraudle-card .clue-strip {
+    grid-column: 1 / -1;
+  }
+  .fraudle-card .board {
+    margin: 20px auto 0;
+  }
+  .fraudle-card .tile {
+    height: clamp(44px, calc((100cqw / var(--n)) * 1.08), 54px);
+  }
+  .fraudle-dock,
+  .fraudle-dock.is-over {
+    width: 312px;
+    margin-top: 20px;
+  }
+  .fraudle-dock .status-line {
+    text-align: left;
+  }
+  .fraudle-card .keyboard {
+    margin: 10px 0 14px;
+    align-items: stretch;
+  }
+  .fraudle-card .key-row {
+    gap: 5px;
+  }
+  .fraudle-card .key {
+    width: 40px;
+    height: 42px;
+  }
+  .fraudle-dock .two-btns {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 10px;
+  }
+  .fraudle-dock .two-btns .btn {
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+  .fraudle-dock .fraudle-lesson {
+    margin-top: 8px;
+  }
+}
+/* Short laptop screens (1280x720): a little less height above the game so "Check word" fits. */
+@media (min-width: 840px) and (max-width: 960px) and (max-height: 800px),
+  (min-width: 1240px) and (max-height: 800px) {
+  .fraudle-page .page-head {
+    margin-bottom: 16px;
+  }
+  .fraudle-page .page-title {
+    font-size: 2.2rem;
+  }
+  .fraudle-card {
+    --pad-y: 20px;
+  }
+  .fraudle-card .clue-strip {
+    padding: 10px 16px;
+  }
+  .fraudle-card .board,
+  .fraudle-dock,
+  .fraudle-dock.is-over {
+    margin-top: 16px;
+  }
+  .fraudle-dock .status-line {
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+}
+
+/* Stacked on a short, wide-ish screen (e.g. a 1024x768 laptop): keep the letters stuck to the
+   bottom of the screen, as on phones, so they stay in view while typing. */
+@media (min-width: 721px) and (max-width: 839px) and (max-height: 900px),
+  (min-width: 961px) and (max-width: 1239px) and (max-height: 900px) {
+  .fraudle-dock:not(.is-over) {
+    position: sticky;
+    margin: 0 calc(-1 * var(--pad-x)) calc(-1 * var(--pad-y));
+    padding: 8px var(--pad-x) var(--pad-y);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: 0 -10px 16px -14px rgba(36, 57, 47, 0.35);
+  }
+  .fraudle-card .board-row {
+    scroll-margin-bottom: calc(var(--dock-h, 320px) + 12px);
+  }
+}

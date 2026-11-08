@@ -217,6 +217,16 @@ export default function ScamOrNot() {
     setStreak(run)
     setBest((b) => Math.max(b, run))
     if (!right) setMissed((m) => [...m, s])
+    // The answer appears under the buttons, often below the fold on a laptop. If it doesn't fit,
+    // scroll so the buttons sit at the top with the answer under them.
+    requestAnimationFrame(() => {
+      const feedback = document.querySelector('.son-page .play > .feedback')
+      if (!feedback || feedback.getBoundingClientRect().bottom <= window.innerHeight) return
+      document.querySelector('.son-page .verdicts')?.scrollIntoView({
+        block: 'start',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
+    })
     void logActivity('scam-or-not', right ? 'answer_correct' : 'answer_wrong', {
       item: s.id,
       said: g,
@@ -249,7 +259,7 @@ export default function ScamOrNot() {
   }
 
   return (
-    <>
+    <div className="son-page">
       <PageHead
         crumb={<Crumb label="Scam or Not?" />}
         title="Scam or Not?"
@@ -364,6 +374,6 @@ export default function ScamOrNot() {
           </a>
         </aside>
       </div>
-    </>
+    </div>
   )
 }
