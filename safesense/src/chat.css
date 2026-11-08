@@ -459,13 +459,24 @@
   padding-top: 10px;
   font-size: 0.8rem;
 }
+/* Laptops (often short: ~700px of page once the browser bar is counted): the card fills the screen under the
+   header. The page title is kept for screen readers only, and the privacy note (the site footer says the same,
+   and it shows before the first message) steps aside, so the messages get the height. */
 @media (min-width: 961px) {
   .chat-page:has(.chat-scroll:not(.chat-scroll-empty)) .page-head {
-    margin-bottom: 20px;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .chat-page:has(.chat-scroll:not(.chat-scroll-empty)) .chat-privacy {
+    display: none;
   }
   .chat-page:has(.chat-scroll:not(.chat-scroll-empty)) .chat-card {
-    min-height: min(640px, calc(100vh - 120px));
-    max-height: max(560px, calc(100vh - 120px));
+    min-height: max(420px, calc(100vh - 150px));
+    max-height: max(420px, calc(100vh - 150px));
   }
 }
 @media (max-width: 720px) {
