@@ -70,7 +70,7 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
       </h2>
       <p>Got a text that feels off? Forward it, or send a screenshot, to SafeSense on iMessage.</p>
       <p className="text-safesense-number">
-        <a href={smsHref}>{number}</a>
+        <a href={smsHref} className="nowrap">{number}</a>
       </p>
 
       <div className="text-safesense-link" aria-live="polite">
@@ -94,7 +94,7 @@ export function TextSafeSense({ bot }: { bot: BotSnapshot }) {
         ) : live ? (
           <>
             <p>
-              Text <strong className="text-safesense-code">LINK {live.code}</strong> to {number} within 10 minutes.
+              Text <strong className="text-safesense-code">LINK {live.code}</strong> to <span className="nowrap">{number}</span> within 10 minutes.
             </p>
             <p className="small muted">Send the whole line, including LINK, as one iMessage from your iPhone. This page will show “Linked” when it works.</p>
             <button type="button" className="btn btn-secondary btn-block" disabled={!ready || busy}

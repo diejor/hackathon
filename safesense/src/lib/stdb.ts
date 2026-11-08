@@ -29,6 +29,8 @@ export function helpBot(): Promise<{ L: Lobby; bot: Bot }> {
 
 type Activity = { game: string; kind: string; details: string }
 const pending: Activity[] = []
+/** One flush at a time: two reports in the same tick used to both send pending[0], saving it twice. */
+let flushing: Promise<boolean> | null = null
 
 /**
  * Report one finished round to the coach (log_activity; rules in spacetimedb/Activity.cs):
@@ -40,11 +42,22 @@ export async function logActivity(game: string, kind: string, details: Record<st
   pending.push({ game, kind, details: JSON.stringify(details).slice(0, 500) })
   try {
     const { L } = await helpBot()
-    const flush = async () => {
-      const c = L.getConn()
-      if (!c || !L.state.connected) return false
-      while (pending.length) await c.reducers.logActivity(pending[0]).then(() => pending.shift())
-      return true
+    const flush = (): Promise<boolean> => {
+      if (flushing) return flushing
+      flushing = (async () => {
+        try {
+          const c = L.getConn()
+          if (!c || !L.state.connected) return false
+          while (pending.length) {
+            await c.reducers.logActivity(pending[0])
+            pending.shift()
+          }
+          return true
+        } finally {
+          flushing = null
+        }
+      })()
+      return flushing
     }
     if (await flush()) return
     const off = L.onChange(() => {

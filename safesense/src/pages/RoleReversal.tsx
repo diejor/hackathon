@@ -217,8 +217,8 @@ function Play({
               </button>
             ))}
           </div>
-          <button className="btn btn-primary btn-block restart-btn" onClick={onRestart}>
-            Retry <RotateCcw size={20} strokeWidth={1.75} />
+          <button className="btn btn-secondary btn-block restart-btn" onClick={onRestart}>
+            Start over <RotateCcw size={20} strokeWidth={1.75} />
           </button>
         </div>
       )}

@@ -19,7 +19,9 @@ export function PageTransition({ children }: { children: ReactNode }) {
       }
     : {
         initial: { opacity: 0, y: 14, filter: 'blur(3px)' },
-        animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
+        // Clear the filter when done: a leftover filter (or will-change) makes the page a containing block, so the
+        // games' position: fixed end screens stopped covering the phone screen.
+        animate: { opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } },
         exit: { opacity: 0, y: -10, filter: 'blur(3px)' },
       }
 
@@ -30,7 +32,6 @@ export function PageTransition({ children }: { children: ReactNode }) {
       exit="exit"
       variants={variants}
       transition={{ duration: reduced ? 0.15 : DURATION, ease: [0.22, 0.61, 0.36, 1] }}
-      style={{ willChange: 'transform, opacity' }}
     >
       {children}
     </motion.div>

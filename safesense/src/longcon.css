@@ -35,7 +35,7 @@
 .con-serif-title {
   font-family: var(--font-serif);
   font-size: 1.75rem;
-  font-weight: 600;
+  font-weight: 500; /* Lora is loaded at 400/500 only; 600 was a faked bold */
   line-height: 1.25;
   color: var(--green-900);
 }
@@ -828,4 +828,9 @@
   .end-overlay {
     overflow-y: auto;
   }
+}
+
+/* Phone: keep the story chip on one line next to the progress dots. */
+.rr-top .chip {
+  white-space: nowrap;
 }

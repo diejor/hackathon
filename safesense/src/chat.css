@@ -502,3 +502,10 @@
 .chat-page .page-head .lead {
   margin-top: 0;
 }
+
+/* The empty chat (greeting + examples + privacy note) can be taller than the running-chat cap: never clip it. */
+@media (min-width: 961px) {
+  .chat-card:has(.chat-scroll-empty) {
+    max-height: none;
+  }
+}
