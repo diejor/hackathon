@@ -103,9 +103,9 @@ same way with `scripts/set-key.sh NAME`. Never commit or print secrets.
 
 **Deploy** (project lead only):
 - Module: `STDB_TS_SERVER=maincloud STDB_TS_DB=safesense-1aa18263 scripts/publish-ts.sh` (never `-c` on Maincloud).
-- Site: in `safesense/`, `VITE_STDB_SERVER=wss://maincloud.spacetimedb.com VITE_STDB_DB=safesense-1aa18263 npm run build`;
-  assemble `safesense/dist` plus the old arcade under `arcade/`, then `scripts/deploy-pages.sh <dir>`.
-  Always pass the directory: with no argument the script deploys the legacy arcade to the root.
+- Site: `scripts/deploy-safesense.sh` builds `safesense/` against the Maincloud db, keeps the old arcade under `arcade/`,
+  checks the result and publishes it to GitHub Pages (`--dry-run` to only assemble). `scripts/deploy-pages.sh` now refuses
+  to run without an explicit build dir, so it can't replace SafeSense with the arcade by accident.
 
 **Testing tools:**
 - `node tools/phone.mjs <url> <outDir> <profileDir> <port> wait:4000 shot:home ...` drives headless Chromium as a
