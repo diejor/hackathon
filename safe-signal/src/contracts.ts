@@ -154,6 +154,9 @@ export interface ScamdleEvent {
   flagsMissed: RedFlag[];
   flagsFalsePositive: RedFlag[];
   elapsedMs: number;
+  // Additive (multi-round games): optional so older single-round rows still parse.
+  tactic?: Tactic; // the manipulation technique this puzzle demonstrates
+  roundIndex?: number; // 0-based round within one play-through; 0 starts a fresh run
 }
 
 export interface GuessWhoEvent {
@@ -166,6 +169,12 @@ export interface GuessWhoEvent {
   deferredToBot: boolean;
   followedBotConsensus: boolean;
   elapsedMs: number;
+  // Additive (Friend or Fraud rounds): optional so older single-round rows still parse.
+  tactic?: Tactic; // mapped technique of the message (absent for legit messages)
+  isFraud?: boolean; // the message was a scam (correctContactId === 'fraud')
+  crowdShown?: boolean; // the simulated crowd's vote was shown before answering
+  crowdCorrect?: boolean; // that crowd majority matched the right answer
+  roundIndex?: number;
 }
 
 export interface BadScamEvent {
@@ -176,6 +185,7 @@ export interface BadScamEvent {
   paymentRail: PaymentRail;
   reachScore: number; // 0..100
   elapsedMs: number;
+  roundIndex?: number; // additive: 0-based round within one play-through
 }
 
 export type GameEvent = ScamdleEvent | GuessWhoEvent | BadScamEvent;

@@ -1,27 +1,142 @@
-"use client";
-import { useState } from 'react';
-import Link from 'next/link';
-import { GameEvent, RedFlag, TACTICS, Tactic } from '../../src/contracts';
-import { reportToBot } from '../../src/lib/helpbot';
-const flags:RedFlag[]=['sender_identity','url_domain','plausibility_bait','urgency_clause','authority_claim','payment_rail','reply_bait','personalization_overreach'];
-const present:RedFlag[]=['sender_identity','url_domain','plausibility_bait','urgency_clause'];
-const questions=[{id:'channel',label:'Can I verify this through our saved team directory?',answer:'The saved directory lists a different address.',score:1},{id:'detail',label:'Does the sender know a public project name?',answer:'Yes, the public project is Maple.',score:0.2},{id:'payment',label:'Does the request ask me to bypass normal approval?',answer:'Yes. The sender asks for immediate payment without approval.',score:0.9}];
-export default function Games(){
- const [step,setStep]=useState(0);const [started,setStarted]=useState(Date.now());const [selected,setSelected]=useState<string[]>([]);const [asked,setAsked]=useState<number[]>([]);const [bot,setBot]=useState(false);const [defer,setDefer]=useState(false);const [guess,setGuess]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);
- const toggle=(value:string)=>setSelected(old=>old.includes(value)?old.filter(v=>v!==value):[...old,value]);
- async function next(){setBusy(true);setError('');try{
- if(step===0){const response=await fetch('/api/player',{method:'POST'});if(!response.ok)throw new Error('Could not start session.');}
- else {const elapsedMs=Date.now()-started;let event;
- if(step===1)event={game:'scamdle',puzzleId:'parcelo-1',attempts:1,flagsFound:present.filter(f=>selected.includes(f)),flagsMissed:present.filter(f=>!selected.includes(f)),flagsFalsePositive:selected.filter(f=>!present.includes(f as RedFlag)),elapsedMs};
- if(step===2)event={game:'guesswho',roundId:'directory-1',questionsAsked:asked.map(i=>questions[i].id),questionsDiagnosticity:asked.map(i=>questions[i].score),guessedContactId:guess,correctContactId:'impostor',deferredToBot:defer,followedBotConsensus:bot&&(defer||guess==='colleague'),elapsedMs};
- if(step===3)event={game:'badscam',targetPersonaId:'synthetic-student',archetypeId:'toll-fee',tacticsChosen:selected as Tactic[],paymentRail:'card_fee',reachScore:selected.reduce((sum,t)=>sum+(['urgency_deadline','small_plausible_amount'].includes(t)?50:10),0),elapsedMs};
- const response=await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});if(!response.ok)throw new Error('Could not save game.');void reportToBot(event as GameEvent);}
- setStep(step+1);setSelected([]);setStarted(Date.now());
- }catch(e){setError(e instanceof Error?e.message:'Please retry.');}finally{setBusy(false);}}
- return <main className="mx-auto max-w-2xl space-y-6 px-6 py-16"><Link href="/">Safe Signal</Link><h1 className="text-3xl font-bold">{['Train your scam radar','Scamdle','Guess Who','Build a Bad Scam','Training complete'][step]}</h1>
- {step===0&&<p>Three short games reveal the manipulation patterns you recognize. Build a personalized simulation after training.</p>}
- {step===1&&<><p className="rounded-xl bg-neutral-800 p-6">Parcelo. Your package is held. Pay $2.99 within 30 minutes at parcelo-fee.example.</p><p>Select the suspicious signals.</p>{flags.map(f=><label className="block" key={f}><input type="checkbox" checked={selected.includes(f)} onChange={()=>toggle(f)}/> {f.replaceAll('_',' ')}</label>)}</>}
- {step===2&&<><p>A message claiming to be your colleague asks for urgent payment. Investigate who sent it.</p>{questions.map((q,i)=><div key={q.id}><button className="underline" onClick={()=>setAsked(old=>old.includes(i)?old:[...old,i])}>{q.label}</button>{asked.includes(i)&&<p>{q.answer}</p>}</div>)}<button className="underline" onClick={()=>setBot(true)}>Ask the helper bot</button>{bot&&<p>The helper bot and two simulated teammates think it is your colleague. Their opinion may be wrong.</p>}<label className="block"><input type="checkbox" checked={defer} onChange={e=>{setDefer(e.target.checked);setBot(true);setGuess('colleague');}}/> Let the helper bot decide</label>{['colleague','impostor'].map(value=><label className="block" key={value}><input type="radio" name="guess" checked={guess===value} onChange={()=>{setGuess(value);setDefer(false);}}/> {value}</label>)}</>}
- {step===3&&<><p>A fictional toll notice asks a synthetic student to pay a small fee before a deadline. Choose up to two tactics that make it persuasive.</p>{TACTICS.map(t=><label className="block" key={t}><input type="checkbox" checked={selected.includes(t)} disabled={!selected.includes(t)&&selected.length===2} onChange={()=>toggle(t)}/> {t.replaceAll('_',' ')}</label>)}</>}
- {error&&<p role="alert">{error}</p>}{step<4?<button className="rounded bg-tmo-magenta px-6 py-3" disabled={busy||(step===2&&!guess)} onClick={()=>void next()}>{busy?'Saving…':step===0?'Start training':'Finish round'}</button>:<Link className="underline" href="/campaign">Build my campaign</Link>}</main>;
-}
+"use client";
+// SafeSense training: Scamdle (4 rounds) → Friend or Fraud (6) → Build a Bad Scam (2), a reveal after
+// every round, then "Training complete" → /campaign and /coach. Each round is stored (/api/events) and
+// reported to the coach (reportToBot).
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import type { RedFlag } from '../../src/contracts';
+import { FLAG_INFO } from '../../src/lib/content';
+import BadScam from '../../src/components/games/BadScam';
+import FriendOrFraud from '../../src/components/games/FriendOrFraud';
+import Scamdle, { type GameSummary } from '../../src/components/games/Scamdle';
+import { ensureSession } from '../../src/components/games/api';
+import { ActionBar, Button, Card, ErrorNote, cx } from '../../src/components/games/ui';
+
+type GameId = 'scamdle' | 'guesswho' | 'badscam';
+const GAMES: { id: GameId; name: string; rounds: number; blurb: string }[] = [
+  { id: 'scamdle', name: 'Scamdle', rounds: 4, blurb: 'Spot the red flags hiding in a message.' },
+  { id: 'guesswho', name: 'Friend or Fraud', rounds: 6, blurb: 'Investigate, then call it: real or scam?' },
+  { id: 'badscam', name: 'Build a Bad Scam', rounds: 2, blurb: 'Play the scammer to see how the trick is built.' },
+];
+
+type Step = { kind: 'intro' } | { kind: 'play'; game: GameId } | { kind: 'between'; game: GameId } | { kind: 'done' };
+
+export default function Games() {
+  const [step, setStep] = useState<Step>({ kind: 'intro' });
+  const [results, setResults] = useState<Partial<Record<GameId, GameSummary>>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [step]);
+
+  async function start() {
+    setBusy(true); setError('');
+    try { await ensureSession(); setStep({ kind: 'play', game: 'scamdle' }); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Please retry.'); }
+    finally { setBusy(false); }
+  }
+  const finish = (game: GameId) => (s: GameSummary) => {
+    setResults((r) => ({ ...r, [game]: s }));
+    setStep(game === 'badscam' ? { kind: 'done' } : { kind: 'between', game });
+  };
+  const nextGame = (game: GameId): GameId => (game === 'scamdle' ? 'guesswho' : 'badscam');
+  const gameIndex = step.kind === 'play' || step.kind === 'between' ? GAMES.findIndex((g) => g.id === step.game) : step.kind === 'done' ? 3 : -1;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <main className="mx-auto max-w-md px-4 pb-6 pt-4">
+        <header className="mb-4 flex items-center justify-between">
+          <Link href="/" className="text-base font-bold text-indigo-700">SafeSense</Link>
+          <ol className="flex items-center gap-1.5" aria-label="Training progress">
+            {GAMES.map((g, i) => (
+              <li key={g.id} title={g.name}
+                className={cx('h-2 w-8 rounded-full', i < gameIndex || (step.kind === 'between' && i === gameIndex) ? 'bg-indigo-600' : i === gameIndex ? 'bg-indigo-300' : 'bg-slate-200')} />
+            ))}
+          </ol>
+        </header>
+
+        {step.kind === 'intro' && (
+          <>
+            <h1 className="text-3xl font-bold leading-tight">Train your scam radar</h1>
+            <p className="mt-2 text-slate-600">Three quick games, about five minutes. After every round you'll see exactly what gave the scam away.</p>
+            <div className="mt-5 space-y-3">
+              {GAMES.map((g, i) => (
+                <Card key={g.id} className="flex items-center gap-4">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-lg font-bold text-indigo-700">{i + 1}</div>
+                  <div>
+                    <p className="font-semibold">{g.name} <span className="text-sm font-normal text-slate-500">· {g.rounds} rounds</span></p>
+                    <p className="text-sm text-slate-600">{g.blurb}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-slate-500">All brands, people and links are fictional. Nothing here is sent anywhere.</p>
+            <ErrorNote error={error} />
+            <ActionBar><Button onClick={() => void start()} disabled={busy}>{busy ? 'Starting…' : 'Start training'}</Button></ActionBar>
+          </>
+        )}
+
+        {step.kind === 'play' && step.game === 'scamdle' && <Scamdle onDone={finish('scamdle')} />}
+        {step.kind === 'play' && step.game === 'guesswho' && <FriendOrFraud onDone={finish('guesswho')} />}
+        {step.kind === 'play' && step.game === 'badscam' && <BadScam onDone={finish('badscam')} />}
+
+        {step.kind === 'between' && (() => {
+          const done = GAMES.find((g) => g.id === step.game)!;
+          const up = GAMES.find((g) => g.id === nextGame(step.game))!;
+          return (
+            <>
+              <Card className="text-center">
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Game {gameIndex + 1} of 3 complete</p>
+                <h1 className="mt-1 text-2xl font-bold">{done.name}</h1>
+                <p className="mt-2 text-3xl font-bold text-indigo-700">{results[step.game]?.headline}</p>
+              </Card>
+              <Card className="mt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Up next</p>
+                <p className="mt-1 text-lg font-semibold">{up.name} <span className="text-sm font-normal text-slate-500">· {up.rounds} rounds</span></p>
+                <p className="text-sm text-slate-600">{up.blurb}</p>
+              </Card>
+              <ActionBar><Button onClick={() => setStep({ kind: 'play', game: up.id })}>Play {up.name}</Button></ActionBar>
+            </>
+          );
+        })()}
+
+        {step.kind === 'done' && <Complete results={results} />}
+      </main>
+    </div>
+  );
+}
+
+function Complete({ results }: { results: Partial<Record<GameId, GameSummary>> }) {
+  const missed = results.scamdle?.missed ?? [];
+  const counts = missed.reduce<Record<string, number>>((m, f) => ({ ...m, [f]: (m[f] ?? 0) + 1 }), {});
+  const worst = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] as RedFlag | undefined;
+  return (
+    <div data-testid="complete">
+      <div className="rounded-2xl bg-indigo-600 p-6 text-white shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wider text-indigo-200">SafeSense</p>
+        <h1 className="mt-1 text-3xl font-bold">Training complete</h1>
+        <p className="mt-2 text-indigo-100">You've seen 12 messages and built 2 scams. Next, see which scam would most likely get you.</p>
+      </div>
+      <Card className="mt-4">
+        <ul className="divide-y divide-slate-100">
+          {GAMES.map((g) => (
+            <li key={g.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <span className="font-semibold">{g.name}</span>
+              <span className="text-sm font-semibold text-indigo-700">{results[g.id]?.headline ?? '—'}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      {worst ? (
+        <Card className="mt-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Your blind spot so far</p>
+          <p className="mt-1 text-lg font-semibold text-red-700">{FLAG_INFO[worst].label}</p>
+          <p className="text-sm text-slate-600">{FLAG_INFO[worst].spot}</p>
+        </Card>
+      ) : null}
+      <ActionBar>
+        <Link href="/campaign" className="flex min-h-12 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700">See my scam profile</Link>
+        <Link href="/coach" className="flex min-h-12 w-full items-center justify-center rounded-xl bg-white px-4 py-3 font-semibold text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50">Ask the coach</Link>
+      </ActionBar>
+    </div>
+  );
+}
