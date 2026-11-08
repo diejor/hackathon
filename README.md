@@ -67,7 +67,7 @@ The texts and calls reach real phones, so these are enforced in the backend, not
 
 | # | Rule | Where it lives |
 |---|---|---|
-| 1 | Calls only go to invited numbers (`CHALLENGE_ALLOWED_NUMBERS`), max 10 a day overall and 3 per number | `challenge.ts` `startChallengeDemo` |
+| 1 | Calls only go to invited numbers (`CHALLENGE_ALLOWED_NUMBERS`), with a 100-a-day safety cap | `challenge.ts` `startChallengeDemo` |
 | 2 | Practice texts only go to a phone that texted the line first, max 1 a day (3 a day before linking) | `practice.ts` |
 | 3 | Kill switch: nothing proactive goes out unless `PHOTON_SENDING_ENABLED=true` | `photon-guards.ts` |
 | 4 | STOP / START honored with one confirmation, 30 replies per phone per day | `photon-guards.ts` |

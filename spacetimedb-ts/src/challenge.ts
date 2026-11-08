@@ -188,7 +188,7 @@ export const challengeClaim = spacetimedb.httpHandler((ctx,req) => {
 
 function debrief(lesson: string | null) {
   return html(lesson === null ? '<p>This practice link has expired or is invalid.</p>' :
-    '<p>This was a SafeSense training scenario. Your practice points are safe.</p><p>'+escapeHtml(lesson)+
+    '<p>This was a SafeSense training scenario: nobody real was calling.</p><p>'+escapeHtml(lesson)+
     '</p><p>Open your SafeSense dashboard to reflect on the warning signs.</p>');
 }
 
@@ -206,8 +206,10 @@ function debrief(lesson: string | null) {
 const DEMO_SCRIPT = 'Hi, this is Jordan from the fraud alerts team at your bank. We noticed two unusual charges on your card totaling four hundred and twelve dollars and need to verify them with you right now before we lock the account. Can you confirm it is really you?';
 const DEMO_LESSON = 'A real bank will never ask you to confirm charges or move money during an unexpected call. Hang up and call the number on the back of your card.';
 const BETA_MESSAGE = 'Phone practice calls are in a private beta right now. Try the games or text SafeSense instead.';
-const DemoCallsPerDay = 10;
-const DemoCallsPerNumberPerDay = 3;
+// Invited numbers only, so the caps are just a safety net against a runaway loop billing Retell (Diego: no
+// per-number limit for the demo). Both are per UTC day.
+const DemoCallsPerDay = 100;
+const DemoCallsPerNumberPerDay = 100;
 
 function demoConfigured(env: Env) {
   return !!env.RETELL_API_KEY && !!env.RETELL_AGENT_ID && /^\+[1-9]\d{7,14}$/.test(env.CHALLENGE_NUMBER || '');
