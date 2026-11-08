@@ -68,7 +68,7 @@ export default function BadScam({ onDone }: { onDone: (s: GameSummary) => void }
     const [before, after = ''] = text.split(PLACEHOLDER);
     const spans: Span[] = [
       ...spansFrom(before, [[spec.senderMark, 'sender_identity']]),
-      { text: 'tap-to-pay link', mark: 'url_domain' },
+      { text: '[link]', mark: 'url_domain' },
       { text: after },
       ...event.tacticsChosen.flatMap((t): Span[] => [{ text: ' ' }, { text: TACTIC_LINE[t].line, mark: TACTIC_LINE[t].flag }]),
     ];
@@ -77,7 +77,7 @@ export default function BadScam({ onDone }: { onDone: (s: GameSummary) => void }
     const sender = archetype.id === 'boss-gift-card' ? `${spec.slots.bossName} (unknown number)` : '+1 (833) 555-0142';
     return (
       <>
-        <Progress game="Build a Bad Scam" revealed round={round} rounds={BADSCAM_ROUNDS.length} score={total} scoreLabel="reach" />
+        <Progress game="Build a Bad Scam" revealed round={round} rounds={BADSCAM_ROUNDS.length} score={total} scoreLabel="reach pts" />
         <RoundReveal
           ok={null}
           title={`About ${score} of 100 people like ${target.name.split(',')[0]} would fall for it`}
@@ -114,7 +114,7 @@ export default function BadScam({ onDone }: { onDone: (s: GameSummary) => void }
 
   return (
     <>
-      <Progress game="Build a Bad Scam" round={round} rounds={BADSCAM_ROUNDS.length} score={total} scoreLabel="reach" />
+      <Progress game="Build a Bad Scam" round={round} rounds={BADSCAM_ROUNDS.length} score={total} scoreLabel="reach pts" />
       <h1 className="text-2xl font-bold text-slate-900">You're the scammer</h1>
       <p className="mb-4 mt-1 text-slate-600">Build {spec.pitch.charAt(0).toLowerCase() + spec.pitch.slice(1)} Seeing how it's made is how you learn to spot it.</p>
 
