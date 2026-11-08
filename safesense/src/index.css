@@ -1271,3 +1271,129 @@ main {
   }
 }
 
+/* ================= GAMES (B3 additions) ================= */
+/* Scam or Not? wrap-up */
+.wrap-up .wrap-title {
+  margin-top: 12px;
+}
+.wrap-up .wrap-lead {
+  margin: 10px 0 16px;
+  font-size: 1.1rem;
+}
+.wrap-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Fraudle lesson after a word */
+.fraudle-lesson {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: var(--green-100);
+  border-radius: var(--radius);
+}
+.fraudle-lesson > p:not(.feedback-title) {
+  margin: 6px 0 16px;
+  font-size: 1.1rem;
+}
+
+/* The Long Con */
+.lc-picker {
+  margin-top: 0;
+}
+.lc-scenario {
+  padding: 18px 20px;
+}
+.lc-scenario .text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.lc-scenario-title {
+  font-size: 1.2rem;
+  color: var(--green-900);
+}
+.lc-scenario-pitch {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+.lc-tactic {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--green-700);
+  margin-bottom: 2px;
+}
+.lc-empty {
+  font-size: 1.05rem;
+}
+.lc-next {
+  margin-top: 16px;
+}
+.lc-restart {
+  margin-top: 24px;
+}
+.lc-end {
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+.lc-moves-title {
+  margin-top: 28px;
+}
+.lc-moves {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lc-moves li {
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.lc-moves li p {
+  margin-top: 8px;
+}
+.lc-move-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.lc-move-head strong {
+  color: var(--green-900);
+  font-size: 1.1rem;
+}
+.lc-move-text {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.lc-motto {
+  margin-top: 24px;
+}
+.lc-motto .lc-motto-lead {
+  font-weight: 600;
+  color: var(--green-900);
+}
+.lc-motto .motto {
+  margin-top: 4px;
+}
+.lc-actions {
+  margin-top: 24px;
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .lc-scenario {
+    padding: 16px;
+  }
+  .lc-moves li {
+    padding: 14px;
+  }
+}
+
