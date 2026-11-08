@@ -3,7 +3,7 @@ import { ArrowRight, ChevronRight, Landmark, Package, ShieldCheck, Smartphone, V
 import { Crumb, PageHead } from '../components/Layout'
 import { href } from '../router'
 import { CAMPAIGNS, SAFETY_LINE, TACTICS, type Campaign } from '../content/longCon'
-import { useCampaign, believedCount, type CampaignState } from '../components/longcon/useCampaign'
+import { useCampaign, outcomeLine, type CampaignState } from '../components/longcon/useCampaign'
 import { Hud } from '../components/longcon/Hud'
 import { Feed } from '../components/longcon/Feed'
 import { Debrief } from '../components/longcon/Debrief'
@@ -16,8 +16,8 @@ function Picker({ onPick }: { onPick: (c: Campaign) => void }) {
     <>
       <section className="card con-cover">
         <VenetianMask size={30} strokeWidth={1.4} className="icon-muted" />
-        <h2 className="con-serif-title">Tonight, you’re the scammer.</h2>
-        <p className="con-cover-lead">Learn the playbook from the inside, then watch it fail.</p>
+        <h2 className="con-serif-title">For a few minutes, you’re the scammer.</h2>
+        <p className="con-cover-lead">Learn the playbook from the inside, then turn it around.</p>
         <p className="muted">{SAFETY_LINE}</p>
       </section>
       <section className="respond con-pick">
@@ -70,21 +70,13 @@ function Choices({ s, onPick }: { s: CampaignState; onPick: (i: number) => void 
 }
 
 function Ending({ s, onDebrief }: { s: CampaignState; onDebrief: () => void }) {
-  const believed = believedCount(s)
-  const n = s.c.people.length
-  const headline =
-    n === 1
-      ? `${s.c.people[0].name} ${believed ? 'believed it.' : 'checked first.'}`
-      : `${believed} of the ${n} people you met believed it.`
   return (
     <section className="card con-ending" aria-labelledby="con-ending-title">
       <p className="con-eyebrow">The ending</p>
       <h2 id="con-ending-title" className="con-serif-title">
-        {headline}
+        {outcomeLine(s)}
       </h2>
-      <p>
-        {s.c.ending({ reach: s.reach, cred: s.cred, believed, people: s.c.people, status: s.status })}
-      </p>
+      <p>{s.c.ending({ reach: s.reach, cred: s.cred, people: s.c.people, status: s.status, end: s.end })}</p>
       <button className="btn btn-primary btn-block" onClick={onDebrief}>
         <ArrowRight size={20} /> Turn your playbook around
       </button>
@@ -170,7 +162,8 @@ export default function LongCon() {
               <h2 className="h3" style={{ marginTop: 0 }}>
                 Unsure in real life?
               </h2>
-              <p>Check with the company or the person using a number you already trust. We can help you think it through.</p>
+              <p>Check with the company or the person using a number you already trust. The SafeSense assistant can help
+                you think it through.</p>
               <a className="btn btn-secondary btn-block" href={href('chat')} style={{ marginTop: 20 }}>
                 Ask SafeSense
               </a>
