@@ -238,10 +238,81 @@
 .chat-alert p + p {
   margin-top: 4px;
 }
-.chat-footnote {
+.composer {
+  margin-top: 20px;
+  padding-top: 20px;
+}
+.composer label {
+  margin: 0 0 10px;
+}
+/* Send is the main action; speaking and adding a picture sit under it as secondary buttons. */
+.chat-send {
   margin-top: 14px;
+}
+.chat-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+.chat-tools .btn {
+  flex: 1 1 auto;
+  gap: 8px;
+  padding: 0 16px;
+  white-space: nowrap; /* wrap the row, not the label */
+}
+.btn.chat-listening,
+.btn.chat-listening:hover {
+  background: #8b3a2b;
+  border-color: #8b3a2b;
+  color: #fff;
+}
+.composer .mic-hint {
+  margin-top: 10px;
+}
+
+/* ---------- Header of the card: name + the one AI disclosure ---------- */
+.chat-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.chat-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-head h2 svg {
+  flex-shrink: 0;
+  color: var(--green-600);
+}
+.chat-ai-note {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Example chips (under the composer while empty) and privacy note ---------- */
+.chat-examples {
+  margin-top: 20px;
+}
+.chat-privacy {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--neutral-200);
   font-size: 0.92rem;
   color: var(--text-muted);
+}
+.chat-privacy svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.chat-done:focus {
+  outline: 2px solid var(--green-700);
+  outline-offset: 2px;
 }
 
 /* ---------- Forget me ---------- */
@@ -290,11 +361,32 @@
   background: var(--scam-dark);
 }
 
+/* The empty greeting is short: never give it an inner scrollbar (bigger text sizes included). */
+.chat-scroll.chat-scroll-empty {
+  max-height: none;
+}
+
+/* Phones: keep the page head short and the conversation bounded, so the text box is on the first screen
+   and stays one short scroll away however long the conversation gets. */
+@media (max-width: 960px) {
+  .chat-page .page-head {
+    margin-bottom: 20px;
+  }
+  .chat-page .page-title {
+    margin-top: 4px;
+  }
+  .chat-not-alone {
+    display: none; /* repeats the home page; keeps Forget me closer */
+  }
+}
 @media (max-width: 720px) {
   .chat-scroll {
-    max-height: 58vh;
+    max-height: min(52svh, 520px);
   }
   .chat-bubble.chat-answer {
     max-width: 100%;
+  }
+  .chat-page .composer textarea {
+    min-height: 96px;
   }
 }
