@@ -88,6 +88,7 @@ Never claim certainty: the coach gives guidance with reasons. Never imply that s
   | --- | --- | --- |
   | `fraudle` | `word_solved`, `word_missed` | `{word, tries}` |
   | `scam-or-not` | `answer_correct`, `answer_wrong` | `{item, said, tactic, checked}`, using the bank's tactic slugs (`fake-delivery`, `bank-impersonation`, …); `checked` = number of "Check it" clues opened |
+  | `scam-or-not` | `run_done` (since design01; one per completed run, earns the run's point) | `{correct, total}` |
   | `long-con` | `round_done` | `{scenario, tactics, fooled}` |
 
 - **Server/db selection:** `?server=&db=` in the URL, otherwise `VITE_STDB_SERVER`/`VITE_STDB_DB` at build time, otherwise Maincloud `hackathon-1aa18263`. After the switch, the default becomes the new db.
