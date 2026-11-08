@@ -402,8 +402,24 @@
   margin: 10px 0 20px;
   font-size: 1.1rem;
 }
-.con-restart {
+.con-exit {
   margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.con-pick-other {
+  min-height: 44px;
+  padding: 8px 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--green-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 .con-main .con-about {
   margin-top: 24px;
@@ -515,27 +531,39 @@
     padding: 8px 16px;
     background: var(--bg);
   }
+  /* One compact row (count · people · dial), so the bar stays under ~18% of a small phone screen,
+     even with "larger" text. */
   .con-hud {
-    padding: 10px 14px;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'count people cred';
+    align-items: center;
+    padding: 6px 12px;
+    gap: 0 12px;
     border-radius: var(--radius);
     box-shadow: 0 6px 16px rgba(36, 57, 47, 0.08);
   }
   .con-stats {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    display: contents;
   }
   .con-count {
+    grid-area: count;
     min-width: 0;
   }
+  .con-count-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 6px;
+  }
   .con-count-num {
-    font-size: 1.7rem;
+    font-size: 1.45rem;
+    line-height: 1.2;
   }
   .con-label,
   .con-sub {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    line-height: 1.25;
   }
   .con-hud .con-long {
     display: none;
@@ -544,52 +572,67 @@
     display: inline;
   }
   .con-cred {
-    flex: 0 0 auto;
-    width: 104px;
+    grid-area: cred;
+    width: 68px;
     text-align: center;
   }
+  .con-cred > .con-label {
+    display: none;
+  }
   .con-dial {
-    margin: 2px auto 0;
+    margin: 0 auto;
+  }
+  .con-dial path {
+    stroke-width: 20;
   }
   .con-dial-word {
     margin-top: 0;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
   }
+  /* The dial turns amber and says "Doubtful"; the note stays for screen readers. */
   .con-low {
-    padding: 4px 10px;
-    font-size: 0.85rem;
-    align-items: center;
-  }
-  .con-low svg {
-    margin-top: 0;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
   .con-people {
+    grid-area: people;
     display: flex;
     align-items: center;
-    gap: 10px;
+  }
+  .con-people > .con-label {
+    display: none;
   }
   .con-people.is-solo .con-person-bio {
     display: none;
   }
-  .con-people .con-label {
-    flex: 1;
-    min-width: 0;
-  }
   .con-people ul {
     flex-direction: row;
-    gap: 10px;
+    gap: 6px;
     margin: 0;
   }
+  .con-people.is-solo .con-person {
+    gap: 8px;
+  }
+  .con-people.is-solo .con-person-name,
+  .con-people.is-solo .con-person-status {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
   .con-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
   }
   .con-person-badge {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     right: -5px;
-    bottom: -3px;
+    bottom: -4px;
   }
   .con-person-badge svg {
     width: 10px;
@@ -605,7 +648,7 @@
     white-space: nowrap;
   }
   .con-row {
-    scroll-margin-top: 190px;
+    scroll-margin-top: 120px;
   }
   .con-post,
   .con-sent {

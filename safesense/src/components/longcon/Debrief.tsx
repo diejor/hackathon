@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { ArrowRight, MessageCircle, RotateCcw, ShieldCheck, Sprout } from 'lucide-react'
+import { ArrowRight, Gamepad2, MessageCircle, RotateCcw, ShieldCheck, Sprout } from 'lucide-react'
 import { href } from '../../router'
 import { SAFETY_LINE, TACTICS, lessonFor } from '../../content/longCon'
-import { believedCount, type CampaignState } from './useCampaign'
+import { outcomeLine, type CampaignState } from './useCampaign'
 
 /** BadScam's debrief: every tactic you used, flipped into the defense it teaches. */
 export function Debrief({
@@ -22,9 +22,9 @@ export function Debrief({
     const l = lessonFor(o)
     if (!l || seen.has(l[0])) return []
     seen.add(l[0])
-    return [{ lesson: l, tactic: o.lesson && o.tactic ? TACTICS[o.tactic].name : null }]
+    const tag = o.tactic ? `You used: ${TACTICS[o.tactic].name}` : o.held ? `You held back: ${TACTICS[o.held].name}` : null
+    return [{ lesson: l, tag }]
   })
-  const believed = believedCount(s)
 
   return (
     <section className="card con-debrief" aria-labelledby="con-debrief-title">
@@ -33,20 +33,17 @@ export function Debrief({
         Your playbook, turned around
       </h2>
       <p className="con-outcome">
-        {s.c.people.length === 1
-          ? `${s.c.people[0].name} ${believed ? 'believed it' : 'checked first'}. `
-          : `${believed} of ${s.c.people.length} people you met believed it. `}
-        Here is every move you used, and what it means when it arrives on your own phone.
+        {outcomeLine(s)} Here is every move you made, and what it means when it arrives on your own phone.
       </p>
 
       <ol className="con-playbook">
-        {lessons.map(({ lesson, tactic }, i) => (
+        {lessons.map(({ lesson, tag }, i) => (
           <li key={lesson[0]}>
             <span className="con-play-num" aria-hidden="true">
               {i + 1}
             </span>
             <div>
-              {tactic && <span className="con-tactic">You used: {tactic}</span>}
+              {tag && <span className="con-tactic">{tag}</span>}
               <strong>{lesson[0]}</strong>
               <p>{lesson[1]}</p>
             </div>
@@ -84,8 +81,11 @@ export function Debrief({
           <RotateCcw size={20} /> Play this campaign again
         </button>
         <button className="btn btn-secondary btn-block" onClick={onOther}>
-          <ArrowRight size={20} /> Try another campaign
+          <ArrowRight size={20} /> Pick another story
         </button>
+        <a className="btn btn-secondary btn-block" href={href('home')}>
+          <Gamepad2 size={20} /> Try another game
+        </a>
         <p className="see-progress-row">
           <a className="see-progress" href={href('profile')}>
             <Sprout size={18} strokeWidth={1.75} aria-hidden="true" /> See your progress

@@ -30,6 +30,8 @@ export type TacticId =
 
 export type Tactic = {
   name: string
+  /** The defense as a short headline, for the debrief. Defaults to the name. */
+  title?: string
   /** How a careful person spots this move, shown in the debrief. */
   spot: string
 }
@@ -37,50 +39,62 @@ export type Tactic = {
 export const TACTICS: Record<TacticId, Tactic> = {
   impersonation: {
     name: 'Pretending to be family',
+    title: 'A “new number” is a cue to check',
     spot: 'A “new number” from someone you love is the cue to call their old number or ask something only they would know.',
   },
   urgency: {
     name: 'Urgency',
+    title: 'Pressure is the warning sign',
     spot: 'Real emergencies can wait the five minutes it takes to check. Pressure to act right now is the warning sign.',
   },
   'switch-channel': {
     name: 'Switching to another app or a call',
+    title: 'Stay where you can check',
     spot: 'Being moved to another app or a callback number takes you away from where you can check. Use the contact details you already have.',
   },
   'bypass-verification': {
     name: 'Blocking the check',
+    title: 'Excuses not to talk are a tell',
     spot: 'Lots of reasons why they can’t talk or meet means they don’t want to be checked. Insist on a real call.',
   },
   'small-amount': {
     name: 'A small, believable amount',
+    title: 'Small amounts are the disguise',
     spot: 'A small amount feels too little to bother checking. That is exactly why scammers start small.',
   },
   secrecy: {
     name: 'Secrecy',
+    title: 'Secrets about money are a red flag',
     spot: '“Don’t tell anyone” cuts you off from people who could help. Anyone asking for secrecy about money is a red flag.',
   },
   'emotional-pressure': {
     name: 'Emotional pressure',
+    title: 'Strong feelings are a reason to pause',
     spot: 'Fear, worry or love can rush you. Strong feelings are a good moment to pause and talk to someone you trust.',
   },
   'gift-cards': {
     name: 'Gift cards',
+    title: 'Gift cards mean scam',
     spot: 'No real bill, bank or family emergency is paid with gift card numbers. That request alone means scam.',
   },
   authority: {
     name: 'Pretending to be the bank',
+    title: 'Any name can be typed',
     spot: 'A message can say any name. Contact the bank yourself using the number on the back of your card.',
   },
   'fake-link': {
     name: 'A fake link',
+    title: 'Open the app yourself',
     spot: 'Banks don’t send links to “unlock” your account. Open the bank’s own app or type its address yourself.',
   },
   'code-request': {
     name: 'Asking for a code',
+    title: 'A code is a key: never read it out',
     spot: 'A code sent to your phone is a key to your account. No real bank or company will ask you to read it out.',
   },
   'safe-account': {
     name: 'A “safe account”',
+    title: 'No real bank moves your money to “protect” it',
     spot: 'A real bank never asks you to move your money to protect it. Hang up and call the number on your card.',
   },
   'fake-sender': {
@@ -127,6 +141,8 @@ export type Move = {
   works: boolean
   /** One line shown right after the reply: why it worked, or what the target noticed. */
   note: string
+  /** For a move that fails: how the story ends (the target checked, so the con is over). */
+  end?: string
 }
 
 export type Step = { title: string; moves: [Move, Move, Move] }
@@ -179,6 +195,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'Who is this? Emma doesn’t text like that. I’m going to call her on her old number.',
             works: false,
             note: 'Linda noticed. Panic from an unknown number made her want to check.',
+            end: 'Linda called Emma on her old number. Emma was fine, at work. One call to a number Linda already had ended the scam, and no money was lost.',
           },
           {
             tactic: 'switch-channel',
@@ -212,6 +229,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'Emma, we don’t keep secrets like that in this family. I’ll ask Dad what he thinks.',
             works: false,
             note: 'Linda pushed back. Asking for secrecy made her want to talk to someone else.',
+            end: 'Linda told Emma’s dad, and he called Emma on her old number. Emma was fine, at work. The request for a secret is what made Linda talk to someone, and no money was lost.',
           },
         ],
       },
@@ -224,6 +242,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'Gift cards for a bill? That doesn’t sound right. I’m going to call you on your old number.',
             works: false,
             note: 'Linda caught it. Gift cards are a classic red flag, and she went to check.',
+            end: 'Linda called Emma on her old number. Emma was fine, at work. Gift cards for a bill made her stop and check, and no money was lost.',
           },
           {
             tactic: 'emotional-pressure',
@@ -243,7 +262,7 @@ export const SCENARIOS: Scenario[] = [
       },
     ],
     fooledEnd:
-      'In real life, this is where the money would be gone. The real Emma was fine all along, at work with her phone in her pocket.',
+      'In real life, this is where the $640 would be gone. The real Emma was fine all along, at work with her phone in her pocket. One call to Emma’s old number would have ended it at any step.',
     caughtEnd: 'Linda called Emma on her old number. Emma was fine, at work. The scam ended there, and no money was lost.',
   },
   {
@@ -276,6 +295,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'My bank doesn’t send links like that. I’ll check my banking app instead.',
             works: false,
             note: 'Robert noticed. He went to his own app, where everything looked normal.',
+            end: 'Robert opened his own banking app instead of your link. Everything looked normal, so he deleted the text. Nothing was taken.',
           },
           {
             tactic: 'small-amount',
@@ -302,6 +322,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'The text with that code says never to share it, even with the bank. I’m not sending it.',
             works: false,
             note: 'Robert caught it. The code message itself warned him.',
+            end: 'Robert kept the code to himself and called the number on the back of his card. The bank said there was no fraud, and nothing had been taken.',
           },
           {
             tactic: 'emotional-pressure',
@@ -321,6 +342,7 @@ export const SCENARIOS: Scenario[] = [
             reply: 'A real bank wouldn’t ask me to move my own money. I’m hanging up and calling the number on my card.',
             works: false,
             note: 'Robert caught it. The “safe account” request is the clearest sign of this scam.',
+            end: 'Robert hung up and called the number on his card. The bank said there was no fraud, and nothing had been taken. A real bank never asks you to move your money to keep it safe.',
           },
           {
             tactic: 'secrecy',
@@ -335,12 +357,13 @@ export const SCENARIOS: Scenario[] = [
             reply: 'Then I’m driving to my branch right now to sort this out in person.',
             works: false,
             note: 'Robert pushed back. With a deadline, he chose to check in person.',
+            end: 'Robert drove to his branch. The staff found no fraud on his account, and nothing had been taken. A deadline made him check, not hurry.',
           },
         ],
       },
     ],
     fooledEnd:
-      'In real life, Robert would now send his savings to an account you control. His real account was never in danger until he moved the money.',
+      'In real life, Robert would now send his savings to an account you control. His real account was never in danger until he moved the money. One call to the number on his card would have stopped it at any step.',
     caughtEnd:
       'Robert called the number on the back of his card. The bank said there was no fraud, and nothing had been taken. The scam ended there.',
   },
@@ -375,15 +398,21 @@ export type Option = {
   label: string
   /** The named tactic, logged to your profile. Optional for chat choices like "That's right". */
   tactic?: TacticId
+  /** A tactic this choice deliberately leaves out ("Let her go"). Shown in the debrief as "You held back", never logged. */
+  held?: TacticId
   /** The defense this choice teaches: [title, explanation]. Defaults to the tactic's own lesson. */
   lesson?: [string, string]
   /** Change in people who believed it (BadScam's "marks"). */
   reach?: number
   /** Change in believability, out of 100 (BadScam's "credibility"). */
   cred?: number
-  /** How each simulated person reacts. */
+  /** How each simulated person reacts. Someone who has checked stays checked: a later "believed" is ignored. */
   react?: Record<string, Reaction>
   out: Entry[]
+  /** Used instead of `out` when this person has already checked (so they don't fall for it after all). */
+  outIfChecked?: { who: string; out: Entry[] }
+  /** Ends the campaign after this choice, with this as the ending text (the only person checked). */
+  end?: string
 }
 
 export type Scene = {
@@ -393,7 +422,14 @@ export type Scene = {
   ask: Option[]
 }
 
-export type EndState = { reach: number; cred: number; believed: number; people: Person[]; status: Record<string, Reaction> }
+export type EndState = {
+  reach: number
+  cred: number
+  people: Person[]
+  status: Record<string, Reaction>
+  /** The ending text of the choice that ended the campaign early, if one did. */
+  end?: string
+}
 
 export type Campaign = {
   id: string
@@ -445,8 +481,8 @@ const PARCEL: Campaign = {
   scenes: [
     {
       lead: [
-        say('Hi there. Welcome to the floor.'),
-        say('You’re here for the text desk. Tonight you send the scam texts, you don’t receive them. Does that still sound right?'),
+        say('Hi there. Welcome to the text desk.'),
+        say('Today you send the scam texts instead of receiving them. Does that still sound right?'),
       ],
       ask: [
         {
@@ -486,8 +522,8 @@ const PARCEL: Campaign = {
           cred: 4,
           out: [
             sent('Meridian Trust', 'Fraud prevention · Do not reply', 'Meridian Trust security: unusual activity flagged on your account.'),
-            say('A fraud desk is a clever costume. People who are worried about fraud will tell a fraud desk anything.'),
-            say('Tonight’s list is people waiting on packages, though, so for the rest of the night you’ll be “Parcelo Support”. Changing costumes costs nothing.'),
+            say('A fraud desk is a clever costume. When people are worried about fraud, they want to believe the fraud desk.'),
+            say('Today’s list is people waiting on packages, though, so for the rest of the game you’ll be “Parcelo Support”. Changing costumes costs nothing.'),
           ],
         },
       ],
@@ -552,8 +588,15 @@ const PARCEL: Campaign = {
           react: { ben: 'believed' },
           out: [
             post('ben', 'checked the small print links at the bottom, they open the actual Parcelo privacy page. ok this one looks fine'),
-            say('That’s the good one. Real links on a fake page cost you nothing and buy you everything. He tested a footer instead of the address bar, and talked himself into it.'),
+            say('That’s the good one. Real links on a fake page cost you nothing and buy you a lot. He tested a footer instead of the address bar, which is an easy check to get wrong.'),
           ],
+          outIfChecked: {
+            who: 'ben',
+            out: [
+              say('That’s the good one. Real links on a fake page cost you nothing and buy you a lot: anyone who tests a footer instead of the address bar walks right in.'),
+              say('Not Ben, though. He already blocked you over the prize text, so he never sees this page.'),
+            ],
+          },
         },
       ],
     },
@@ -561,15 +604,17 @@ const PARCEL: Campaign = {
       lead: [say('The page is ready. Now, how long do they get to think about it?')],
       ask: [
         {
-          label: 'Give them 24 hours',
-          tactic: 'urgency',
+          label: 'Give them a week',
+          held: 'urgency',
           lesson: [
             'Pressure is the ingredient to look for',
             'You chose not to rush anyone, and fewer people fell for it. That’s how much urgency is worth to a scammer.',
           ],
           reach: 16,
           cred: 6,
-          out: [say('Safe, but slow. A day is long enough for someone to mention it to a friend, and friends ruin everything.')],
+          out: [
+            say('Safe, but slow. A week is long enough for someone to show the text to a friend, and a friend asking “is that real?” is exactly the kind of check that beats you.'),
+          ],
         },
         {
           label: 'Give them until midnight tonight',
@@ -583,7 +628,7 @@ const PARCEL: Campaign = {
           react: { dana: 'believed' },
           out: [
             post('dana', 'wait it says the delivery slot closes at midnight?? paying now before I lose it'),
-            say('A deadline deletes the only step that beats you: the pause where somebody checks. She isn’t careless. She’s hurrying, which is better for you.'),
+            say('A deadline deletes the only step that beats you: the pause where somebody checks. Dana isn’t careless. She’s busy, and the clock did the rest.'),
           ],
         },
       ],
@@ -620,13 +665,19 @@ const PARCEL: Campaign = {
             post('ben', 'a delivery company wants my login code? no.'),
             say('Too fast. A code out of nowhere smells wrong, even to tired people. Scammers earn the code later, once people believe they’re being helped.'),
           ],
+          outIfChecked: {
+            who: 'ben',
+            out: [
+              say('Too fast. A code out of nowhere smells wrong, even to tired people. Scammers earn the code later, once people believe they’re being helped.'),
+            ],
+          },
         },
       ],
     },
     {
       lead: [
         post('priya', 'Not tapping anything in a text. I’ll call support and check this properly.'),
-        say('Here comes a careful one. Don’t panic. Careful people still trust a printed number.'),
+        say('Here comes a careful one. Careful people still tend to trust a number printed in the message.'),
       ],
       ask: [
         {
@@ -642,12 +693,12 @@ const PARCEL: Campaign = {
           out: [
             sent(...PARCELO, 'Questions about your delivery? Call Parcelo Support at (888) 555-0142.'),
             post('priya', 'called the number on the notice, spoke to an agent, he confirmed the package and read out my case number. gave him the code he asked for.'),
-            say('Look what she did. She checked you, using you. You wrote the notice, so you chose the number, so you answered the phone.'),
+            say('She did check, just through you. You wrote the notice, so you chose the number, so you answered the phone.'),
           ],
         },
         {
           label: 'Let her go',
-          tactic: 'callback-number',
+          held: 'callback-number',
           lesson: [
             'Her own route beat the whole campaign',
             'Opening her order history herself cost nothing and ended the scam. That’s the habit this game is trying to build.',
@@ -657,7 +708,7 @@ const PARCEL: Campaign = {
           react: { priya: 'checked' },
           out: [
             post('priya', 'opened my order history myself. no package, no fee owed. forwarded the text to 7726.'),
-            say('One got away. She found her own route to support instead of the one you handed her. Remember that: she’s the expensive kind.'),
+            say('One got away. She found her own route to support instead of the one you handed her, and that one move beats this whole playbook.'),
           ],
         },
       ],
@@ -689,7 +740,7 @@ const PARCEL: Campaign = {
           out: [
             sent('Meridian Mobile', 'Account notifications', 'Your SIM change request is complete. Service will move to the new device shortly.'),
             post('dana', 'my phone has no bars?? and I never asked for a new SIM'),
-            say('Her number receives every password reset she’ll ever need. Move the line, and her email, her bank and her photos follow it. She’s also now the one person who can’t phone for help.'),
+            say('Her number receives every password reset she’ll ever need. Move the line, and her email, her bank and her photos follow it. With no service she can’t easily phone for help, which is why losing bars out of nowhere is an emergency.'),
           ],
         },
       ],
@@ -698,26 +749,55 @@ const PARCEL: Campaign = {
       react: { sam: 'checked' },
       lead: [
         post('sam', 'Got a Parcelo text about a held package and a fee. Didn’t tap it. Opened my order history myself, nothing waiting. Forwarded the text to 7726 and blocked the sender.'),
-        say('Nothing in your playbook touches him. No deadline, no number of yours, no footer to test. And his report gets your sender blocked for everyone else. How are you feeling?'),
+        say('Nothing in your playbook touches him. No deadline, no number of yours, no footer to test. And his report gets your sender blocked for everyone else.'),
+        say('That’s how most campaigns like this one end. You know the playbook now. Want to see how people beat it?'),
       ],
       ask: [
         {
-          label: 'Pretty good',
+          label: 'Show me how people beat it',
           reach: -70,
           cred: -10,
-          out: [say('You should. You now know every move from the inside, which is exactly the point of tonight.')],
+          out: [say('Every move you made has a habit that beats it. Sam used the best one: he went to Parcelo himself, by a route you didn’t give him.')],
         },
         {
-          label: 'I have moral objections',
+          label: 'That was uncomfortable',
           reach: -70,
           cred: -10,
-          out: [say('Good. Hold on to that. Here’s your playbook, turned around and pointed the other way.')],
+          out: [
+            say('It should be. That feeling is the same pressure a real text puts on you, and noticing it is the first step to beating it. Sam’s habit is the best one: he went to Parcelo himself, by a route you didn’t give him.'),
+          ],
         },
       ],
     },
   ],
-  ending: ({ reach, cred }) =>
-    `About ${reach.toLocaleString('en-US')} people believed it, and your believability ended at ${Math.round(cred)} out of 100. Then you met one man who checked for himself, and the whole campaign stopped working.`,
+  ending: ({ cred, people, status }) => {
+    const met = people.filter((p) => p.id !== 'sam')
+    const fell = met.filter((p) => status[p.id] === 'believed').map((p) => p.name)
+    const checked = met.filter((p) => status[p.id] === 'checked').map((p) => p.name)
+    const c = Math.round(cred)
+    const look =
+      c >= 50
+        ? `Your texts still looked believable at the end (${c} out of 100), which is why real campaigns like this one work.`
+        : c < LOW_CRED
+          ? `Your believability ended at ${c} out of 100: most people doubted it, and texts this obvious get blocked fast.`
+          : `Your believability ended at ${c} out of 100.`
+    const who = [
+      fell.length ? `${names(fell)} believed it.` : 'None of the people you followed believed it.',
+      checked.length ? `${names(checked)} checked first.` : '',
+    ]
+    return [
+      look,
+      ...who,
+      'Then you met Sam, who checked his order history himself, and his report got your sender blocked. Every person who beat you did the same thing: they paused and checked by a route they chose.',
+    ]
+      .filter(Boolean)
+      .join(' ')
+  },
+}
+
+/** "Dana", "Dana and Ben", "Dana, Ben and Priya". */
+function names(list: string[]) {
+  return list.length < 3 ? list.join(' and ') : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`
 }
 
 /** Narrator lines for the older three-step stories. */
@@ -726,7 +806,7 @@ type StoryVoice = { intro: string[]; ready: string; wait: string; steps: [string
 const VOICES: Record<string, StoryVoice> = {
   'new-number-hi-mom': {
     intro: [
-      'Welcome to the family desk. Tonight’s script is old, and it still works: pretend to be someone’s grown-up child, texting from a new number.',
+      'Welcome to the family desk. Today’s script is old, and it still works: pretend to be someone’s grown-up child, texting from a new number.',
       'Your list has five thousand parents on it. You’ll follow one of them: Linda. Her daughter is called Emma.',
     ],
     ready: 'Rule one: you are not trying to fool every parent. You only need the ones whose kid really might have broken a phone.',
@@ -734,15 +814,15 @@ const VOICES: Record<string, StoryVoice> = {
     steps: [
       'First text. How does “Emma” say hello?',
       'Linda is listening. Now give her a reason not to check, or a reason to help.',
-      'Time to ask for the money. This is where it works, or falls apart.',
+      'Time to ask for the money. This is where it works, or falls apart. One check from Linda and it’s over.',
     ],
   },
   'bank-fraud-alert': {
     intro: [
-      'Welcome to the bank desk. Tonight you’re “Lakeshore Bank’s fraud team”. Lakeshore is invented, and so is everyone you’ll talk to.',
+      'Welcome to the bank desk. Today you’re “Lakeshore Bank’s fraud team”. Lakeshore is invented, and so is everyone you’ll talk to.',
       'Your texts go to eight thousand phones. You’ll follow one customer: Robert, at home in Ohio.',
     ],
-    ready: 'Rule one: people who are worried about fraud will tell a fraud team almost anything. Your job is to sound like one.',
+    ready: 'Rule one: when people are worried about fraud, they want to believe the fraud team. Your job is to sound like one.',
     wait: `It’s practice. ${SAFETY_LINE} You’re learning the moves so you recognize a fake fraud alert when one is aimed at you.`,
     steps: [
       'First text. How does the “fraud team” say hello?',
@@ -776,18 +856,26 @@ function fromStory(s: Scenario, person: Person, sentTo: number, icon: Campaign['
       ...s.steps.map(
         (step, i): Scene => ({
           lead: [say(voice.steps[i])],
-          ask: step.moves.map((m) => ({
-            label: m.text,
-            tactic: m.tactic,
-            reach: m.works ? reach[i] : 2,
-            cred: m.works ? 12 : -20,
-            react: { [person.id]: m.works ? 'believed' : 'checked' },
-            out: [sent(sender, 'Text message', m.text), post(person.id, m.reply), say(m.note)],
-          })),
+          ask: step.moves.map(
+            (m): Option => ({
+              label: m.text,
+              tactic: m.tactic,
+              reach: m.works ? reach[i] : 0,
+              cred: m.works ? 12 : -20,
+              react: { [person.id]: m.works ? 'believed' : 'checked' },
+              out: [
+                sent(sender, 'Text message', m.text),
+                post(person.id, m.reply),
+                say(m.note),
+                ...(m.works ? [] : [say(`That’s the end of the con. Once ${person.name} checks, there’s nothing left for you to do.`)]),
+              ],
+              end: m.works ? undefined : (m.end ?? s.caughtEnd),
+            })
+          ),
         })
       ),
     ],
-    ending: ({ status }) => (status[person.id] === 'believed' ? s.fooledEnd : s.caughtEnd),
+    ending: ({ status, end }) => end ?? (status[person.id] === 'believed' ? s.fooledEnd : s.caughtEnd),
   }
 }
 
@@ -800,6 +888,7 @@ export const CAMPAIGNS: Campaign[] = [
 /** The lesson a choice teaches: its own, or its tactic's. */
 export function lessonFor(o: Option): [string, string] | null {
   if (o.lesson) return o.lesson
-  if (o.tactic) return [TACTICS[o.tactic].name, TACTICS[o.tactic].spot]
+  const t = o.tactic ?? o.held
+  if (t) return [TACTICS[t].title ?? TACTICS[t].name, TACTICS[t].spot]
   return null
 }

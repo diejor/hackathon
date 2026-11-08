@@ -26,6 +26,8 @@ export type CampaignState = {
   used: Option[]
   /** A choice was just made; the next scene opens after a beat. */
   waiting: boolean
+  /** Set when a choice ended the campaign early (its only person checked): the ending text. */
+  end?: string
   done: boolean
   /** Key of the first line the last choice added (scrolled into view). */
   firstNew: number
@@ -40,9 +42,16 @@ function append(s: CampaignState, entries: Entry[], scene: number): FeedItem[] {
   return [...s.feed, ...entries.map((entry) => ({ key: key++, scene, entry }))]
 }
 
+/** The outcome model: a person who has checked stays checked. A later "believed" never flips them back. */
+function react(status: Record<string, Reaction>, r: Record<string, Reaction> | undefined): Record<string, Reaction> {
+  const next = { ...status }
+  for (const [id, v] of Object.entries(r ?? {})) if (next[id] !== 'checked') next[id] = v
+  return next
+}
+
 function openScene(s: CampaignState, scene: number): CampaignState {
   const sc = s.c.scenes[scene]
-  return { ...s, scene, waiting: false, status: { ...s.status, ...sc.react }, feed: append(s, sc.lead, scene) }
+  return { ...s, scene, waiting: false, status: react(s.status, sc.react), feed: append(s, sc.lead, scene) }
 }
 
 function reduce(s: CampaignState | null, a: Action): CampaignState | null {
@@ -68,7 +77,8 @@ function reduce(s: CampaignState | null, a: Action): CampaignState | null {
     const o = a.o
     const reach = o.reach ?? 0
     const cred = o.cred ?? 0
-    const feed = append(s, o.out, s.scene)
+    const out = o.outIfChecked && s.status[o.outIfChecked.who] === 'checked' ? o.outIfChecked.out : o.out
+    const feed = append(s, out, s.scene)
     const firstNew = s.feed.length ? s.feed[s.feed.length - 1].key + 1 : 0
     if ((reach || cred) && feed.length) feed[feed.length - 1] = { ...feed[feed.length - 1], receipt: { reach, cred } }
     return {
@@ -77,14 +87,15 @@ function reduce(s: CampaignState | null, a: Action): CampaignState | null {
       firstNew,
       reach: Math.max(0, s.reach + reach),
       cred: clamp(s.cred + cred),
-      status: { ...s.status, ...o.react },
-      used: o.tactic || o.lesson ? [...s.used, o] : s.used,
+      status: react(s.status, o.react),
+      used: o.tactic || o.held || o.lesson ? [...s.used, o] : s.used,
       waiting: true,
+      end: o.end,
     }
   }
   // advance
   if (!s.waiting) return s
-  if (s.scene + 1 < s.c.scenes.length) return openScene(s, s.scene + 1)
+  if (!s.end && s.scene + 1 < s.c.scenes.length) return openScene(s, s.scene + 1)
   return { ...s, scene: s.scene + 1, waiting: false, done: true }
 }
 
@@ -94,6 +105,19 @@ export const prefersReducedMotion = () =>
 /** Simulated people who believed it, out of everyone in the campaign. */
 export const believedCount = (s: CampaignState) => s.c.people.filter((p) => s.status[p.id] === 'believed').length
 
+/**
+ * The final outcome, the same everywhere (ending, debrief, profile log): fooled when anyone you followed still
+ * believed it at the end. A one-person story ends the moment its person checks, so it is fooled only when every
+ * move worked.
+ */
+export const wasFooled = (s: CampaignState) => !s.end && believedCount(s) > 0
+
+/** The one headline for the ending and the debrief. */
+export function outcomeLine(s: CampaignState) {
+  if (s.c.people.length === 1) return `${s.c.people[0].name} ${wasFooled(s) ? 'believed it.' : 'checked first.'}`
+  return `About ${s.reach.toLocaleString('en-US')} of ${s.c.sentTo.toLocaleString('en-US')} people believed it.`
+}
+
 /** The tactic slugs used, each once, in order. */
 export const tacticsUsed = (s: CampaignState) => [...new Set(s.used.map((o) => o.tactic).filter((t) => !!t))] as string[]
 
@@ -102,7 +126,7 @@ export function useCampaign() {
 
   useEffect(() => {
     if (!state?.waiting) return
-    const last = state.scene + 1 >= state.c.scenes.length
+    const last = !!state.end || state.scene + 1 >= state.c.scenes.length
     const t = window.setTimeout(
       () => {
         if (last) {
@@ -110,7 +134,7 @@ export function useCampaign() {
           void logActivity('long-con', 'round_done', {
             scenario: state.c.id,
             tactics: tacticsUsed(state),
-            fooled: believedCount(state) > 0,
+            fooled: wasFooled(state),
           })
         }
         dispatch({ type: 'advance' })

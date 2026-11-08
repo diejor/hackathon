@@ -8,11 +8,12 @@ function Receipt({ reach, cred }: { reach: number; cred: number }) {
   const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`)
   return (
     <p className="con-receipt">
-      {reach !== 0 && (
-        <span className={reach < 0 ? 'is-down' : ''}>
-          {sign(reach)} {Math.abs(reach) === 1 ? 'person' : 'people'} believed it
+      {reach > 0 && (
+        <span>
+          +{reach} {reach === 1 ? 'person' : 'people'} believed it
         </span>
       )}
+      {reach < 0 && <span className="is-down">{-reach} fewer people believed it</span>}
       {cred !== 0 && <span className={cred < 0 ? 'is-down' : ''}>Believability {sign(cred)}</span>}
     </p>
   )
