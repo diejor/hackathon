@@ -105,13 +105,13 @@
 .fraudle-lesson .feedback-title {
   scroll-margin: 16px;
 }
-.fraudle-lesson .feedback-title:focus {
+/* Focus is moved here by script so the lesson is read out; it is not a control, so no ring */
+.fraudle-lesson .feedback-title:focus,
+.fraudle-lesson .feedback-title:focus-visible {
   outline: none;
 }
-.fraudle-lesson .feedback-title:focus-visible {
-  outline: 3px solid var(--green-700);
-  outline-offset: 4px;
-  border-radius: 4px;
+.fraudle-lesson > p.see-progress-row {
+  margin: 8px 0 -6px;
 }
 .fraudle-lesson > p.fraudle-all-done {
   margin-top: -6px;
@@ -179,11 +179,14 @@
     height: 48px;
   }
   .fraudle-dock .two-btns {
+    /* "Check word" gets the wider half so it stays on one line in larger text */
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     gap: 8px;
   }
   .fraudle-dock .two-btns .btn {
     min-height: 52px;
-    padding: 0 12px;
+    padding: 0 10px;
+    white-space: nowrap;
   }
   .fraudle-dock.is-over {
     padding: 0;
