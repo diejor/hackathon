@@ -1,0 +1,191 @@
+/* ================= FRAUDLE (layout polish) =================
+   Overrides the base Fraudle rules in index.css. Everything is scoped to .fraudle-page /
+   .fraudle-card so it wins over index.css regardless of load order.
+
+   Goal: while typing, the clue, the row being typed, the status line, the letters and
+   "Check word" are all on screen together, even on a 360x740 phone. To get there:
+   - the letters, status line and buttons live in a dock that sticks to the bottom of the screen;
+   - tries not used yet are thin placeholders, so the board only grows as you play;
+   - the page head and clue are tighter on phones. */
+
+.fraudle-card {
+  --pad-x: 28px;
+  --pad-y: 24px;
+  padding: var(--pad-y) var(--pad-x);
+}
+
+/* ---------- Clue (with the tries tracker in its header row) ---------- */
+.fraudle-card .clue-strip {
+  margin-top: 0;
+}
+.fraudle-card .clue-body {
+  flex: 1;
+  min-width: 0;
+}
+.fraudle-card .clue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.fraudle-card .guess-tracker {
+  gap: 6px;
+  margin-left: 0;
+}
+.fraudle-card .pip {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- Board ---------- */
+.fraudle-card .board {
+  margin: 20px auto 16px;
+}
+.fraudle-card .board-row {
+  /* Leave room for the sticky dock when a row is scrolled into view */
+  scroll-margin-top: 12px;
+  scroll-margin-bottom: calc(var(--dock-h, 320px) + 12px);
+}
+.fraudle-card .tile {
+  aspect-ratio: auto;
+  /* A little taller than wide, never under 44px tall */
+  height: clamp(44px, calc((100cqw / var(--n)) * 1.08), 62px);
+  font-size: min(1.6rem, calc((100cqw / var(--n)) * 0.56));
+  font-weight: 600;
+}
+/* Tries not used yet: thin placeholders */
+.fraudle-card .board-row.future .tile {
+  height: 10px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--neutral-200);
+}
+
+/* ---------- Dock: status line + letters + buttons ---------- */
+.fraudle-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 0 calc(-1 * var(--pad-x)) calc(-1 * var(--pad-y));
+  padding: 10px var(--pad-x) calc(var(--pad-y) + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 -10px 16px -14px rgba(36, 57, 47, 0.35);
+}
+.fraudle-dock.is-over {
+  position: static;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.fraudle-dock .status-line {
+  color: var(--text-body);
+  font-weight: 500;
+  line-height: 1.4;
+  min-height: 1.4em;
+}
+.fraudle-card .keyboard {
+  margin: 10px 0 12px;
+  gap: 6px;
+}
+.fraudle-card .key-row {
+  gap: 6px;
+}
+.fraudle-card .key {
+  font-weight: 600;
+}
+
+/* ---------- Lesson after a word ---------- */
+.fraudle-dock .fraudle-lesson {
+  margin-top: 12px;
+}
+.fraudle-lesson .feedback-title {
+  scroll-margin: 16px;
+}
+.fraudle-lesson .feedback-title:focus {
+  outline: none;
+}
+.fraudle-lesson .feedback-title:focus-visible {
+  outline: 3px solid var(--green-700);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.fraudle-lesson > p.fraudle-all-done {
+  margin-top: -6px;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 720px) {
+  .fraudle-page {
+    margin-top: -12px;
+  }
+  .fraudle-page .page-head {
+    margin-bottom: 14px;
+  }
+  .fraudle-page .page-title {
+    font-size: 1.75rem;
+    margin-top: 2px;
+  }
+  .fraudle-page .lead {
+    font-size: 1rem;
+    line-height: 1.45;
+    margin-top: 4px;
+  }
+
+  .fraudle-card {
+    --pad-x: 10px;
+    --pad-y: 12px;
+  }
+  .fraudle-card .clue-icon {
+    display: none;
+  }
+  .fraudle-card .clue-strip {
+    padding: 8px 12px 10px;
+  }
+  .fraudle-card .clue-text {
+    font-size: 1.05rem;
+    line-height: 1.35;
+  }
+  .fraudle-card .clue-meta {
+    font-size: 0.85rem;
+  }
+
+  .fraudle-card .board {
+    --gap: clamp(3px, calc(32px / var(--n)), 6px);
+    margin: 12px auto 10px;
+  }
+
+  .fraudle-dock {
+    padding: 8px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .fraudle-dock .status-line {
+    padding: 0 6px;
+    text-align: center;
+  }
+  .fraudle-card .keyboard {
+    margin: 8px 0 10px;
+    gap: 6px;
+  }
+  .fraudle-card .key-row {
+    gap: 5px;
+  }
+  .fraudle-card .key {
+    max-width: 52px;
+    height: 48px;
+  }
+  .fraudle-dock .two-btns {
+    gap: 8px;
+  }
+  .fraudle-dock .two-btns .btn {
+    min-height: 52px;
+    padding: 0 12px;
+  }
+  .fraudle-dock.is-over {
+    padding: 0;
+  }
+}
