@@ -2573,4 +2573,5 @@ a.points-badge:hover {
 .ask-name-row .text-input {
   flex: 1 1 200px;
   width: auto;
+  min-width: 0; /* at the largest text size its natural width pushed past the card (Phone Call page) */
 }

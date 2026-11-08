@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 /** Total length of the award animation (ms); also the fallback if animation events never fire. */
 const AWARD_MS = 1900
@@ -49,12 +49,21 @@ export function EndOverlay({ children, label }: { children: ReactNode; label: st
     return () => window.clearTimeout(t)
   }, [])
 
+  // When the result appears, make sure its top is on screen (on a laptop a long game can leave the page
+  // scrolled so far down that the sticky panel's heading sat above the window).
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (phase === 'result') panelRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [phase])
+
   return (
     <div className="end-overlay" role="dialog" aria-modal="true" aria-label={label}>
       {phase === 'points' ? (
         <PointAward onDone={() => setPhase('result')} />
       ) : (
-        <div className="end-panel">{children}</div>
+        <div className="end-panel" ref={panelRef}>
+          {children}
+        </div>
       )}
     </div>
   )
