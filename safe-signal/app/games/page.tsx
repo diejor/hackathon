@@ -1,7 +1,8 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import { RedFlag, TACTICS, Tactic } from '../../src/contracts';
+import { GameEvent, RedFlag, TACTICS, Tactic } from '../../src/contracts';
+import { reportToBot } from '../../src/lib/helpbot';
 const flags:RedFlag[]=['sender_identity','url_domain','plausibility_bait','urgency_clause','authority_claim','payment_rail','reply_bait','personalization_overreach'];
 const present:RedFlag[]=['sender_identity','url_domain','plausibility_bait','urgency_clause'];
 const questions=[{id:'channel',label:'Can I verify this through our saved team directory?',answer:'The saved directory lists a different address.',score:1},{id:'detail',label:'Does the sender know a public project name?',answer:'Yes, the public project is Maple.',score:0.2},{id:'payment',label:'Does the request ask me to bypass normal approval?',answer:'Yes. The sender asks for immediate payment without approval.',score:0.9}];
@@ -14,7 +15,7 @@ export default function Games(){
  if(step===1)event={game:'scamdle',puzzleId:'parcelo-1',attempts:1,flagsFound:present.filter(f=>selected.includes(f)),flagsMissed:present.filter(f=>!selected.includes(f)),flagsFalsePositive:selected.filter(f=>!present.includes(f as RedFlag)),elapsedMs};
  if(step===2)event={game:'guesswho',roundId:'directory-1',questionsAsked:asked.map(i=>questions[i].id),questionsDiagnosticity:asked.map(i=>questions[i].score),guessedContactId:guess,correctContactId:'impostor',deferredToBot:defer,followedBotConsensus:bot&&(defer||guess==='colleague'),elapsedMs};
  if(step===3)event={game:'badscam',targetPersonaId:'synthetic-student',archetypeId:'toll-fee',tacticsChosen:selected as Tactic[],paymentRail:'card_fee',reachScore:selected.reduce((sum,t)=>sum+(['urgency_deadline','small_plausible_amount'].includes(t)?50:10),0),elapsedMs};
- const response=await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});if(!response.ok)throw new Error('Could not save game.');}
+ const response=await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});if(!response.ok)throw new Error('Could not save game.');void reportToBot(event as GameEvent);}
  setStep(step+1);setSelected([]);setStarted(Date.now());
  }catch(e){setError(e instanceof Error?e.message:'Please retry.');}finally{setBusy(false);}}
  return <main className="mx-auto max-w-2xl space-y-6 px-6 py-16"><Link href="/">Safe Signal</Link><h1 className="text-3xl font-bold">{['Train your scam radar','Scamdle','Guess Who','Build a Bad Scam','Training complete'][step]}</h1>

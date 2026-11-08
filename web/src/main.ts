@@ -1,4 +1,5 @@
 import "./style.css";
+import "./bot/bot.css";
 import * as L from "./lobby";
 import { h, render } from "./ui";
 import type { GameHandle } from "./games/types";

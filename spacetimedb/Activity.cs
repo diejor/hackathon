@@ -120,6 +120,13 @@ public static partial class Module
         foreach (var e in wrong.Take(ActivityRecentWrong))
             sb.Append($"\n- {e.Game}, {Ago(now, e.CreatedAt)}: {Clean(e.Details.Replace(",\"demo\":true", ""), 160)}");
 
+        // Latest finished round per game (e.g. Bad Scam's chosen tactics, Guess Who's checks): not right/wrong answers.
+        var rounds = events.Where(e => e.Kind == "round_done").GroupBy(e => e.Game)
+            .Select(g => g.MaxBy(e => e.CreatedAt.MicrosecondsSinceUnixEpoch)).Take(4).ToList();
+        if (rounds.Count > 0) sb.Append("\nLatest rounds:");
+        foreach (var e in rounds)
+            sb.Append($"\n- {e.Game}, {Ago(now, e.CreatedAt)}: {Clean(e.Details.Replace(",\"demo\":true", ""), 160)}");
+
         var s = sb.ToString();
         return s.Length <= MaxActivitySummaryChars ? s : s[..MaxActivitySummaryChars] + "…";
     }
