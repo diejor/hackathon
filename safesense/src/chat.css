@@ -473,3 +473,16 @@
     max-height: min(56svh, 600px);
   }
 }
+
+/* The chat is the point of this page: a smaller heading than the other pages, so the conversation starts
+   higher. Sizes are in rem, so they still follow the text-size control. */
+.chat-page .page-head {
+  margin-bottom: 20px;
+}
+.chat-page .page-title {
+  font-size: 2rem;
+}
+.chat-page .page-head .lead {
+  font-size: 1rem;
+  margin-top: 4px;
+}
