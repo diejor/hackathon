@@ -262,6 +262,20 @@ Never ship his GPL or copied Wordle code, his OpenAI server, his Photon sender o
 - **We don't merge `web-app`.** His work is ported into `safesense`, credited.
 - **His role:** his iPhone's iMessage number for Photon, testing "Text SafeSense", and coding only from a branch off `safesense`. The designer's zips will need more careful merging in these three pages.
 
+### B13 — Merge design01, the designer's near-final version (~02:50 CST)
+
+`design01` is committed as-is to `design-vendor` (`44dd158`) and is being merged into `safesense`. The decisions (Diego):
+
+| Area | Decision |
+| --- | --- |
+| Overall | The designer's UI wins visually; our working features run underneath (bot chat, activity logging, Krishna's logic and content, profile, About, Phone Call, footer, Text SafeSense) |
+| Role-play game | The designer's **"Role Reversal"** name, route (`#/role-reversal`, alias `#/long-con`), layout and trust meter, running **our engine and 3 stories**. The activity slug stays `long-con` |
+| Points | The designer's UX: **+1 per finished game**, a burst animation, an end overlay, a badge. The total comes from **rounds stored in SpacetimeDB**, not localStorage. The locked Phone Call unlocks at **10** points |
+| Home | The designer's **dashboard** (Hello name, points, last played, "How can I improve?" → prefilled chat), plus our locked Phone Call card, footer and About. One name, set through the designer's name dialog |
+| Language | US English throughout |
+
+After the merge, **Krishna takes over the branch** (`docs/HANDOFF.md`).
+
 ## 7. Schedule and gates (CST)
 
 | Time | What | Gate |
