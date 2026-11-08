@@ -332,3 +332,11 @@
   font-size: 0.9rem;
   color: var(--text-muted);
 }
+
+/* One column (phones): the lesson card already shows the count after a solved word, so the side
+   card would repeat it on the same screen. */
+@media (max-width: 960px) {
+  .fraudle-today {
+    display: none;
+  }
+}
