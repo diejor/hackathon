@@ -110,7 +110,7 @@ export function Composer({
 
   return (
     <div className="composer">
-      <label htmlFor="question">Type or speak your question</label>
+      <label htmlFor="question">Your question</label>
       <textarea
         id="question"
         ref={textareaRef}
