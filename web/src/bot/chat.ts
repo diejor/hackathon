@@ -14,6 +14,9 @@ const EXAMPLES = [
   { label: "How do I set up 2FA?", text: "How do I set up two-factor authentication on my accounts?" },
 ];
 
+const HOW_AM_I_DOING = { label: "How am I doing?", text: "How am I doing in the games? What should I practice?" };
+const DEMO = new URLSearchParams(location.search).get("demo") === "1"; // ?demo=1 shows "Load demo game history"
+
 export interface ChatView { el: HTMLElement; destroy(): void }
 
 export function mountChat(opts: { onBack: () => void }): ChatView {
@@ -21,6 +24,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   let previewUrl: string | null = null;
   let confirming = false;
   let lastCount = -1;
+  let seeding = false;
 
   // ---------- Top bar + forget-me confirm ----------
   const forgetBtn = h("button", { class: "bot-top-btn bot-forget", onclick: () => { confirming = true; update(); } }, "Forget me");
@@ -31,7 +35,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
 
   const confirmFacts = h("ul", { class: "bot-confirm-facts" });
   const confirmBox = h("div", { class: "bot-confirm", role: "alertdialog", "aria-label": "Forget me" },
-    h("p", { class: "bot-confirm-text" }, "Delete this whole conversation and everything the bot remembers about you? This can't be undone."),
+    h("p", { class: "bot-confirm-text" }, "Delete this whole conversation, your game history and everything the bot remembers about you? This can't be undone."),
     confirmFacts,
     h("div", { class: "bot-confirm-actions" },
       h("button", { class: "btn btn-secondary btn-small", onclick: () => { confirming = false; update(); } }, "Cancel"),
@@ -138,11 +142,17 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   }
 
   function emptyState() {
+    const played = Bot.activity().length;
+    const examples = played ? [HOW_AM_I_DOING, ...EXAMPLES] : EXAMPLES;
     return h("div", { class: "bot-empty" },
       h("div", { class: "bot-empty-title" }, "Not sure about a text, email or link?"),
       h("p", { class: "bot-empty-sub" }, "Paste it here or attach a screenshot. I'll tell you if it looks like a scam and what to do."),
       h("div", { class: "bot-examples" },
-        EXAMPLES.map((ex) => h("button", { class: "bot-example", disabled: !Bot.ready(), onclick: () => void submit(ex.text) }, ex.label))));
+        examples.map((ex) => h("button", { class: "bot-example", disabled: !Bot.ready(), onclick: () => void submit(ex.text) }, ex.label))),
+      DEMO ? h("button", {
+        class: "bot-demo-seed", disabled: !Bot.ready() || seeding,
+        onclick: async () => { seeding = true; update(); await Bot.seedDemo(); seeding = false; update(); },
+      }, seeding ? "Loading…" : played ? `Reload demo game history (${played} events)` : "Load demo game history") : null);
   }
 
   // Scroll to the newest message now and again once layout settles (the view may not be attached

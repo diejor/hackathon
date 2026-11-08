@@ -33,6 +33,31 @@ scripts/deploy-pages.sh          # build + publish to GitHub Pages
 - Embedding: the game only talks to its parent page when the iframe URL names it exactly
   (`?parentOrigin=https://host.example`); no `*` origins in either direction.
 
+## Help Bot (scam checker + coach)
+
+Open the chat from the home-screen card or with `#bot` in the URL (add `demo=1` for a "Load demo game history" button).
+Code: `spacetimedb/Bot.cs`, `spacetimedb/Activity.cs`, `web/src/bot/`.
+
+**Games: log what the player did** so the bot can coach them. Call the reducer `log_activity(game, kind, details)`:
+- `game`, `kind`: slugs (`a-z 0-9 - _`, ≤ 32 chars), e.g. `friend-or-fraud`. Recommended kinds: `answer_correct`, `answer_wrong`, `round_done`.
+- `details`: short JSON text (≤ 500 chars), e.g. `{"item":"usps-sms","tactic":"urgency","chose":"friend"}`. Include `tactic` on answers: the bot counts missed tactics.
+- Owner and time come from the server (`ctx.Sender`, `ctx.Timestamp`). The last 200 events per player are kept.
+
+```ts
+conn.reducers.logActivity({ game: "friend-or-fraud", kind: "answer_wrong",
+  details: JSON.stringify({ item: "usps-sms", tactic: "fake-delivery", chose: "friend" }) });
+```
+
+`web/src/bot/bot.ts` API:
+- `onChange(fn)`: re-render on any change; `ready()`: connected and subscribed.
+- `messages()`, `facts()`, `activity()`: the player's chat, remembered facts, game events (oldest first).
+- `send(text, image?)`: ask the bot (`bot_send`); `state.sending` / `state.error` show progress.
+- `forgetMe()`: delete everything; `seedDemo()`: replace the player's demo game history (~15 events).
+
+**Privacy:** chat messages, memory facts and game activity live in private tables; each player sees only their own
+rows through per-user views (`my_messages`, `my_facts`, `my_activity`), and screenshots are never stored.
+"Forget me" deletes the player's messages, facts and game activity.
+
 ## Setup notes
 
 - **Layout:** `spacetimedb/` = SpacetimeDB C# server module (.NET 8 + `wasi-experimental` workload). `client/` = Unity 6000.3.28f1 project (WebGL target).

@@ -234,6 +234,11 @@ body.bot-open .header, body.bot-open .game-host { display: none; }
 }
 .bot-example:active:not(:disabled) { background: var(--magenta-soft); border-color: var(--magenta); }
 .bot-example:disabled { opacity: 0.4; }
+.bot-demo-seed {
+  margin-top: 16px; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
+  background: transparent; border: 1px dashed var(--border); color: inherit; opacity: 0.75;
+}
+.bot-demo-seed:disabled { opacity: 0.35; }
 
 .bot-composer { flex: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--bg); }
 .bot-status { color: var(--danger); font-size: 14px; font-weight: 700; margin: 0 4px 6px; }

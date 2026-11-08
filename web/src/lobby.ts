@@ -137,7 +137,7 @@ export function connect() {
         })
         .subscribe([
           "SELECT * FROM my_room", "SELECT * FROM my_room_members",
-          "SELECT * FROM my_messages", "SELECT * FROM my_facts", // Help Bot (src/bot/bot.ts)
+          "SELECT * FROM my_messages", "SELECT * FROM my_facts", "SELECT * FROM my_activity", // Help Bot (src/bot/bot.ts)
         ]);
     })
     .onAutomaticReconnect((_c, identity, token) => {

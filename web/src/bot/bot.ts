@@ -1,6 +1,7 @@
 // Help Bot store (plain TS, no framework). Uses the lobby's SpacetimeDB connection, so the bot talks
-// to the same identity as the player. Data comes from the per-user views my_messages / my_facts
-// (subscribed in lobby.ts); sending goes through the bot_send procedure.
+// to the same identity as the player. Data comes from the per-user views my_messages / my_facts /
+// my_activity (subscribed in lobby.ts); sending goes through the bot_send procedure. Games log
+// results with conn.reducers.logActivity({ game, kind, details }) (see README "Help Bot").
 //
 //   import * as Bot from "./bot/bot";
 //   Bot.onChange(render); Bot.messages(); await Bot.send("Is this a scam? ...", screenshotBlob);
@@ -9,9 +10,9 @@
 // doesn't store them either (only the model's transcription, `imageNote`).
 import * as L from "../lobby";
 import type { DbConnection } from "../module_bindings";
-import type { ChatMessage, MemoryFact } from "../module_bindings/types";
+import type { ActivityEvent, ChatMessage, MemoryFact } from "../module_bindings/types";
 
-export type { ChatMessage, MemoryFact };
+export type { ActivityEvent, ChatMessage, MemoryFact };
 
 export const MAX_IMAGE_CHARS = 2_800_000; // must match the server (Bot.cs)
 const MAX_SIDE = 1024;
@@ -49,6 +50,8 @@ L.onConnection((c: DbConnection) => {
   c.db.myMessages.onDelete(bump);
   c.db.myFacts.onInsert(bump);
   c.db.myFacts.onDelete(bump);
+  c.db.myActivity.onInsert(bump);
+  c.db.myActivity.onDelete(bump);
 });
 
 /** Connected and the subscription is applied. */
@@ -71,6 +74,27 @@ export function facts(): MemoryFact[] {
   const c = L.getConn();
   if (!c || !ready()) return [];
   return [...c.db.myFacts.iter()].sort(byTime);
+}
+
+/** The player's Security Arcade game events (what the bot coaches from), oldest first. */
+export function activity(): ActivityEvent[] {
+  const c = L.getConn();
+  if (!c || !ready()) return [];
+  return [...c.db.myActivity.iter()].sort(byTime);
+}
+
+/** Demo only: replace the player's demo game history with ~15 seeded events (seed_demo_activity). */
+export async function seedDemo(): Promise<boolean> {
+  const c = L.getConn();
+  if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");
+  try {
+    await c.reducers.seedDemoActivity({});
+    state.error = null;
+    bump();
+    return true;
+  } catch (e) {
+    return fail(e);
+  }
 }
 
 /** Whether a user message came with a screenshot (the server's HadImage flag). */
@@ -107,7 +131,7 @@ export async function send(text: string, image?: Blob): Promise<boolean> {
   }
 }
 
-/** Delete all of the player's messages and remembered facts (server-side). */
+/** Delete all of the player's messages, remembered facts and game activity (server-side). */
 export async function forgetMe(): Promise<boolean> {
   const c = L.getConn();
   if (!c || !ready()) return fail("Not connected yet. Try again in a moment.");

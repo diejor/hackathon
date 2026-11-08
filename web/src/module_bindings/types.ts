@@ -10,6 +10,16 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const ActivityEvent = __t.object("ActivityEvent", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  game: __t.string(),
+  kind: __t.string(),
+  details: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type ActivityEvent = __Infer<typeof ActivityEvent>;
+
 export const AiResult = __t.object("AiResult", {
   ok: __t.bool(),
   text: __t.string(),

@@ -39,7 +39,9 @@ import CreateRoomReducer from "./create_room_reducer";
 import ForgetMeReducer from "./forget_me_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
+import LogActivityReducer from "./log_activity_reducer";
 import ReturnToLobbyReducer from "./return_to_lobby_reducer";
+import SeedDemoActivityReducer from "./seed_demo_activity_reducer";
 import SetNameReducer from "./set_name_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
@@ -50,6 +52,7 @@ import * as AiPingProcedure from "./ai_ping_procedure";
 import * as BotSendProcedure from "./bot_send_procedure";
 
 // Import all table schema definitions
+import MyActivityRow from "./my_activity_table";
 import MyFactsRow from "./my_facts_table";
 import MyMessagesRow from "./my_messages_table";
 import MyRoomRow from "./my_room_table";
@@ -59,6 +62,13 @@ import MyRoomMembersRow from "./my_room_members_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  myActivity: __table({
+    name: 'my_activity',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyActivityRow),
   myFacts: __table({
     name: 'my_facts',
     indexes: [
@@ -96,7 +106,9 @@ const reducersSchema = __reducers(
   __reducerSchema("forget_me", ForgetMeReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
+  __reducerSchema("log_activity", LogActivityReducer),
   __reducerSchema("return_to_lobby", ReturnToLobbyReducer),
+  __reducerSchema("seed_demo_activity", SeedDemoActivityReducer),
   __reducerSchema("set_name", SetNameReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
@@ -111,6 +123,8 @@ const proceduresSchema = __procedures(
 
 type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "tables"> & {
   tables: typeof tablesSchema.schemaType.tables & {
+    /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
+    readonly "MyActivity": Omit<typeof tablesSchema.schemaType.tables["myActivity"], "accessorName"> & { readonly accessorName: "MyActivity" };
     /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
     readonly "MyFacts": Omit<typeof tablesSchema.schemaType.tables["myFacts"], "accessorName"> & { readonly accessorName: "MyFacts" };
     /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
@@ -137,6 +151,7 @@ const REMOTE_MODULE = {
 >;
 
 const tableAccessorAliases = {
+  "MyActivity": "myActivity",
   "MyFacts": "myFacts",
   "MyMessages": "myMessages",
   "MyRoom": "myRoom",
@@ -161,6 +176,8 @@ function __withTableAccessorAliases<T extends object>(target: T, freeze = false)
 
 type __DbViewBase = __DbConnectionImpl<typeof REMOTE_MODULE>["db"];
 export type DbView = __DbViewBase & {
+  /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
+  readonly "MyActivity": __DbViewBase["myActivity"];
   /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
   readonly "MyFacts": __DbViewBase["myFacts"];
   /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
@@ -173,6 +190,8 @@ export type DbView = __DbViewBase & {
 
 type __TablesBase = __QueryBuilder<typeof tablesSchema.schemaType>;
 export type Tables = __TablesBase & {
+  /** @deprecated Use `myActivity` instead. This alias will be removed in the next major version. */
+  readonly "MyActivity": __TablesBase["myActivity"];
   /** @deprecated Use `myFacts` instead. This alias will be removed in the next major version. */
   readonly "MyFacts": __TablesBase["myFacts"];
   /** @deprecated Use `myMessages` instead. This alias will be removed in the next major version. */
