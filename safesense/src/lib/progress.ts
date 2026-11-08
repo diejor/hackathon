@@ -84,6 +84,21 @@ export function pointsFor(e: ProgressEvent): number {
   return 0
 }
 
+// A practice-call debrief from challenge.ts (server-inserted; never earns points, never resets them).
+const isChallengeDebrief = (e: ProgressEvent) => e.game === 'challenge-line' &&
+  (e.kind === 'link_opened' || e.kind === 'voice_response')
+
+function latestReflection(events: ProgressEvent[]) {
+  const event = events.reduce<ProgressEvent | undefined>((last, e) =>
+    isChallengeDebrief(e) && (!last || e.at >= last.at) ? e : last, undefined)
+  if (!event) return null
+  const saved = events.find(e => e.game === 'reflection' && e.kind === 'challenge_review' &&
+    parseDetails(e.details).attemptAt === event.at)
+  return { at: event.at, voice: event.kind === 'voice_response', lesson: str(parseDetails(event.details).lesson),
+    answer: saved ? str(parseDetails(saved.details).answer) : '' }
+}
+
+// Every point counts, always: practice drills never take points away.
 export const totalPoints = (events: ProgressEvent[]) => events.reduce((sum, e) => sum + pointsFor(e), 0)
 
 /** Local calendar day (YYYY-MM-DD) for a timestamp; `offsetMin` is minutes ahead of UTC (tests pass 0). */
@@ -200,12 +215,14 @@ export type Progress = {
   caught: Map<string, Caught>
   words: string[]
   practice: PracticeItem[]
+  reflection: ReturnType<typeof latestReflection>
   genuineMissed: number
 }
 
 /** Everything the profile shows, from the activity rows (oldest first). */
 export function deriveProgress(events: ProgressEvent[]): Progress {
   return {
+    reflection: latestReflection(events),
     events: events.length,
     points: totalPoints(events),
     counts: counts(events),

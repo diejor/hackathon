@@ -81,7 +81,7 @@ function NextUnlock({ points }: { points: number }) {
     <p className="profile-next-unlock">
       {toGo > 0 ? 'Next unlock: ' : 'Unlocked: '}
       <a href={href('phone-call')}>{UPCOMING.title}</a>
-      {toGo > 0 ? ` — ${toGo} ${toGo === 1 ? 'point' : 'points'} to go` : ' — coming soon'}
+      {toGo > 0 ? ` — ${toGo} ${toGo === 1 ? 'point' : 'points'} to go` : ' — unlocked'}
     </p>
   )
 }

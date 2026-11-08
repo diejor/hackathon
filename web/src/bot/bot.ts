@@ -177,6 +177,21 @@ export async function requestPracticeText(): Promise<string | null> {
   }
 }
 
+/**
+ * Ask SafeSense to place one practice scam call to `phone` (spacetimedb-ts/src/challenge.ts startChallengeDemo:
+ * private beta, invited numbers only, daily caps). Resolves null when it's queued, else the server's reason.
+ */
+export async function startPracticeCall(phone: string): Promise<string | null> {
+  const c = L.getConn();
+  if (!c || !ready()) return "Not connected yet. Try again in a moment.";
+  try {
+    await c.reducers.startChallengeDemo({ phone });
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+}
+
 /** Whether a user message came with a screenshot (the server's HadImage flag). */
 export const hasScreenshot = (m: ChatMessage) => m.role.tag === "User" && m.hadImage;
 

@@ -1,3 +1,4 @@
+import { ChallengeReflection } from '../components/ChallengeReflection'
 import { useState, type FormEvent, type MouseEvent } from 'react'
 import { ArrowRight, Lightbulb, MessagesSquare, Pencil, ScanSearch, SpellCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -182,6 +183,7 @@ export default function Home() {
 
   return (
     <>
+      <ChallengeReflection />
       <section className="home-hero dashboard">
         <div>
           <div className="dash-greeting">

@@ -7,6 +7,7 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import ChooseGameReducer from "../choose_game_reducer";
+import ConfirmChallengeEngagedReducer from "../confirm_challenge_engaged_reducer";
 import CreateLinkCodeReducer from "../create_link_code_reducer";
 import CreateRoomReducer from "../create_room_reducer";
 import ForgetMeReducer from "../forget_me_reducer";
@@ -18,10 +19,12 @@ import ReturnToLobbyReducer from "../return_to_lobby_reducer";
 import SeedDemoActivityReducer from "../seed_demo_activity_reducer";
 import SetNameReducer from "../set_name_reducer";
 import SetReadyReducer from "../set_ready_reducer";
+import StartChallengeDemoReducer from "../start_challenge_demo_reducer";
 import StartGameReducer from "../start_game_reducer";
 import UnlinkChannelsReducer from "../unlink_channels_reducer";
 
 export type ChooseGameParams = __Infer<typeof ChooseGameReducer>;
+export type ConfirmChallengeEngagedParams = __Infer<typeof ConfirmChallengeEngagedReducer>;
 export type CreateLinkCodeParams = __Infer<typeof CreateLinkCodeReducer>;
 export type CreateRoomParams = __Infer<typeof CreateRoomReducer>;
 export type ForgetMeParams = __Infer<typeof ForgetMeReducer>;
@@ -33,6 +36,7 @@ export type ReturnToLobbyParams = __Infer<typeof ReturnToLobbyReducer>;
 export type SeedDemoActivityParams = __Infer<typeof SeedDemoActivityReducer>;
 export type SetNameParams = __Infer<typeof SetNameReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
+export type StartChallengeDemoParams = __Infer<typeof StartChallengeDemoReducer>;
 export type StartGameParams = __Infer<typeof StartGameReducer>;
 export type UnlinkChannelsParams = __Infer<typeof UnlinkChannelsReducer>;
 

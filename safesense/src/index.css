@@ -1005,6 +1005,27 @@ a.last-played:hover svg {
 .pc-unlock .unlock-bar {
   background: var(--surface);
 }
+.pc-call form {
+  margin-top: 18px;
+}
+.pc-call .ask-name-row .text-input {
+  margin-top: 0;
+}
+.pc-called {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--green-900);
+  font-weight: 600;
+}
+.pc-called svg {
+  flex: none;
+  margin-top: 2px;
+}
+.panel p.pc-note {
+  margin-top: 12px;
+  color: var(--green-900);
+}
 .profile-next-unlock {
   margin-top: 12px;
 }

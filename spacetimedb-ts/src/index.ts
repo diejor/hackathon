@@ -15,6 +15,8 @@
 // function's name (snake_cased for clients).
 import spacetimedb from './schema';
 import { Router } from 'spacetimedb/server';
+import { challengeLanding, challengeResponse, challengeClaim } from './challenge';
+export { challengeRunJob, demoCallRunJob, challengeLanding, challengeResponse, challengeClaim, startChallengeDemo, confirmChallengeEngaged } from './challenge';
 import { photonWebhook } from './photon';
 import { discordInteractions } from './discord';
 import { voiceContext, voiceResult } from './voice';
@@ -51,4 +53,7 @@ export const routes = spacetimedb.httpRouter(
     .post('/discord', discordInteractions)
     .post('/voice/context', voiceContext)
     .post('/voice/result', voiceResult)
+    .post('/challenge-response', challengeResponse)
+    .get('/challenge', challengeLanding)
+    .post('/challenge', challengeClaim)
 );

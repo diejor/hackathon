@@ -303,6 +303,32 @@ const voiceLink = table(
   }
 );
 
+// ---------- Phone practice calls (challenge.ts, Krishna) ----------
+// New tables only (additive). challenge_enrollment / challenge_job are the SMS-enrollment path, which stays
+// off unless CHALLENGE_ENABLED == "true" (docs/VOICE.md). demo_call_job holds a number only until its job runs.
+const challengeEnrollment = table({ name: 'challenge_enrollment' }, {
+  owner: t.identity().primaryKey(), phone: t.string().unique(), senderKey: t.string(), spaceId: t.string(), agentUserId: t.string(), mode: t.string(), version: t.string(),
+});
+export const challengeJob = table({ name: 'challenge_job' }, {
+  scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt(),
+  owner: t.identity().index('btree'), version: t.string(),
+});
+// Demo-only button-triggered call (PhoneCall.tsx -> startChallengeDemo). Fires demoCallRunJob, which makes
+// the Retell outbound. Separate from challengeJob so it doesn't go through SMS enrollment / Groq gating.
+export const demoCallJob = table({ name: 'demo_call_job' }, {
+  scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt(),
+  owner: t.identity().index('btree'), phone: t.string(), token: t.string(),
+});
+// Daily caps for web-started practice calls (startChallengeDemo): key "<UTC day>:all" or "<UTC day>:<phone HMAC>".
+// Counts only (no numbers). Private.
+const demoCallCount = table({ name: 'demo_call_count' }, {
+  key: t.string().primaryKey(), count: t.u32(),
+});
+const challengeAttempt = table({ name: 'challenge_attempt' }, {
+  token: t.string().primaryKey(), owner: t.identity().index('btree'), phoneHash: t.string().index('btree'),
+  createdAt: t.timestamp(), status: t.string(), lesson: t.string(),
+});
+
 // ---------- Schema + environment ----------
 
 // Secrets live in the database environment (supplied at publish time from the gitignored .env,
@@ -326,6 +352,7 @@ const spacetimedb = schema(
     channelOptout,
     channelSendDaily,
     channelReach,
+    challengeEnrollment, challengeJob, demoCallJob, challengeAttempt, demoCallCount,
     practiceSend,
     practiceJob,
     voiceLink,
@@ -355,6 +382,16 @@ const spacetimedb = schema(
       // Practice calls (voice.ts); optional, the /voice routes answer 503 when both are unset.
       RETELL_API_KEY: t.option(t.string()), // Retell key with the webhook badge: verifies X-Retell-Signature
       VOICE_WEBHOOK_SECRET: t.option(t.string()), // shared secret in the x-safesense-voice-secret header
+      // Phone practice calls placed from the web (challenge.ts, docs/VOICE.md). All optional: unset = the Phone
+      // Call page answers with the private-beta message and nothing is dialed.
+      RETELL_AGENT_ID: t.option(t.string()), // the SafeSense practice-caller agent
+      CHALLENGE_NUMBER: t.option(t.string()), // E.164 from_number for outbound practice calls
+      CHALLENGE_ALLOWED_NUMBERS: t.option(t.string()), // comma-separated E.164 allowlist (private beta)
+      // SMS enrollment (JOIN texts, Groq-picked drills): OFF unless exactly "true". Leave unset.
+      CHALLENGE_ENABLED: t.option(t.string()),
+      CHALLENGE_ROUTE_BASE: t.option(t.string()),
+      CHALLENGE_GROQ_KEY: t.option(t.string()),
+      CHALLENGE_GROQ_MODEL: t.option(t.string()),
     },
   }
 );

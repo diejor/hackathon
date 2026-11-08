@@ -273,7 +273,7 @@ Never ship his GPL or copied Wordle code, his OpenAI server, his Photon sender o
 | --- | --- |
 | Overall | The designer's UI wins visually; our working features run underneath (bot chat, activity logging, Krishna's logic and content, profile, About, Phone Call, footer, Text SafeSense) |
 | Role-play game | The designer's **"Role Reversal"** name, route (`#/role-reversal`, alias `#/long-con`), layout and trust meter, running **our engine and 3 stories**. The activity slug stays `long-con` |
-| Points | The designer's UX: **+1 per finished game**, a burst animation, an end overlay, a badge. The total comes from **rounds stored in SpacetimeDB**, not localStorage. The locked Phone Call unlocks at **10** points |
+| Points | The designer's UX: **+1 per finished game**, a burst animation, an end overlay, a badge. The total comes from **rounds stored in SpacetimeDB**, not localStorage. The locked Phone Call unlocks at **2** points (a practice call from SafeSense; private beta) |
 | Home | The designer's **dashboard** (Hello name, points, last played, "How can I improve?" → prefilled chat), plus our locked Phone Call card, footer and About. One name, set through the designer's name dialog |
 | Language | US English throughout |
 

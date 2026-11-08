@@ -35,6 +35,35 @@ export const AiUsage = __t.object("AiUsage", {
 });
 export type AiUsage = __Infer<typeof AiUsage>;
 
+export const ChallengeAttempt = __t.object("ChallengeAttempt", {
+  token: __t.string(),
+  owner: __t.identity(),
+  phoneHash: __t.string(),
+  createdAt: __t.timestamp(),
+  status: __t.string(),
+  lesson: __t.string(),
+});
+export type ChallengeAttempt = __Infer<typeof ChallengeAttempt>;
+
+export const ChallengeEnrollment = __t.object("ChallengeEnrollment", {
+  owner: __t.identity(),
+  phone: __t.string(),
+  senderKey: __t.string(),
+  spaceId: __t.string(),
+  agentUserId: __t.string(),
+  mode: __t.string(),
+  version: __t.string(),
+});
+export type ChallengeEnrollment = __Infer<typeof ChallengeEnrollment>;
+
+export const ChallengeJob = __t.object("ChallengeJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  owner: __t.identity(),
+  version: __t.string(),
+});
+export type ChallengeJob = __Infer<typeof ChallengeJob>;
+
 export const ChannelAiUsage = __t.object("ChannelAiUsage", {
   senderKey: __t.string(),
   recentMicros: __t.array(__t.i64()),
@@ -98,6 +127,21 @@ export const ChatRole = __t.enum("ChatRole", {
   Bot: __t.unit(),
 });
 export type ChatRole = __Infer<typeof ChatRole>;
+
+export const DemoCallCount = __t.object("DemoCallCount", {
+  key: __t.string(),
+  count: __t.u32(),
+});
+export type DemoCallCount = __Infer<typeof DemoCallCount>;
+
+export const DemoCallJob = __t.object("DemoCallJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  owner: __t.identity(),
+  phone: __t.string(),
+  token: __t.string(),
+});
+export type DemoCallJob = __Infer<typeof DemoCallJob>;
 
 export const DisconnectCleanup = __t.object("DisconnectCleanup", {
   scheduledId: __t.u64(),
@@ -191,6 +235,27 @@ export const PracticeSend = __t.object("PracticeSend", {
 });
 export type PracticeSend = __Infer<typeof PracticeSend>;
 
+export const PracticeTrial = __t.object("PracticeTrial", {
+  id: __t.u64(),
+  senderKey: __t.string(),
+  projectId: __t.string(),
+  spaceId: __t.string(),
+  agentUserId: __t.string(),
+  templateId: __t.string(),
+  tactic: __t.string(),
+  createdAt: __t.timestamp(),
+  status: __t.string(),
+});
+export type PracticeTrial = __Infer<typeof PracticeTrial>;
+
+export const PracticeTrialJob = __t.object("PracticeTrialJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  trialId: __t.u64(),
+  text: __t.string(),
+});
+export type PracticeTrialJob = __Infer<typeof PracticeTrialJob>;
+
 export const Room = __t.object("Room", {
   id: __t.u64(),
   code: __t.string(),
@@ -220,6 +285,14 @@ export const RoomState = __t.enum("RoomState", {
   Playing: __t.unit(),
 });
 export type RoomState = __Infer<typeof RoomState>;
+
+export const VoiceLink = __t.object("VoiceLink", {
+  phoneHash: __t.string(),
+  owner: __t.identity(),
+  senderKey: __t.string(),
+  linkedAt: __t.timestamp(),
+});
+export type VoiceLink = __Infer<typeof VoiceLink>;
 
 export const WebhookSeen = __t.object("WebhookSeen", {
   id: __t.string(),

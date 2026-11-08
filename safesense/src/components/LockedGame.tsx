@@ -36,7 +36,7 @@ function useUnlocked(): boolean {
   return status === 'ready' && pointsToGo(progress.points) === 0
 }
 
-/** The fourth card on Home: the next game, locked until enough points. Opens the coming-soon page. */
+/** The fourth card on Home: The Phone Call, locked until enough points. Opens its page. */
 export function LockedGameCard() {
   const unlocked = useUnlocked()
   return (
@@ -51,7 +51,7 @@ export function LockedGameCard() {
       <span className="kind">
         {unlocked ? (
           <>
-            <Sparkles size={16} strokeWidth={1.75} aria-hidden="true" /> Unlocked — coming soon
+            <Sparkles size={16} strokeWidth={1.75} aria-hidden="true" /> Unlocked
           </>
         ) : (
           <>
@@ -65,11 +65,11 @@ export function LockedGameCard() {
       </p>
       <div className="locked-foot">
         <p className="locked-status" id="locked-status">
-          {unlocked ? 'You’ve earned it. The game itself is still being built.' : `Unlocks at ${UPCOMING.unlockAt} points`}
+          {unlocked ? 'You’ve earned it. Get a practice call from SafeSense.' : `Unlocks at ${UPCOMING.unlockAt} points`}
         </p>
         <UnlockProgress id="locked-have" />
         <span className="locked-more">
-          Find out more <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
+          {unlocked ? 'Get a practice call' : 'Find out more'} <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
         </span>
       </div>
     </a>

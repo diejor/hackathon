@@ -1,17 +1,18 @@
-// The next game, shown locked on Home until the player has enough points. It is a placeholder: the game
-// isn't built yet, so even "unlocked" only shows "coming soon". Change the threshold or the words here.
+// The fourth game, shown locked on Home until the player has enough points. Unlocked, its page lets SafeSense
+// place a practice scam call (private beta: invited numbers only, spacetimedb-ts/src/challenge.ts).
+// The single source for the threshold and the words: Home's card, Profile's "Next unlock" and the page read it.
 
 export const UPCOMING = {
   title: 'The Phone Call',
-  kind: 'Coming next',
+  kind: 'Practice call',
   /** One line on the Home card. */
   line: 'Is that really your bank calling? Practice spotting voice scams.',
-  /** Points needed to unlock it: every finished game is 1 point (lib/progress.ts pointsFor), so 10 games. */
-  unlockAt: 10,
-  /** What the game will be, on the coming-soon page. */
+  /** Points needed to unlock it: every finished game is 1 point (lib/progress.ts pointsFor), so 2 games. */
+  unlockAt: 2,
+  /** How it works, on its page. */
   what: [
-    'A pretend phone call from someone who says they’re your bank. Nobody really calls you, and nothing is dialed.',
-    'You listen, decide when something doesn’t add up, then hang up and call back on a number you trust, like the one on the back of your card.',
+    'SafeSense calls your phone with a practice scam: a pretend caller who says they’re from your bank. It’s a practice call from SafeSense, not a real one, and nothing is at risk.',
+    'Listen, decide when something doesn’t add up, then hang up. A finished practice call earns 1 point, and your points never go down.',
   ],
   /** Why phone scams are worth practicing. Kept calm, and no numbers unless they're sourced. */
   why: [

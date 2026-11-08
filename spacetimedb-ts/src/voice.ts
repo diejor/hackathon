@@ -248,7 +248,7 @@ function sources(root: unknown): unknown[] {
   ].filter(isObject);
 }
 
-function outcomeOf(root: unknown): 'caught' | 'fooled' | null {
+export function outcomeOf(root: unknown): 'caught' | 'fooled' | null {
   for (const s of sources(root)) {
     const o = outcomeWord(prop(s, 'outcome')) ?? outcomeWord(prop(s, 'caught'));
     if (o) return o;
@@ -256,7 +256,7 @@ function outcomeOf(root: unknown): 'caught' | 'fooled' | null {
   return null;
 }
 
-function tacticOf(root: unknown): string {
+export function tacticOf(root: unknown): string {
   // Only an explicit "tactic" (never the context's top_tactic: the call's scenario may be a different one).
   for (const s of sources(root)) {
     const t = str(s, 'tactic').trim().toLowerCase().replace(/\s+/g, '-');
@@ -265,7 +265,7 @@ function tacticOf(root: unknown): string {
   return '';
 }
 
-function callIdOf(root: unknown): string {
+export function callIdOf(root: unknown): string {
   const raw = str(prop(root, 'call'), 'call_id') || str(prop(root, 'args'), 'call_id') || str(root, 'call_id');
   const id = raw.trim();
   return /^[A-Za-z0-9_.:-]{1,80}$/.test(id) ? id : '';
@@ -289,14 +289,29 @@ export const voiceResult = spacetimedb.httpHandler((ctx, request) => {
   const tactic = tacticOf(root);
   const phones = playerPhones(root);
 
+  const token = challengeTokenOf(root);
   const result = ctx.withTx(tx => {
-    const owner = ownerFor(tx.db, phones);
+    // A linked phone, else the player who started this call from the Phone Call page (challenge.ts).
+    const owner = ownerFor(tx.db, phones) ?? (token ? tx.db.challengeAttempt.token.find(token)?.owner ?? null : null);
     if (!owner) return 'unknown caller';
-    if (!markSeen(tx.db, `voice:${callId}`, tx.timestamp)) return 'duplicate';
-    const details = JSON.stringify({ call: callId, tactic, outcome });
-    recordActivity(tx.db, owner, PracticeCallGame, outcome === 'caught' ? 'answer_correct' : 'answer_wrong', details, tx.timestamp);
-    return 'recorded';
+    return recordPracticeCall(tx.db, owner, callId, outcome, tactic, tx.timestamp);
   });
   console.log(`Voice: result ${result} (${outcome}${tactic ? ', ' + tactic : ''})`);
   return json(200, { result, outcome, tactic });
 });
+
+// The token startChallengeDemo put in the call's metadata (challenge.ts), if any.
+export function challengeTokenOf(root: unknown): string {
+  const t = str(prop(prop(root, 'call'), 'metadata'), 'challenge_token');
+  return /^[a-f0-9]{64}$/.test(t) ? t : '';
+}
+
+// One finished practice call = one practice-call row (+1 point on the web), at most once per call id, whichever
+// route (/voice/result or /challenge-response) hears about it first.
+export function recordPracticeCall(db: Db, owner: Identity, callId: string, outcome: 'caught' | 'fooled', tactic: string,
+  now: Timestamp): 'recorded' | 'duplicate' {
+  if (!markSeen(db, `voice:${callId}`, now)) return 'duplicate';
+  const details = JSON.stringify({ call: callId, tactic, outcome });
+  recordActivity(db, owner, PracticeCallGame, outcome === 'caught' ? 'answer_correct' : 'answer_wrong', details, now);
+  return 'recorded';
+}

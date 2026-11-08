@@ -35,6 +35,7 @@ import {
 
 // Import all reducer arg schemas
 import ChooseGameReducer from "./choose_game_reducer";
+import ConfirmChallengeEngagedReducer from "./confirm_challenge_engaged_reducer";
 import CreateLinkCodeReducer from "./create_link_code_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import ForgetMeReducer from "./forget_me_reducer";
@@ -46,6 +47,7 @@ import ReturnToLobbyReducer from "./return_to_lobby_reducer";
 import SeedDemoActivityReducer from "./seed_demo_activity_reducer";
 import SetNameReducer from "./set_name_reducer";
 import SetReadyReducer from "./set_ready_reducer";
+import StartChallengeDemoReducer from "./start_challenge_demo_reducer";
 import StartGameReducer from "./start_game_reducer";
 import UnlinkChannelsReducer from "./unlink_channels_reducer";
 
@@ -129,6 +131,7 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("choose_game", ChooseGameReducer),
+  __reducerSchema("confirm_challenge_engaged", ConfirmChallengeEngagedReducer),
   __reducerSchema("create_link_code", CreateLinkCodeReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("forget_me", ForgetMeReducer),
@@ -140,6 +143,7 @@ const reducersSchema = __reducers(
   __reducerSchema("seed_demo_activity", SeedDemoActivityReducer),
   __reducerSchema("set_name", SetNameReducer),
   __reducerSchema("set_ready", SetReadyReducer),
+  __reducerSchema("start_challenge_demo", StartChallengeDemoReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("unlink_channels", UnlinkChannelsReducer),
 );

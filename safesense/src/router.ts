@@ -16,7 +16,7 @@ const TITLES: Record<Route, string> = {
   chat: 'Ask SafeSense · SafeSense',
   profile: 'Your progress · SafeSense',
   about: 'About SafeSense',
-  'phone-call': 'The Phone Call (coming soon) · SafeSense',
+  'phone-call': 'The Phone Call · SafeSense',
 }
 
 export const href = (route: Route) => (route === 'home' ? '#/' : `#/${route}`)

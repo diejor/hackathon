@@ -52,7 +52,7 @@ SafeSense has three parts.
 **Progress without an account:**
 - every finished game earns 1 point;
 - your dashboard shows what you've practiced and what's worth practicing next;
-- a locked 4th game, *The Phone Call*, opens at 10 points (coming soon).
+- a locked 4th game, *The Phone Call*, opens at 2 points: SafeSense places a practice scam call (private beta, invited numbers only).
 
 There's no sign-up. A **recovery key** carries your progress to another device.
 

@@ -245,7 +245,7 @@ function deliver(ctx: Handler, msg: InboundMessage, reply: Reply, idempotencyKey
 
 // The only way out for a practice text (not a reply): the proactive kill switch, opt-out and daily cap, then
 // Photon. The shared line still refuses it (403) unless that phone texted the line first.
-function deliverProactive(
+export function deliverProactive(
   ctx: TxHost,
   target: { senderKey: string; spaceId: string; agentUserId: string; projectId?: string },
   text: string,
