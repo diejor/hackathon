@@ -340,3 +340,30 @@
     display: none;
   }
 }
+
+/* ---------- Laptops and desktops ----------
+   The sticky dock exists so phones can see the keyboard while typing. On wider screens the whole
+   game fits, so the dock flows under the board and the keys get a little smaller. */
+@media (min-width: 721px) {
+  .fraudle-dock {
+    position: static;
+    margin: 0;
+    padding: 4px 0 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .fraudle-card .board-row {
+    scroll-margin-bottom: 12px;
+  }
+  .fraudle-card .keyboard {
+    margin: 12px 0 14px;
+    gap: 6px;
+  }
+  .fraudle-card .key {
+    width: 44px;
+    height: 44px;
+    font-size: 1.05rem;
+  }
+}
