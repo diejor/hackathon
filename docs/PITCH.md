@@ -66,7 +66,7 @@ Research on "inoculation" games, like Bad News for misinformation, suggests that
 
 **What did each of you do?**
 - **Diego:** the backend (SpacetimeDB), Gemini, Photon integration and deploys.
-- **Krishna:** scam research, the BadScam game design behind Role Reversal, the practice-text safety rules and the mascot.
+- **Krishanth:** scam research, the BadScam game design behind Role Reversal, the practice-text safety rules and the mascot.
 - **Emily Yuan:** the whole look and the UX.
 
 **What was hardest?**

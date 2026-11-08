@@ -11,7 +11,7 @@ Paste each section into the matching Devpost field. Things to fill in are marked
   - Video: **TODO**
 - **Team:**
   - Diego Rodrigues (lead, backend and integration)
-  - Krishna **TODO full name** (Safe Signal research, Photon practice texts, game logic)
+  - Krishanth Sentil (Safe Signal research, Photon practice texts, game logic)
   - Emily Yuan (product design and UI)
 
 ---
