@@ -58,12 +58,18 @@ export function Hud({
     <section className="con-hud" aria-label="How your campaign is going">
       <div className="con-stats">
         <div className="con-count">
-          <span className="con-label">People who believed it</span>
+          <span className="con-label">
+            <span className="con-long">People who believed it</span>
+            <span className="con-short">Believed it</span>
+          </span>
           <strong className="con-count-num">{shown.toLocaleString('en-US')}</strong>
           <span className="con-sub">of {c.sentTo.toLocaleString('en-US')} texts sent</span>
         </div>
         <div className="con-cred">
-          <span className="con-label">How believable it looks</span>
+          <span className="con-label">
+            <span className="con-long">How believable it looks</span>
+            <span className="con-short">Believability</span>
+          </span>
           <Dial cred={cred} />
         </div>
       </div>
@@ -74,13 +80,22 @@ export function Hud({
       {low && (
         <p className="con-low" role="status">
           <Info size={18} strokeWidth={1.75} aria-hidden="true" />
-          <span>People are starting to doubt it. This is where real scams fall apart.</span>
+          <span>
+            People are starting to doubt it.<span className="con-long"> This is where real scams fall apart.</span>
+          </span>
         </p>
       )}
 
-      <div className="con-people">
+      <div className={`con-people${c.people.length === 1 ? ' is-solo' : ''}`}>
         <p className="con-label">
-          {c.people.length === 1 ? 'The person you’re following' : `${believed} of ${c.people.length} people believed it`}
+          {c.people.length === 1 ? (
+            <span className="con-long">The person you’re following</span>
+          ) : (
+            <>
+              <span className="con-long">{`${believed} of the ${c.people.length} people you met believed it`}</span>
+              <span className="con-short">{`${believed} of ${c.people.length} believed it`}</span>
+            </>
+          )}
         </p>
         <ul>
           {c.people.map((p) => {

@@ -75,7 +75,7 @@ function Ending({ s, onDebrief }: { s: CampaignState; onDebrief: () => void }) {
   const headline =
     n === 1
       ? `${s.c.people[0].name} ${believed ? 'believed it.' : 'checked first.'}`
-      : `${believed} of ${n} people believed it.`
+      : `${believed} of the ${n} people you met believed it.`
   return (
     <section className="card con-ending" aria-labelledby="con-ending-title">
       <p className="con-eyebrow">The ending</p>

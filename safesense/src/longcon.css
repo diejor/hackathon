@@ -451,6 +451,12 @@
   color: var(--green-700);
   font-weight: 700;
 }
+.con-playbook .con-tactic {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 .con-playbook strong {
   display: block;
   font-size: 1.1rem;
@@ -491,6 +497,10 @@
   gap: 10px;
 }
 
+.con-short {
+  display: none;
+}
+
 /* ---------- Phones and narrow windows: the panel becomes a slim bar that stays at the top ---------- */
 @media (max-width: 960px) {
   .con-grid {
@@ -525,11 +535,17 @@
   }
   .con-label,
   .con-sub {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
+  }
+  .con-hud .con-long {
+    display: none;
+  }
+  .con-hud .con-short {
+    display: inline;
   }
   .con-cred {
     flex: 0 0 auto;
-    width: 118px;
+    width: 104px;
     text-align: center;
   }
   .con-dial {
@@ -540,13 +556,20 @@
     font-size: 0.85rem;
   }
   .con-low {
-    padding: 6px 10px;
+    padding: 4px 10px;
     font-size: 0.85rem;
+    align-items: center;
+  }
+  .con-low svg {
+    margin-top: 0;
   }
   .con-people {
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+  .con-people.is-solo .con-person-bio {
+    display: none;
   }
   .con-people .con-label {
     flex: 1;
@@ -573,7 +596,7 @@
     height: 10px;
   }
   /* Names and statuses stay readable to screen readers; the badges show them on screen. */
-  .con-hud .con-person-text {
+  .con-hud .con-people:not(.is-solo) .con-person-text {
     position: absolute;
     width: 1px;
     height: 1px;
