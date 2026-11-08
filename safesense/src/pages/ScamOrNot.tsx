@@ -6,12 +6,14 @@ import {
   Bell,
   Check,
   CheckCircle2,
+  ExternalLink,
   Info,
   Lightbulb,
   Mail,
   MessageCircle,
   MessageSquare,
   RotateCcw,
+  Search,
   ShieldAlert,
   ShieldCheck,
   Sprout,
@@ -19,9 +21,14 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Crumb, PageHead } from '../components/Layout'
+import { InspectPanel } from '../components/scamornot/InspectPanel'
+import { Marked } from '../components/scamornot/Marked'
+import { ProgressTrack } from '../components/scamornot/ProgressTrack'
+import { marksFor, type Marks } from '../components/scamornot/evidence'
 import { href } from '../router'
 import { logActivity } from '../lib/stdb'
 import { REMEMBER, REMEMBER_DEFAULT, SCENARIOS, type Guess, type Kind, type Scenario } from '../content/scamOrNot'
+import '../scamornot.css'
 
 const FORMAT: Record<Kind, { label: string; icon: LucideIcon }> = {
   text: { label: 'Text message', icon: MessageSquare },
@@ -31,7 +38,9 @@ const FORMAT: Record<Kind, { label: string; icon: LucideIcon }> = {
 }
 
 const LABEL: Record<Guess, string> = { scam: 'Scam', safe: 'Not a scam' }
-function SenderCard({ s, revealed }: { s: Scenario; revealed: boolean }) {
+const clues = (n: number) => `${n} ${n === 1 ? 'clue' : 'clues'}`
+
+function SenderCard({ s, revealed, marks }: { s: Scenario; revealed: boolean; marks: Marks }) {
   const format = FORMAT[s.kind]
   const FormatIcon = format.icon
   return (
@@ -43,11 +52,19 @@ function SenderCard({ s, revealed }: { s: Scenario; revealed: boolean }) {
         <span className="format-label">
           <FormatIcon size={14} strokeWidth={2} /> {format.label}
         </span>
-        <h2 className="sender-name">{s.name}</h2>
-        {s.bio && <p className="sender-bio">{s.bio}</p>}
+        <h2 className="sender-name">
+          <Marked text={s.name} marks={marks.name} />
+        </h2>
+        {s.bio && (
+          <p className="sender-bio">
+            <Marked text={s.bio} marks={marks.bio} />
+          </p>
+        )}
         <ul className="tags">
           {s.details.map((d) => (
-            <li key={d}>{d}</li>
+            <li key={d}>
+              <Marked text={d} marks={marks.details} />
+            </li>
           ))}
         </ul>
       </div>
@@ -61,30 +78,40 @@ function SenderCard({ s, revealed }: { s: Scenario; revealed: boolean }) {
   )
 }
 
-function MessageCard({ s }: { s: Scenario }) {
+function MessageCard({ s, marks }: { s: Scenario; marks: Marks }) {
   return (
     <article className={`message-card ${s.kind}`} aria-label={FORMAT[s.kind].label}>
         <header className="message-meta">
-          <span className="from">{s.from}</span>
+          <span className="from">
+            <Marked text={s.from} marks={marks.from} />
+          </span>
           <span className="time">{s.time}</span>
         </header>
         {s.kind === 'email' ? (
           <div className="email-content">
-            {s.subject && <h3>{s.subject}</h3>}
-            <p>{s.body}</p>
+            {s.subject && (
+              <h3>
+                <Marked text={s.subject} marks={marks.subject} />
+              </h3>
+            )}
+            <p>
+              <Marked text={s.body} marks={marks.body} />
+            </p>
             {s.link && (
               <span className="fake-link" role="presentation">
-                {s.link}
+                <Marked text={s.link} marks={marks.link} />
               </span>
             )}
           </div>
         ) : (
           <div className="message-bubble">
-            {s.body}
+            <Marked text={s.body} marks={marks.body} />
             {s.link && (
               <>
                 {' '}
-                <span className="inline-link">{s.link}</span>
+                <span className="inline-link">
+                  <Marked text={s.link} marks={marks.link} />
+                </span>
               </>
             )}
           </div>
@@ -101,17 +128,33 @@ function signToRemember(missed: Scenario[]): string {
   return REMEMBER_DEFAULT
 }
 
-function WrapUp({ missed, onAgain }: { missed: Scenario[]; onAgain: () => void }) {
+type WrapProps = { missed: Scenario[]; checked: number; best: number; onAgain: () => void }
+
+function WrapUp({ missed, checked, best, onAgain }: WrapProps) {
   return (
     <section className="game-shell wrap-up" aria-labelledby="wrap-title">
       <div className="section">
         <ShieldCheck size={32} strokeWidth={1.4} className="icon-muted" />
-        <h2 id="wrap-title" className="h2 wrap-title">
+        <h2 id="wrap-title" className="h2 wrap-title" tabIndex={-1}>
           You looked at {SCENARIOS.length} messages.
         </h2>
         <p className="wrap-lead">
           Taking the time to look closely is the most important habit of all. Thank you for practicing.
         </p>
+        <ul className="son-wrap-notes">
+          <li>
+            <Search size={18} strokeWidth={2} aria-hidden="true" />
+            {checked
+              ? `You checked ${clues(checked)} along the way.`
+              : 'Next time, try “Check it” before you decide. Looking closer is always free.'}
+          </li>
+          {best >= 3 && (
+            <li>
+              <Sprout size={18} strokeWidth={2} aria-hidden="true" />
+              Your steadiest run: {best} in a row.
+            </li>
+          )}
+        </ul>
         <div className="feedback">
           <p className="feedback-title">
             <Lightbulb size={20} strokeWidth={1.5} /> One sign worth remembering
@@ -141,28 +184,48 @@ export default function ScamOrNot() {
   const [guess, setGuess] = useState<Guess | null>(null)
   const [missed, setMissed] = useState<Scenario[]>([])
   const [done, setDone] = useState(false)
+  // Inspect: which checks are open this round, and how many were open when the player answered.
+  const [opened, setOpened] = useState<number[]>([])
+  const [checkedAtAnswer, setCheckedAtAnswer] = useState(0)
+  const [checkedTotal, setCheckedTotal] = useState(0)
+  // A gentle "steady" run of right answers. It is acknowledged, never required.
+  const [streak, setStreak] = useState(0)
+  const [best, setBest] = useState(0)
 
   const s = SCENARIOS[round]
   const revealed = guess !== null
   const correct = guess === s.answer
   const last = round === SCENARIOS.length - 1
+  const marks = marksFor(s, opened)
+
+  const check = (i: number) => setOpened((o) => (o.includes(i) ? o : [...o, i]))
 
   const answer = (g: Guess) => {
     if (revealed) return
     setGuess(g)
     const right = g === s.answer
+    const checked = opened.length
+    setCheckedAtAnswer(checked)
+    setCheckedTotal((t) => t + checked)
+    const run = right ? streak + 1 : 0
+    setStreak(run)
+    setBest((b) => Math.max(b, run))
     if (!right) setMissed((m) => [...m, s])
     void logActivity('scam-or-not', right ? 'answer_correct' : 'answer_wrong', {
       item: s.id,
       said: g,
       tactic: s.tactic,
+      checked,
     })
   }
 
   const next = () => {
-    if (last) setDone(true)
-    else setRound(round + 1)
+    if (last) {
+      setDone(true)
+      requestAnimationFrame(() => document.getElementById('wrap-title')?.focus())
+    } else setRound(round + 1)
     setGuess(null)
+    setOpened([])
     window.scrollTo(0, 0)
   }
 
@@ -170,6 +233,10 @@ export default function ScamOrNot() {
     setRound(0)
     setGuess(null)
     setMissed([])
+    setOpened([])
+    setCheckedTotal(0)
+    setStreak(0)
+    setBest(0)
     setDone(false)
     window.scrollTo(0, 0)
   }
@@ -183,26 +250,18 @@ export default function ScamOrNot() {
       />
       <div className="page-grid">
         {done ? (
-          <WrapUp missed={missed} onAgain={again} />
+          <WrapUp missed={missed} checked={checkedTotal} best={best} onAgain={again} />
         ) : (
         <section className="game-shell" aria-label="Game">
-          <div className="game-top section-top">
-            <div
-              className="guess-tracker"
-              role="img"
-              aria-label={`Round ${round + 1} of ${SCENARIOS.length}`}
-              // 15 rounds: a tighter gap keeps every pip on one line at 360–390px wide.
-              style={{ gap: 4, flexWrap: 'wrap' }}
-            >
-              {SCENARIOS.map((_, i) => (
-                <span key={i} className={`pip ${i < round + (revealed ? 1 : 0) ? 'used' : ''}`} />
-              ))}
-            </div>
+          <div className="section-top">
+            <ProgressTrack total={SCENARIOS.length} done={round + (revealed ? 1 : 0)} current={round} />
           </div>
 
           <div className="section play">
-            <SenderCard s={s} revealed={revealed} />
-            <MessageCard s={s} />
+            <SenderCard s={s} revealed={revealed} marks={marks} />
+            <MessageCard s={s} marks={marks} />
+
+            <InspectPanel checks={s.inspect} opened={opened} onCheck={check} answered={revealed} />
 
             <div className="verdicts" role="radiogroup" aria-label="Is this a scam?">
               {(['scam', 'safe'] as Guess[]).map((g) => {
@@ -240,6 +299,29 @@ export default function ScamOrNot() {
                     <li key={c}>{c}</li>
                   ))}
                 </ul>
+                <ul className="son-reveal-notes">
+                  <li>
+                    <Search size={16} strokeWidth={2} aria-hidden="true" />
+                    {checkedAtAnswer
+                      ? `You checked ${clues(checkedAtAnswer)} before deciding. Looking closer is a good habit.`
+                      : 'You went with your first look. Next time, try a “Check it” too.'}
+                  </li>
+                  {correct && streak >= 3 && (
+                    <li>
+                      <Sprout size={16} strokeWidth={2} aria-hidden="true" />
+                      {streak} in a row — nice and steady.
+                    </li>
+                  )}
+                </ul>
+                {s.source && (
+                  <p className="son-source">
+                    <a href={s.source.url} target="_blank" rel="noopener noreferrer">
+                      Learn more: {s.source.label}
+                      <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -260,6 +342,8 @@ export default function ScamOrNot() {
               Scams often rush you, ask for money or personal details, or come from someone you can’t check. A
               real company won’t mind if you hang up and contact them using details you already trust.
             </p>
+            <p>Not sure? Use “Check it” to look closer at the sender, the link or the wording before you decide.</p>
+            <p className="son-credit">Inspect mechanic adapted from Friend or Fraud? by Krishna (SafeSense team).</p>
           </div>
           <a className="btn btn-secondary btn-block" href={href('home')}>
             Leave game
