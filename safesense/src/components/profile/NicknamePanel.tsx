@@ -62,7 +62,7 @@ export function NicknamePanel() {
       )}
       <p>Your progress is saved privately on SafeSense’s server, linked to this browser. No account needed.</p>
       <a className="btn btn-secondary btn-block" href={href('chat')}>
-        <MessageCircle size={20} /> Ask SafeSense about my progress
+        <MessageCircle size={20} /> <span>Ask SafeSense about my progress</span>
       </a>
     </div>
   )
