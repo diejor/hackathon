@@ -39,7 +39,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
     onclick: () => { menuOpen = !menuOpen; update(); },
   }, "⋯");
   const menu = h("div", { class: "bot-menu", role: "menu" },
-    h("button", { class: "bot-menu-item bot-menu-link", role: "menuitem", onclick: () => void openLink() }, "Link iMessage"),
+    h("button", { class: "bot-menu-item bot-menu-link", role: "menuitem", hidden: !BOT_IMESSAGE_ADDRESS, onclick: () => void openLink() }, "Link iMessage"),
     h("button", { class: "bot-menu-item bot-forget", role: "menuitem", onclick: () => { menuOpen = false; linking = false; confirming = true; update(); } }, "Forget me"));
   const top = h("div", { class: "bot-top" },
     h("button", { class: "bot-top-btn bot-back", onclick: opts.onBack, "aria-label": "Back" }, "‹ Back"),
