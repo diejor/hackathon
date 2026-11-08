@@ -51,7 +51,7 @@ export default function Chat() {
       <PageHead
         crumb="A safe place to ask"
         title="Let’s talk it through."
-        lead={`Ask a question by speaking, typing, or adding a screenshot or photo. ${THE_ASSISTANT[0].toUpperCase()}${THE_ASSISTANT.slice(1)} can offer guidance, but it can’t confirm that a message or caller is safe.`}
+        lead="Ask a question by speaking, typing, or adding a screenshot or photo." // the card says it's an AI with no guarantees
       />
       <div
         className="page-grid"
