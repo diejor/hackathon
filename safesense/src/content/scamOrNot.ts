@@ -536,3 +536,60 @@ export const REMEMBER: Record<string, string> = {
 
 export const REMEMBER_DEFAULT =
   'Most scams rush you. If a message wants money, a code or a click right now, pause and check another way.'
+
+// ---------- Round order ----------
+// Each play deals the rounds in a new random order. The first is always an obvious scam to ease people
+// in, and the answers keep a good mix: never more than 3 scams or 2 genuine messages in a row, so
+// guessing by pattern doesn't work.
+
+/** The gentle opener: a delivery-fee text with most of the classic signs. */
+export const OPENER_ID = 'parcel-redelivery-fee'
+const MAX_RUN: Record<Guess, number> = { scam: 3, safe: 2 }
+
+function shuffle<T>(items: T[]): T[] {
+  const a = [...items]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+/** Every scam/genuine pattern that starts with `first`, uses exactly the given counts and obeys MAX_RUN. */
+function patterns(first: Guess, scams: number, safes: number): Guess[][] {
+  const out: Guess[][] = []
+  const walk = (seq: Guess[], scamLeft: number, safeLeft: number, run: number) => {
+    if (!scamLeft && !safeLeft) {
+      out.push(seq)
+      return
+    }
+    const prev = seq[seq.length - 1]
+    for (const g of ['scam', 'safe'] as Guess[]) {
+      if ((g === 'scam' ? scamLeft : safeLeft) === 0) continue
+      const nextRun = g === prev ? run + 1 : 1
+      if (nextRun > MAX_RUN[g]) continue
+      walk([...seq, g], scamLeft - (g === 'scam' ? 1 : 0), safeLeft - (g === 'safe' ? 1 : 0), nextRun)
+    }
+  }
+  walk([first], scams - (first === 'scam' ? 1 : 0), safes - (first === 'safe' ? 1 : 0), 1)
+  return out
+}
+
+let patternCache: Guess[][] | undefined
+
+/** A fresh order of all SCENARIOS: the opener first, then a random mix that keeps to MAX_RUN. */
+export function dealRounds(): Scenario[] {
+  const opener = SCENARIOS.find((s) => s.id === OPENER_ID) ?? SCENARIOS[0]
+  const rest = SCENARIOS.filter((s) => s !== opener)
+  const scams = shuffle(rest.filter((s) => s.answer === 'scam'))
+  const safes = shuffle(rest.filter((s) => s.answer === 'safe'))
+  patternCache ??= patterns(
+    opener.answer,
+    scams.length + (opener.answer === 'scam' ? 1 : 0),
+    safes.length + (opener.answer === 'safe' ? 1 : 0),
+  )
+  // No valid pattern (only if the content changes a lot): fall back to a plain shuffle.
+  if (!patternCache.length) return [opener, ...shuffle(rest)]
+  const pattern = patternCache[Math.floor(Math.random() * patternCache.length)]
+  return pattern.map((g, i) => (i === 0 ? opener : g === 'scam' ? scams.pop()! : safes.pop()!))
+}

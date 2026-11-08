@@ -28,13 +28,13 @@ export const PUZZLES: Puzzle[] = [
     lesson: 'Check by calling a number you already trust, never the one in the message.',
   },
   {
-    word: 'URGENT',
-    clue: 'A message that says you must act right now.',
-    lesson: 'Pressure to hurry is a warning sign. A real bank or agency will give you time to check.',
+    word: 'BLOCK',
+    clue: 'What you can do to a number that keeps sending you scam texts.',
+    lesson: 'Blocking a scam number stops it coming back. Your phone’s settings or your carrier can help you do it.',
   },
   {
     word: 'CALLBACK',
-    clue: 'A number in a message that asks you to ring it.',
+    clue: 'A number in a message that asks you to call it.',
     lesson: 'A number printed in a message belongs to whoever wrote it. Call the number on your card or bill instead.',
   },
   {

@@ -314,7 +314,7 @@ Never cut: the three games working with explanations, the chat with screenshots,
 
 Profiles and unlocks are **demo placeholders tonight**:
 - points are computed in the browser from activity stored in SpacetimeDB;
-- the teammate's "unlock games" UI is a visual placeholder ("Coming soon");
+- the teammate's "unlock games" UI is a visual placeholder ("Coming soon"). Since ~01:35 the Home page also shows a locked 4th game, **"The Phone Call"** (voice scams; unlocks at 500 points; non-functional), configured in `safesense/src/content/upcoming.ts`;
 - there are no other games and no backend unlock tables.
 
 Next steps, in order:
