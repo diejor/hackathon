@@ -187,11 +187,11 @@ Respond ONLY with a JSON object of this shape:
     // The shared bot pipeline: rate limit, store the user's message, load context (facts, history, game
     // activity), one model call, then store the reply, the screenshot note and new facts. `owner` is the
     // identity whose chat this is (web: ctx.Sender; messaging apps: the linked player or a pseudo identity).
-    // Inputs must be validated by the caller.
+    // Inputs must be validated by the caller. cooldown=false: the caller rate-limits (messaging budget, Photon.cs).
     static BotTurn RunBotTurn(IBotHost host, AiConfig cfg, Identity owner, string channel, string text, string imageDataUrl,
-        TimeSpan? aiTimeout = null, TimeSpan? fallbackTimeout = null)
+        TimeSpan? aiTimeout = null, TimeSpan? fallbackTimeout = null, bool cooldown = true)
     {
-        if (!host.Tx((db, now) => TakeAiQuota(db, owner, now)))
+        if (cooldown && !host.Tx((db, now) => TakeAiQuota(db, owner, now)))
             return new BotTurn(false, Fail("Slow down a little — try again in a few seconds"), default, 0);
         var hasImage = imageDataUrl.Length > 0;
 

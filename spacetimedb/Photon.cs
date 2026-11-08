@@ -17,7 +17,9 @@ using SpacetimeDB;
 //  - A sender is identified by Photon's user id. Until it is linked, it gets its own pseudo identity
 //    (PseudoIdentity), so strangers never see or touch anyone else's chat. Linking needs a one-time code
 //    that only the player can see (MyLinkCode), valid 10 minutes, with wrong codes rate-limited per sender.
-//  - Screenshots are downloaded, sent to the model and never stored (same as the web).
+//  - Screenshots are downloaded, sent to the model and never stored (same as the web). Only JPEG/PNG/WebP/
+//    HEIC/HEIF are accepted (Content-Type, else magic bytes); other attachments get a fixed reply, no model call.
+//  - AI turns are budgeted per sender (ChannelAiUsage: 8 per rolling minute), not the web's 3 s cooldown.
 //  - ChannelLink / LinkCode / LinkAttempt / WebhookSeen are private; players see only their own rows.
 public static partial class Module
 {
@@ -32,6 +34,13 @@ public static partial class Module
     const int MaxChannelReplyChars = 1200;
     // Photon gives up after 20 s; keep the whole webhook well under that.
     const long WebhookBudgetMicros = 15_000_000;
+    // Messaging AI budget per sender (replaces the web's 3 s cooldown here: people often send a text and
+    // a screenshot as two messages within a second).
+    const int MaxChannelAiTurns = 8;
+    const long ChannelAiWindowMicros = 60_000_000L; // rolling 60 s
+    const string ChannelBusyReply = "You're sending a lot at once — give me a minute.";
+    const string NotAScreenshotReply = "I can read text messages and screenshots (PNG/JPEG). Send a screenshot of it and I'll take a look.";
+    static readonly HashSet<string> ChannelImageMimes = new() { "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif" };
 
     // A messaging-app sender linked to a player. SenderKey = "<platform>:<Photon user id>".
     [SpacetimeDB.Table(Accessor = "ChannelLink")]
@@ -60,6 +69,16 @@ public static partial class Module
         [PrimaryKey] public string SenderKey;
         public uint Failures;
         public Timestamp WindowStart;
+    }
+
+    // AI turns per messaging sender in the last ChannelAiWindowMicros (private). Notified: the "sending a
+    // lot" reply went out for the current over-budget streak, so further messages are dropped silently.
+    [SpacetimeDB.Table(Accessor = "ChannelAiUsage")]
+    public partial struct ChannelAiUsage
+    {
+        [PrimaryKey] public string SenderKey;
+        public List<long> RecentMicros;
+        public bool Notified;
     }
 
     // Webhook ids already handled (Photon retries; webhook-id stays the same). Capped at MaxWebhookSeen.
@@ -259,14 +278,16 @@ public static partial class Module
             return "I can't listen to voice notes yet. Please type your question, paste the message, or send a screenshot.";
         if (LoadAiConfig() is not { } cfg) return "Sorry, I'm not set up to answer right now. Please try again later.";
 
-        // ---- Screenshot: download once, never store ----
+        // ---- Screenshot: download once, never store (skip the download when already over budget) ----
         var imageDataUrl = "";
         if (msg.AttachmentId.Length > 0)
         {
+            if (host.Tx((db, now) => TakeChannelBudget(db, senderKey, now, consume: false)) is { } busy) return busy;
             var (dataUrl, problem) = FetchAttachmentDataUrl(host.Http, msg);
             if (problem.Length > 0) return problem;
             imageDataUrl = dataUrl;
         }
+        if (host.Tx((db, now) => TakeChannelBudget(db, senderKey, now, consume: true)) is { } over) return over;
 
         var owner = host.Tx((db, _) => db.ChannelLink.SenderKey.Find(senderKey)?.Owner ?? pseudo);
         // Time left for the model: the webhook must finish in ~15 s (Photon times out at 20 s), and the
@@ -276,10 +297,36 @@ public static partial class Module
         var first = left > TimeSpan.FromSeconds(9) ? TimeSpan.FromSeconds(9) : left;
         var fallback = left - first > TimeSpan.FromSeconds(3) ? left - first : TimeSpan.Zero;
 
-        var turn = RunBotTurn(host, cfg, owner, msg.Platform, text, imageDataUrl, first, fallback);
+        var turn = RunBotTurn(host, cfg, owner, msg.Platform, text, imageDataUrl, first, fallback, cooldown: false);
         if (!turn.Stored) return "One message at a time, please. Send that again in a few seconds.";
         if (!turn.Ai.Ok) return BotApology;
         return FormatChannelReply(turn.Reply);
+    }
+
+    // Per-sender rolling budget for messaging AI turns. null = go ahead (a turn is recorded when `consume`);
+    // otherwise the reply to send: ChannelBusyReply once per over-budget streak, then "" (stay quiet).
+    static string? TakeChannelBudget(Local db, string senderKey, Timestamp now, bool consume)
+    {
+        var t = now.MicrosecondsSinceUnixEpoch;
+        var row = db.ChannelAiUsage.SenderKey.Find(senderKey);
+        var recent = (row?.RecentMicros ?? new()).Where(x => t - x < ChannelAiWindowMicros).ToList();
+        if (recent.Count >= MaxChannelAiTurns)
+        {
+            var notified = row?.Notified ?? false;
+            Save(new ChannelAiUsage { SenderKey = senderKey, RecentMicros = recent, Notified = true });
+            return notified ? "" : ChannelBusyReply;
+        }
+        if (consume)
+        {
+            recent.Add(t);
+            Save(new ChannelAiUsage { SenderKey = senderKey, RecentMicros = recent, Notified = false });
+        }
+        return null;
+
+        void Save(ChannelAiUsage u)
+        {
+            if (row is null) db.ChannelAiUsage.Insert(u); else db.ChannelAiUsage.SenderKey.Update(u);
+        }
     }
 
     static string LinkSender(Local db, Timestamp now, string senderKey, Identity pseudo, InboundMessage msg, string arg)
@@ -420,25 +467,39 @@ public static partial class Module
                     Log.Warn($"Photon: attachment download HTTP {response.StatusCode}");
                     return ("", "Sorry, I couldn't open that picture. Try sending it again, or paste the text.");
                 }
+                // Video, audio, PDF, ...: say what we can read instead of calling the model.
+                var declared = NormalizeMime(Header(response.Headers, "content-type"));
+                if (declared.Length > 0 && !ChannelImageMimes.Contains(declared)) return ("", NotAScreenshotReply);
                 var bytes = response.Body.ToBytes();
-                if (bytes.Length == 0 || bytes.Length > MaxAttachmentBytes) return ("", "That picture is too big for me. Try a screenshot instead (under 8 MB).");
-                var mime = SniffImageMime(bytes);
-                if (mime.Length == 0) return ("", "I can only read pictures (screenshots or photos). Please send a screenshot or paste the text.");
+                if (bytes.Length == 0) return ("", NotAScreenshotReply);
+                if (bytes.Length > MaxAttachmentBytes) return ("", "That picture is too big for me. Try a screenshot instead (under 8 MB).");
+                // Prefer what the bytes say; with no usable Content-Type, the bytes must be a known image.
+                var sniffed = SniffImageMime(bytes);
+                var mime = sniffed.Length > 0 ? sniffed : declared;
+                if (mime.Length == 0) return ("", NotAScreenshotReply);
                 return ($"data:{mime};base64,{Convert.ToBase64String(bytes)}", "");
             },
             error => ("", "Got your screenshot; send it again in a few seconds."));
     }
 
-    // Trust the bytes, not the Content-Type header.
+    // Magic bytes of the image types we accept (ChannelImageMimes); "" for anything else.
     static string SniffImageMime(byte[] b)
     {
         bool At(int off, string ascii) => b.Length >= off + ascii.Length && ascii.Select((c, i) => b[off + i] == c).All(x => x);
         if (b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF) return "image/jpeg";
         if (b.Length > 8 && b[0] == 0x89 && At(1, "PNG")) return "image/png";
         if (At(0, "RIFF") && At(8, "WEBP")) return "image/webp";
-        if (At(0, "GIF8")) return "image/gif";
-        if (At(4, "ftyp") && (At(8, "heic") || At(8, "heix") || At(8, "mif1") || At(8, "msf1"))) return "image/heic";
+        if (At(4, "ftyp") && (At(8, "heic") || At(8, "heix") || At(8, "heim") || At(8, "heis"))) return "image/heic";
+        if (At(4, "ftyp") && (At(8, "mif1") || At(8, "msf1") || At(8, "heif"))) return "image/heif";
         return "";
+    }
+
+    // "Image/JPEG; charset=..." -> "image/jpeg"; generic binary types count as missing ("").
+    static string NormalizeMime(string contentType)
+    {
+        var m = contentType.Split(';')[0].Trim().ToLowerInvariant();
+        if (m == "image/jpg") return "image/jpeg";
+        return m is "application/octet-stream" or "binary/octet-stream" ? "" : m;
     }
 
     // ---------- Helpers ----------
@@ -487,9 +548,11 @@ public static partial class Module
         return false;
     }
 
-    static string Header(HttpRequest request, string name)
+    static string Header(HttpRequest request, string name) => Header(request.Headers, name);
+
+    static string Header(IEnumerable<HttpHeader> headers, string name)
     {
-        foreach (var h in request.Headers)
+        foreach (var h in headers)
             if (string.Equals(h.Name, name, StringComparison.OrdinalIgnoreCase)) return Encoding.UTF8.GetString(h.Value).Trim();
         return "";
     }

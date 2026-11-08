@@ -16,6 +16,8 @@ const EXAMPLES = [
 ];
 
 const HOW_AM_I_DOING = { label: "How am I doing?", text: "How am I doing in the games? What should I practice?" };
+const PLACEHOLDER = "Ask or paste…";
+const CHECK_HINT = "Paste the text, email or link…";
 const DEMO = new URLSearchParams(location.search).get("demo") === "1"; // ?demo=1 shows "Load demo game history"
 
 export interface ChatView { el: HTMLElement; destroy(): void }
@@ -29,6 +31,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   let linkTimer: ReturnType<typeof setInterval> | null = null;
   let lastCount = -1;
   let seeding = false;
+  let hint = false; // "Check a message" chip: textarea shows CHECK_HINT until the next send
 
   // ---------- Top bar (⋯ menu: Link iMessage, Forget me) + panels ----------
   const menuBtn = h("button", {
@@ -102,7 +105,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   // ---------- Composer ----------
   const status = h("div", { class: "bot-status", role: "status" });
   const textarea = h("textarea", {
-    class: "bot-input", rows: 1, placeholder: "Ask or paste…",
+    class: "bot-input", rows: 1, placeholder: PLACEHOLDER,
     enterkeyhint: "send", "aria-label": "Message", maxlength: 4000,
     onkeydown: (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); void submit(); }
@@ -137,7 +140,15 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   const preview = h("div", { class: "bot-preview" },
     previewImg,
     h("button", { class: "bot-preview-remove", "aria-label": "Remove screenshot", onclick: () => setImage(null) }, "✕"));
+  // Quick chips above the input once a conversation exists (the empty state has its own examples).
+  const howChip = h("button", { class: "bot-chip", onclick: () => void submit(HOW_AM_I_DOING.text) }, HOW_AM_I_DOING.label);
+  const checkChip = h("button", {
+    class: "bot-chip", onclick: () => { hint = true; update(); textarea.focus(); },
+  }, "Check a message");
+  const shotChip = h("button", { class: "bot-chip", onclick: () => fileInput.click() }, "📷 Check a screenshot");
+  const chips = h("div", { class: "bot-chips", role: "group", "aria-label": "Quick actions" }, howChip, checkChip, shotChip);
   const composer = h("div", { class: "bot-composer" },
+    chips,
     status,
     preview,
     h("div", { class: "bot-compose-row" }, attachBtn, fileInput, textarea, micSlot, sendBtn));
@@ -164,6 +175,7 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
   async function submit(text = textarea.value) {
     if (Bot.state.sending || (!text.trim() && !image)) return;
     dictation.cancel(); // don't let late speech results land in the cleared box
+    hint = false;
     const img = image;
     const draft = textarea.value;
     textarea.value = "";
@@ -248,8 +260,11 @@ export function mountChat(opts: { onBack: () => void }): ChatView {
       micBtn.title = on ? "Stop listening" : "Speak your message";
       micBtn.textContent = on ? "■" : "🎤";
       micBtn.toggleAttribute("disabled", !ready);
-      textarea.placeholder = on ? "Listening…" : "Ask or paste…";
     }
+    textarea.placeholder = dictation.active ? "Listening…" : hint ? CHECK_HINT : PLACEHOLDER;
+    chips.hidden = !msgs.length || Bot.state.sending;
+    howChip.hidden = !Bot.activity().length;
+    for (const c of [howChip, checkChip, shotChip]) c.toggleAttribute("disabled", !ready);
 
     confirmBox.hidden = !confirming;
     menu.hidden = !menuOpen;

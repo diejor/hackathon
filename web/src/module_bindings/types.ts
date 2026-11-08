@@ -35,6 +35,13 @@ export const AiUsage = __t.object("AiUsage", {
 });
 export type AiUsage = __Infer<typeof AiUsage>;
 
+export const ChannelAiUsage = __t.object("ChannelAiUsage", {
+  senderKey: __t.string(),
+  recentMicros: __t.array(__t.i64()),
+  notified: __t.bool(),
+});
+export type ChannelAiUsage = __Infer<typeof ChannelAiUsage>;
+
 export const ChannelLink = __t.object("ChannelLink", {
   senderKey: __t.string(),
   owner: __t.identity(),
