@@ -188,7 +188,9 @@ function guardedInbound(ctx: Handler, msg: InboundMessage): Reply {
     return { text: '', why: 'daily cap reached' };
   }
   // Kill switch on: commands still work (LINK, UNLINK, FORGET ME), but no AI turn for a reply nobody gets.
-  return { text: handleInbound(ctx, msg, killSwitchBlock(ctx.env, 'reply') === null) };
+  const sending = killSwitchBlock(ctx.env, 'reply') === null;
+  const text = handleInbound(ctx, msg, sending);
+  return sending || text.length > 0 ? { text } : { text: '', why: 'sending disabled' };
 }
 
 // The only way out to a phone: kill switch, opt-out and daily cap, then Photon's REST API.
