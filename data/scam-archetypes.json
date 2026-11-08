@@ -1,0 +1,132 @@
+[
+  {
+    "id": "delivery-fee",
+    "label": "Delivery redelivery fee",
+    "family": "delivery",
+    "template": "Parcelo: Your package is held at the distribution center. A fee of {{amount}} is required before delivery. Pay now: {{tokenUrl}}",
+    "slots": {
+      "amount": ["$1.65", "$2.99", "$3.25", "$4.15"]
+    },
+    "flagsPresent": ["sender_identity", "url_domain", "plausibility_bait", "urgency_clause"],
+    "traitLoads": {
+      "plausibility_anchoring": 0.8,
+      "urgency_reactivity": 0.6,
+      "verification_deficit": 0.7
+    },
+    "allowedPaymentRails": ["card_fee"],
+    "realWorldNote": "USPS/UPS redelivery-fee texts peaked in 2024; small dollar amounts bypass skepticism."
+  },
+  {
+    "id": "toll-fee",
+    "label": "Unpaid toll notice",
+    "family": "toll",
+    "template": "ExpressLane: You have an unpaid toll of {{amount}} from {{location}}. Late fees apply after 48h. Settle: {{tokenUrl}}",
+    "slots": {
+      "amount": ["$4.15", "$6.75", "$7.80"],
+      "location": ["I-35E", "I-635", "the North Dallas Tollway"]
+    },
+    "flagsPresent": ["sender_identity", "url_domain", "urgency_clause", "payment_rail", "plausibility_bait"],
+    "traitLoads": {
+      "urgency_reactivity": 0.8,
+      "authority_deference": 0.7,
+      "plausibility_anchoring": 0.7
+    },
+    "allowedPaymentRails": ["card_fee"],
+    "realWorldNote": "Toll-authority smishing surged after E-ZPass expansion; the dollar amount is designed to feel too small to verify."
+  },
+  {
+    "id": "bank-hold",
+    "label": "Bank fraud hold",
+    "family": "bank",
+    "template": "{{bank}} Alert: We detected a {{amount}} charge from {{city}}. Reply YES to approve or NO to dispute: {{tokenUrl}}",
+    "slots": {
+      "bank": ["Meridian Bank", "Keystone Credit Union", "Cascade Financial"],
+      "amount": ["$487.22", "$612.00", "$1,284.50"],
+      "city": ["Miami, FL", "Newark, NJ", "Boise, ID"]
+    },
+    "flagsPresent": ["sender_identity", "authority_claim", "urgency_clause", "reply_bait"],
+    "traitLoads": {
+      "authority_deference": 0.8,
+      "urgency_reactivity": 0.75,
+      "channel_switch_tolerance": 0.6
+    },
+    "allowedPaymentRails": ["ach", "wire"],
+    "realWorldNote": "Fake bank alerts drive the victim to call back a scammer-controlled number — the reply bait is the pivot."
+  },
+  {
+    "id": "boss-gift-card",
+    "label": "Boss asking for gift cards",
+    "family": "boss",
+    "template": "Hey, it's {{bossName}}. Stuck in a meeting but I need you to grab {{count}} {{brand}} gift cards for a client thank-you. I'll reimburse. Can you do it now? {{tokenUrl}}",
+    "slots": {
+      "bossName": ["Dana", "Marcus", "Priya"],
+      "count": ["5", "8", "10"],
+      "brand": ["Zyre", "NorthStar", "Beacon"]
+    },
+    "flagsPresent": ["sender_identity", "authority_claim", "urgency_clause", "payment_rail", "personalization_overreach"],
+    "traitLoads": {
+      "authority_deference": 0.85,
+      "reciprocity_pull": 0.7,
+      "urgency_reactivity": 0.6
+    },
+    "allowedPaymentRails": ["gift_card"],
+    "realWorldNote": "Business email/text compromise variant; gift cards are untraceable and non-reversible."
+  },
+  {
+    "id": "irs-balance",
+    "label": "Tax balance due",
+    "family": "tax",
+    "template": "Final Notice — Revenue Services: You owe {{amount}} in back taxes. Enforcement action begins {{deadline}}. Resolve: {{tokenUrl}}",
+    "slots": {
+      "amount": ["$842.00", "$1,276.40", "$2,105.00"],
+      "deadline": ["Monday", "in 24 hours", "tomorrow 5pm"]
+    },
+    "flagsPresent": ["sender_identity", "authority_claim", "urgency_clause", "payment_rail"],
+    "traitLoads": {
+      "authority_deference": 0.9,
+      "urgency_reactivity": 0.8,
+      "scarcity_response": 0.6
+    },
+    "allowedPaymentRails": ["wire", "gift_card", "crypto"],
+    "realWorldNote": "The IRS never texts; the real agency only sends paper mail first. Scammers lean on fear of enforcement."
+  },
+  {
+    "id": "prize-sweepstakes",
+    "label": "Sweepstakes winner",
+    "family": "prize",
+    "template": "Congrats {{firstName}}! You won a {{prize}} in the {{sponsor}} drawing. Claim within {{deadline}}: {{tokenUrl}}",
+    "slots": {
+      "firstName": ["customer", "winner"],
+      "prize": ["$500 travel voucher", "new iPhone", "cruise for two"],
+      "sponsor": ["Horizon Rewards", "SkyMiles Plus", "Beacon Club"],
+      "deadline": ["48 hours", "today", "tonight"]
+    },
+    "flagsPresent": ["sender_identity", "url_domain", "urgency_clause", "plausibility_bait"],
+    "traitLoads": {
+      "scarcity_response": 0.85,
+      "reciprocity_pull": 0.6,
+      "plausibility_anchoring": 0.5
+    },
+    "allowedPaymentRails": ["card_fee"],
+    "realWorldNote": "Prize scams exploit the thrill of winning; a 'shipping fee' payment page follows the click."
+  },
+  {
+    "id": "tech-support-lockout",
+    "label": "Account lockout warning",
+    "family": "tech_support",
+    "template": "{{provider}} Security: Unusual sign-in from {{city}}. Your account will lock in {{minutes}} minutes. Verify: {{tokenUrl}}",
+    "slots": {
+      "provider": ["NorthCloud", "LinkMail", "Nimbus ID"],
+      "city": ["Sofia", "Lagos", "Hanoi"],
+      "minutes": ["15", "30", "60"]
+    },
+    "flagsPresent": ["sender_identity", "authority_claim", "urgency_clause", "url_domain"],
+    "traitLoads": {
+      "urgency_reactivity": 0.85,
+      "authority_deference": 0.7,
+      "verification_deficit": 0.7
+    },
+    "allowedPaymentRails": [],
+    "realWorldNote": "Credential-phishing shell; the far-away city primes the victim to act without checking the URL."
+  }
+]
