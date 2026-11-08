@@ -270,6 +270,14 @@
 .nickname-panel > .btn svg {
   flex-shrink: 0;
 }
+.nickname-panel > .btn span {
+  text-align: left; /* if it still wraps (narrow phones, big text), the lines sit beside the icon */
+}
+@media (max-width: 720px) {
+  .nickname-panel > .btn {
+    font-size: 0.95rem;
+  }
+}
 .link-button {
   min-height: 44px;
   margin-top: 4px;
