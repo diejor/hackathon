@@ -6,7 +6,8 @@
 //   PHOTON_WEBHOOK_SECRET=whsec_<base64> node tools/photon-sim.mjs <db> "<message text>" [--from +15551234567]
 //   node tools/photon-sim.mjs <db> --checks        # signature checks (signed / unsigned / tampered / stale / duplicate),
 //                                                  # then the guards: STOP (one confirmation, then silence), START,
-//                                                  # and the daily cap (30 replies, the last one says so, then silence)
+//                                                  # and the daily cap (30 replies, the last one says so, then silence),
+//                                                  # and PRACTICE from an unlinked phone (a reply, no practice text)
 //
 // The secret must be a FAKE test secret that you also published to the local db, e.g.:
 //   export PHOTON_WEBHOOK_SECRET=whsec_$(node -e "console.log(require('crypto').randomBytes(24).toString('base64'))")
@@ -87,6 +88,9 @@ if (args.includes('--checks')) {
   await send('STOP again             (expect silence)', event('STOP', p), { expect: /^200 ok: silent \(already opted out\)$/ })
   await send('START                  (expect a reply)', event('start', p), { expect: attempted })
   await send('UNLINK after START     (expect a reply)', event('UNLINK', p), { expect: attempted })
+
+  // Practice texts: an unlinked phone asking for one gets a calm "link first" reply (no AI call)
+  await send('PRACTICE, not linked   (expect a reply)', event('PRACTICE', p), { expect: attempted })
 
   // Daily cap: 30 replies per sender per UTC day, the 30th says so, then silence
   const c = '+1555' + String(Math.floor(Math.random() * 1e7)).padStart(7, '0')

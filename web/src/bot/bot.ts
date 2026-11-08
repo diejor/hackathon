@@ -10,10 +10,10 @@
 // doesn't store them either (only the model's transcription, `imageNote`).
 import * as L from "../lobby";
 import type { DbConnection } from "../module_bindings";
-import type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact } from "../module_bindings/types";
+import type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact, PracticeSend } from "../module_bindings/types";
 import { CHANNEL_LABELS } from "./config";
 
-export type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact };
+export type { ActivityEvent, ChannelLink, ChatMessage, LinkCode, MemoryFact, PracticeSend };
 
 export const MAX_IMAGE_CHARS = 2_800_000; // must match the server (Bot.cs)
 const MAX_SIDE = 1024;
@@ -57,6 +57,12 @@ L.onConnection((c: DbConnection) => {
   c.db.myLinkCode.onDelete(bump);
   c.db.myChannelLinks.onInsert(bump);
   c.db.myChannelLinks.onDelete(bump);
+  c.db.myPracticeTexts.onInsert(bump);
+  c.db.myPracticeTexts.onDelete(bump);
+  // Its own subscription, so a server without practice texts yet can't break the lobby's.
+  c.subscriptionBuilder()
+    .onError(() => console.warn("[STDB] practice texts aren't available on this server"))
+    .subscribe(["SELECT * FROM my_practice_texts"]);
 });
 
 /** Connected and the subscription is applied. */
@@ -145,6 +151,29 @@ export async function unlinkChannels(): Promise<boolean> {
     return true;
   } catch (e) {
     return fail(e);
+  }
+}
+
+/** The player's practice texts (request_practice_text), oldest first. */
+export function practiceTexts(): PracticeSend[] {
+  const c = L.getConn();
+  if (!c || !ready()) return [];
+  return [...c.db.myPracticeTexts.iter()].sort(byTime);
+}
+
+/**
+ * Ask SafeSense to text the linked phone one practice scam (1 a day, 3 in total). Resolves null when it's
+ * queued, else the server's reason (not linked, limits, switched off, ...). Leaves `state.error` alone.
+ */
+export async function requestPracticeText(): Promise<string | null> {
+  const c = L.getConn();
+  if (!c || !ready()) return "Not connected yet. Try again in a moment.";
+  try {
+    await c.reducers.requestPracticeText({});
+    bump();
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
   }
 }
 

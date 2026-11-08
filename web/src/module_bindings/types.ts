@@ -51,6 +51,29 @@ export const ChannelLink = __t.object("ChannelLink", {
 });
 export type ChannelLink = __Infer<typeof ChannelLink>;
 
+export const ChannelOptout = __t.object("ChannelOptout", {
+  senderKey: __t.string(),
+  optedOutAt: __t.timestamp(),
+});
+export type ChannelOptout = __Infer<typeof ChannelOptout>;
+
+export const ChannelReach = __t.object("ChannelReach", {
+  senderKey: __t.string(),
+  owner: __t.identity(),
+  platform: __t.string(),
+  spaceId: __t.string(),
+  agentUserId: __t.string(),
+  savedAt: __t.timestamp(),
+});
+export type ChannelReach = __Infer<typeof ChannelReach>;
+
+export const ChannelSendDaily = __t.object("ChannelSendDaily", {
+  senderKey: __t.string(),
+  day: __t.i64(),
+  sent: __t.u32(),
+});
+export type ChannelSendDaily = __Infer<typeof ChannelSendDaily>;
+
 export const ChatMessage = __t.object("ChatMessage", {
   id: __t.u64(),
   owner: __t.identity(),
@@ -139,11 +162,34 @@ export type MyLinkCode = __Infer<typeof MyLinkCode>;
 export const MyMessages = __t.object("MyMessages", {});
 export type MyMessages = __Infer<typeof MyMessages>;
 
+export const MyPracticeTexts = __t.object("MyPracticeTexts", {});
+export type MyPracticeTexts = __Infer<typeof MyPracticeTexts>;
+
 export const MyRoom = __t.object("MyRoom", {});
 export type MyRoom = __Infer<typeof MyRoom>;
 
 export const MyRoomMembers = __t.object("MyRoomMembers", {});
 export type MyRoomMembers = __Infer<typeof MyRoomMembers>;
+
+export const PracticeJob = __t.object("PracticeJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  practiceId: __t.u64(),
+  owner: __t.identity(),
+  text: __t.string(),
+});
+export type PracticeJob = __Infer<typeof PracticeJob>;
+
+export const PracticeSend = __t.object("PracticeSend", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  senderKey: __t.string(),
+  templateId: __t.string(),
+  tactic: __t.string(),
+  createdAt: __t.timestamp(),
+  status: __t.string(),
+});
+export type PracticeSend = __Infer<typeof PracticeSend>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),
