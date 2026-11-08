@@ -82,7 +82,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'The site is package-redelivery.example, not the website of any company delivering to you.',
       },
     ],
-    source: { label: 'AARP: Scam delivery texts', url: 'https://www.aarp.org/money/scams-fraud/fake-usps-ups-smishing-texts/' },
+    source: { label: 'Scam delivery texts (AARP)', url: 'https://www.aarp.org/money/scams-fraud/fake-usps-ups-smishing-texts/' },
   },
   {
     id: 'bank-account-locked-email',
@@ -113,7 +113,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Thirty minutes leaves no time to call your bank and check.',
       },
     ],
-    source: { label: 'AARP: Bank impersonation scams', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
+    source: { label: 'Bank impersonation scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
   },
   // Krishna (8f415eb friend-or-fraud): a code you asked for yourself
   {
@@ -143,7 +143,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Back into that same app. Nobody is asking you to read it out, reply with it or type it on a website.',
       },
     ],
-    source: { label: 'AARP: Text message scams', url: 'https://www.aarp.org/money/scams-fraud/smishing/' },
+    source: { label: 'Text message scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/smishing/' },
   },
   {
     id: 'grandkid-new-number',
@@ -171,7 +171,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Money today, and keep it secret. Secrecy stops you from checking with the rest of the family.',
       },
     ],
-    source: { label: 'AARP: Grandparent scams', url: 'https://www.aarp.org/money/scams-fraud/grandparent/' },
+    source: { label: 'Grandparent scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/grandparent/' },
   },
   // Krishna (8f415eb friend-or-fraud): a lookalike web address
   {
@@ -205,7 +205,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'It lines up with something you really did. Texts like this go out to many people, and some of them always just upgraded.',
       },
     ],
-    source: { label: 'AARP: Loyalty and rewards points fraud', url: 'https://www.aarp.org/money/scams-fraud/loyalty-rewards-points/' },
+    source: { label: 'Loyalty and rewards points fraud (AARP)', url: 'https://www.aarp.org/money/scams-fraud/loyalty-rewards-points/' },
   },
   {
     id: 'book-club-friend',
@@ -235,7 +235,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Nothing. She mentions something you really did together, with no link, money or code.',
       },
     ],
-    source: { label: 'AARP: Common social media scams', url: 'https://www.aarp.org/money/scams-fraud/social-media/' },
+    source: { label: 'Common social media scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/social-media/' },
   },
   // bank: geek-squad-auto-renewal
   {
@@ -266,7 +266,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'The email did. Calling a number from a surprise bill puts you through to whoever sent it.',
       },
     ],
-    source: { label: 'AARP: Tech support scams', url: 'https://www.aarp.org/money/scams-fraud/fake-online-tech-support/' },
+    source: { label: 'Tech support scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/fake-online-tech-support/' },
   },
   // Krishna (8f415eb friend-or-fraud): a refund smaller than you asked for
   {
@@ -297,7 +297,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Nothing: no link, no card and no reply. It points you to Billing in the app you already use.',
       },
     ],
-    source: { label: 'CFPB: Fraud and scams', url: 'https://www.consumerfinance.gov/consumer-tools/fraud/' },
+    source: { label: 'Fraud and scams (CFPB)', url: 'https://www.consumerfinance.gov/consumer-tools/fraud/' },
   },
   {
     id: 'romance-officer-dm',
@@ -331,7 +331,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'To move somewhere more private, away from the site that could spot him and stop him.',
       },
     ],
-    source: { label: 'AARP: Online romance scams', url: 'https://www.aarp.org/money/scams-fraud/romance/' },
+    source: { label: 'Online romance scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/romance/' },
   },
   // bank: costco-loyalty-winner
   {
@@ -361,7 +361,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'The site is maplemart-winners.example, not Maple Mart’s own website.',
       },
     ],
-    source: { label: 'AARP: Sweepstakes scams', url: 'https://www.aarp.org/money/scams-fraud/sweepstakes/' },
+    source: { label: 'Sweepstakes scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/sweepstakes/' },
   },
   // Krishna (8f415eb friend-or-fraud): a real case number, the wrong kind of code
   {
@@ -398,7 +398,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'They did, and it isn’t in your contacts. The number on your bill is one you can check yourself.',
       },
     ],
-    source: { label: 'AARP: SIM swapping', url: 'https://www.aarp.org/money/scams-fraud/sim-swapping/' },
+    source: { label: 'SIM swapping (AARP)', url: 'https://www.aarp.org/money/scams-fraud/sim-swapping/' },
   },
   {
     id: 'bank-app-purchase',
@@ -427,7 +427,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'Nothing new. If the purchase isn’t yours, it sends you to your own app or card, details you already trust.',
       },
     ],
-    source: { label: 'AARP: Bank impersonation scams', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
+    source: { label: 'Bank impersonation scams (AARP)', url: 'https://www.aarp.org/money/scams-fraud/bank-impersonation-fake-text-messages-emails-calls/' },
   },
   // Krishna (8f415eb friend-or-fraud): a receipt that asks for nothing
   {
@@ -457,7 +457,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'You switched these texts on yourself, and it matches the trip you took yesterday.',
       },
     ],
-    source: { label: 'AARP: Toll road scam texts', url: 'https://www.aarp.org/money/scams-fraud/toll-road-texts/' },
+    source: { label: 'Toll road scam texts (AARP)', url: 'https://www.aarp.org/money/scams-fraud/toll-road-texts/' },
   },
   // bank: remote-task-job-text
   {
@@ -486,7 +486,7 @@ export const SCENARIOS: Scenario[] = [
         note: 'The sender, and it moves you to another app and another number, away from any company you can check.',
       },
     ],
-    source: { label: 'AARP: Fake job offers', url: 'https://www.aarp.org/money/scams-fraud/online-job-search/' },
+    source: { label: 'Fake job offers (AARP)', url: 'https://www.aarp.org/money/scams-fraud/online-job-search/' },
   },
   // bank: mom-call-me-flights
   {

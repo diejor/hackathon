@@ -315,10 +315,11 @@ export default function ScamOrNot() {
                 </ul>
                 {s.source && (
                   <p className="son-source">
+                    Learn more:{' '}
                     <a href={s.source.url} target="_blank" rel="noopener noreferrer">
-                      Learn more: {s.source.label}
-                      <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+                      {s.source.label}
                       <span className="sr-only"> (opens in a new tab)</span>
+                      <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
                     </a>
                   </p>
                 )}
