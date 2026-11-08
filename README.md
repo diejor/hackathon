@@ -1,106 +1,169 @@
 # SafeSense
 
-Scam training that knows you: three short games build your scam profile, you practise the scam that
-would most likely get you as a safe drill text on your own phone, then talk it through with a coach.
-The app lives in [`safe-signal/`](safe-signal/README.md) (Next.js). Its coach at `/coach` is the Help Bot
-from this repo's Security Arcade (`web/src/bot` on the SpacetimeDB module in `spacetimedb/`), which
-serves as the coach backend.
+**Pause. Check. Then act.** A calm place to practice spotting scams, and to ask when something doesn't feel right.
 
-# Security Arcade
+**Live:** https://diejor.github.io/hackathon/ (works on a phone; no sign-up).
+The team's earlier prototype, the Security Arcade, is still up at https://diejor.github.io/hackathon/arcade/.
 
-Phone-first multiplayer security games (T-Mobile security hackathon). A web app (Vite + TypeScript,
-games in [Phaser](https://phaser.io/)) on a SpacetimeDB backend. Players get together Kahoot-style:
-one creates a room, others scan its QR code or type the 4-character code, then they play real-time
-mini-games. Live: https://diejor.github.io/hackathon/
+## What it is
 
-## Quick start (web)
+SafeSense is for people who feel unsure about scams, often older adults. It has no scores to chase,
+no timers and no pressure, and it has a text-size control.
+
+- **Three short games.** *Fraudle* (guess the scam word, with a one-line lesson each time), *Scam or Not?*
+  (real-looking texts: decide, then see why) and *The Long Con*, where **you play the scammer** and see how a
+  careful person spots each move. The Long Con is being rebuilt on teammate Krishna's BadScam game engine.
+  The people and companies in the games are made up.
+- **The SafeSense assistant** is an AI. Type a message that worries you, say it, or add a screenshot. It
+  replies with a verdict, the signs to notice and what to do next. It remembers what you struggle with in
+  the games and coaches you on it. It gives guidance, not guarantees.
+- **Your progress.** Points, "signs you can spot" and "worth practicing". There are no accounts: a recovery
+  key carries your progress to another device.
+- **SafeSense by text.** Forward a suspicious text over iMessage (via Photon) and get the same calm verdict
+  back. Honest limit: on Photon's free shared line only **one registered sender** can reach it, so for the
+  demo that's a teammate's iPhone; judges can't text it themselves. A dedicated line removes the limit.
+
+SafeSense is meant as a companion to T-Mobile's Scam Shield: Scam Shield blocks quietly at the network
+level, and SafeSense teaches people and covers what reaches them anyway (screenshots from any app,
+iMessage). It is not affiliated with or endorsed by T-Mobile.
+
+## Hackathon tracks (HackUTD 2026)
+
+| Track | How SafeSense addresses it |
+| --- | --- |
+| **T-Mobile Safe Signal** | Teaches people to recognise scams through practice instead of fear, and gives a second opinion on anything that slips past network filtering. Positioned as a Scam Shield companion. |
+| **Best Use of Photon API** | "SafeSense by text": Photon 2.0 signed webhooks are verified (HMAC-SHA256, Standard Webhooks) and handled inside the database, replies go out through Photon's REST API, and `LINK <code>` joins a phone to the same memory as the web chat. |
+| **MLH Best Use of Gemini API** | Gemini (`gemini-3.5-flash`, through the OpenAI-compatible API) reads text and screenshots (vision), answers in a strict JSON schema (verdict, signs, next steps, memory facts), uses each person's game history to coach them, treats pasted content as data with prompt-injection rules, and falls back to `gemini-3.5-flash-lite` when the main model is overloaded. |
+
+## Architecture
+
+```
+ Phone or laptop browser                         iPhone (Messages)
+ safesense/ React app on GitHub Pages                  │ text SafeSense
+   games ── log_activity ──┐                           ▼
+   assistant ── bot_send ──┤ WebSocket      Photon 2.0 ── signed webhook ──┐
+                           ▼                                               ▼
+        SpacetimeDB on Maincloud, db safesense-1aa18263 (TypeScript module, spacetimedb-ts/)
+          private tables + per-user views · procedures (AI calls) · HTTP route /photon
+                           │ outbound HTTPS
+                           ▼
+              Google Gemini API            Photon REST API (replies)
+```
+
+There is no other server: the database is the backend. Identity is the SpacetimeDB identity whose token
+is kept in the browser (that token is the recovery key).
+
+| Folder | What's in it |
+| --- | --- |
+| `safesense/` | The product's frontend: React 19 + Vite, hash router. Designer's files plus our additions in `src/lib`, `src/components`, `src/content` |
+| `spacetimedb-ts/` | The TypeScript SpacetimeDB module: `bot.ts` (assistant, memory, Forget me), `ai.ts` (Gemini client, fallback, rate limits), `activity.ts` (game history, coaching summary), `photon.ts` (iMessage), `crypto.ts` (HMAC/Ed25519 via `@noble`), `schema.ts` (all tables) |
+| `web/src/bot/` | Assistant data layer (connection, subscriptions, voice) that SafeSense uses through `safesense/src/lib/stdb.ts` |
+| `docs/` | [`PLAN.md`](docs/PLAN.md) (product, decisions, roadmap), [`PHOTON.md`](docs/PHOTON.md) (iMessage setup), `content/messages.json` (scam message bank, fictional brands), `research/` |
+| `tools/` | `phone.mjs` (headless phone tester), `photon-sim.mjs` (simulated Photon webhooks) |
+| `scripts/` | Publish, key and deploy scripts (below) |
+| Legacy | `spacetimedb/` (C# module the TS one was ported from), `web/` (Security Arcade UI), `client/` (Unity client). See [`docs/LEGACY.md`](docs/LEGACY.md) |
+
+| Branch | Role |
+| --- | --- |
+| `safesense` | The product; all current work |
+| `design-vendor` | The designer's files as delivered, merged into `safesense/` |
+| `combined`, `main` | Archives (Krishna's earlier Next.js app; the Security Arcade) |
+
+## Privacy and safety
+
+- **What's stored:** chat messages, what the assistant remembers about you, and your game history, in
+  **private tables**. Each person sees only their own rows through per-user views (`my_messages`,
+  `my_facts`, `my_activity`). Identity comes only from the server (`ctx.sender`).
+- **Gemini reads your messages** in order to answer. Screenshots are sent to the model and **never stored**;
+  only a short note of what they said is kept.
+- **Forget me** deletes your chat, the assistant's memory, your game history and any linked phone.
+- **Prompt injection:** pasted text and screenshots are wrapped in delimiters and treated as data. Text
+  that tries to instruct an AI is flagged to you as suspicious; an ordinary scam is still judged as a scam.
+  Memory facts are filtered so secrets aren't saved.
+- **Limits:** one AI call per person every 3 seconds on the web, 8 per minute per texting sender. Photon
+  and Discord webhooks are signature-checked, deduplicated and rejected after 5 minutes.
+- **Games use fictional brands**, `.example` domains and 555 numbers. No messages or money are ever sent.
+- **Practice texts** (a fake scam text to your own phone) are planned, opt-in only, with STOP honoured.
+
+## Run it locally
+
+Prerequisites: Node 20+, the [SpacetimeDB CLI](https://spacetimedb.com/install) 2.14.x, and a Gemini API key.
 
 ```sh
-cd web && npm install
-npm run dev                      # http://127.0.0.1:5173 (uses the shared Maincloud db)
-# against a local server:        http://127.0.0.1:5173/?server=ws://127.0.0.1:3001&db=hackathon-local
-scripts/deploy-pages.sh          # build + publish to GitHub Pages
+spacetime start --listen-addr 127.0.0.1:3001     # local server (CLI nickname `local` points here)
+scripts/set-key.sh AI_API_KEY                    # hidden prompt; saved to the gitignored .env
+scripts/publish-ts.sh                            # builds spacetimedb-ts/ and publishes db safesense-local
+cd safesense && npm ci
+VITE_STDB_SERVER=ws://127.0.0.1:3001 VITE_STDB_DB=safesense-local npx vite
 ```
 
-## How it fits together
+Any build also accepts `?server=...&db=...` in the URL. Other module settings (`AI_MODEL`,
+`AI_FALLBACK_MODEL`, `PHOTON_WEBHOOK_SECRET`, ...) are listed in [`docs/PLAN.md`](docs/PLAN.md) §5 and set the
+same way with `scripts/set-key.sh NAME`. Never commit or print secrets.
 
-- `spacetimedb/Lib.cs` — server: lobby (rooms, members, ready-up, host picks a game, start).
-  Games add their own tables keyed by `RoomId`.
-- `web/src/lobby.ts` — client state + actions (connection, views, reducers).
-- `web/src/ui.ts` — lobby screens (plain DOM). `web/src/style.css` — magenta phone-first styles.
-- `web/src/games/` — Phaser games, loaded only when a game starts (keeps the lobby ~45 KB gzipped).
-  Register a scene in `games/index.ts` under the same id as in `GAMES` (`lobby.ts`).
-- `web/src/module_bindings/` — generated; regenerate with `scripts/gen-web.sh` after server changes.
-- `client/` — the earlier Unity 6.3 + Rish client (same server, kept for reference; not the main app).
+**Deploy** (project lead only):
+- Module: `STDB_TS_SERVER=maincloud STDB_TS_DB=safesense-1aa18263 scripts/publish-ts.sh` (never `-c` on Maincloud).
+- Site: in `safesense/`, `VITE_STDB_SERVER=wss://maincloud.spacetimedb.com VITE_STDB_DB=safesense-1aa18263 npm run build`;
+  assemble `safesense/dist` plus the old arcade under `arcade/`, then `scripts/deploy-pages.sh <dir>`.
+  Always pass the directory: with no argument the script deploys the legacy arcade to the root.
 
-### Security model (worth mentioning in the pitch)
-- Room/member tables are **private**; clients only see their own room via per-user **views**
-  (`my_room`, `my_room_members`) — you can't list rooms or scrape codes.
-- Joining needs the code; **failed join attempts are rate-limited** per identity (8/min).
-- All authorization uses `ctx.Sender`; the scheduled cleanup reducer refuses client calls.
-- Embedding: the game only talks to its parent page when the iframe URL names it exactly
-  (`?parentOrigin=https://host.example`); no `*` origins in either direction.
+**Testing tools:**
+- `node tools/phone.mjs <url> <outDir> <profileDir> <port> wait:4000 shot:home ...` drives headless Chromium as a
+  phone (touch, typing, file upload, screenshots). Use a fresh profile dir per simulated person.
+- `node tools/photon-sim.mjs safesense-local --checks` sends signed, unsigned, tampered, stale and duplicate
+  webhooks to a local db; with a message instead of `--checks` it runs one bot turn. Use a fake `whsec_` secret
+  and never point it at Maincloud. Details in [`docs/PHOTON.md`](docs/PHOTON.md).
 
-## Help Bot (scam checker + coach)
+## Facts we cite
 
-Open the chat from the home-screen card or with `#bot` in the URL (add `demo=1` for a "Load demo game history" button).
-Code: `spacetimedb/Bot.cs`, `spacetimedb/Activity.cs`, `web/src/bot/`.
+- In 2024, people reported **$470 million** in losses to scams that started with a text. The top five were fake
+  package delivery, fake jobs, fake fraud alerts, unpaid tolls and wrong numbers.
+  [FTC Data Spotlight, April 2025](https://www.ftc.gov/news-events/data-visualizations/data-spotlight/2025/04/top-text-scams-2024)
+- Malwarebytes tracked "more than 1,000 closely related campaign templates" in a carrier rewards-points texting
+  scam, monitored since early May 2026 (no victim or loss count given).
+  [Malwarebytes, 2026-09-17](https://www.malwarebytes.com/blog/threat-intel/2026/09/t-mobile-rewards-points-expiry-texts-are-a-phishing-scam)
+- In a smishing campaign targeting US telecom customers, the scammers used genuine carrier links, with copies
+  aimed at AT&T and Verizon customers.
+  [Whalebone](https://www.whalebone.io/post/tracking-a-smishing-campaign-targeting-us-telecom-customers)
 
-**Games: log what the player did** so the bot can coach them. Call the reducer `log_activity(game, kind, details)`:
-- `game`, `kind`: slugs (`a-z 0-9 - _`, ≤ 32 chars), e.g. `friend-or-fraud`. Recommended kinds: `answer_correct`, `answer_wrong`, `round_done`.
-- `details`: short JSON text (≤ 500 chars), e.g. `{"item":"usps-sms","tactic":"urgency","chose":"friend"}`. Include `tactic` on answers: the bot counts missed tactics.
-- Owner and time come from the server (`ctx.Sender`, `ctx.Timestamp`). The last 200 events per player are kept.
+## Roadmap
 
-```ts
-conn.reducers.logActivity({ game: "friend-or-fraud", kind: "answer_wrong",
-  details: JSON.stringify({ item: "usps-sms", tactic: "fake-delivery", chose: "friend" }) });
-```
+For now, points are computed in the browser from the activity stored in SpacetimeDB, and there are no
+unlockable games yet. Next, in order:
 
-`web/src/bot/bot.ts` API:
-- `onChange(fn)`: re-render on any change; `ready()`: connected and subscribed.
-- `messages()`, `facts()`, `activity()`: the player's chat, remembered facts, game events (oldest first).
-- `send(text, image?)`: ask the bot (`bot_send`); `state.sending` / `state.error` show progress.
-- `forgetMe()`: delete everything; `seedDemo()`: replace the player's demo game history (~15 events).
+1. **Server-side profile:** a `player_profile` table and `my_profile` view, with points awarded on the server
+   in `log_activity` so the web and iMessage count the same.
+2. **Optional sign-in with SpacetimeAuth** (email, Google), with "bring my progress" from the anonymous identity.
+3. **Unlockable games:** a catalog with point costs and more games.
+4. **Partner insights:** anonymous aggregates only (which tricks still work, whether practice lowers the miss
+   rate), with groups under 5 hidden.
+5. **Practice texts over Photon** (Krishna's drill idea), opt-in only, plus a dedicated line so anyone can text SafeSense.
 
-**iMessage (Photon Beta):** `spacetimedb/Photon.cs` serves a signed webhook at `/v1/database/<db>/route/photon`
-(env `PHOTON_WEBHOOK_SECRET`, `PHOTON_API_KEY`, optional `PHOTON_PROJECT_ID`, `PHOTON_BASE_URL`; see `.env.example`).
-It runs the same bot pipeline as the web and replies in plain text. Senders get their own pseudo identity until they text
-`LINK <code>` (Help Bot → ⋯ → Link iMessage); after that, their chats share the player's history and show up in the web chat as "via iMessage".
-Other commands: `UNLINK`, `FORGET ME`. Set the bot's number in `web/src/bot/config.ts`.
+## Team and credits
 
-**Discord (HTTP interactions):** `spacetimedb/Discord.cs` serves the app's Interactions Endpoint at `/v1/database/<db>/route/discord`
-(env `DISCORD_PUBLIC_KEY`, optional `DISCORD_APPLICATION_ID`, `DISCORD_API_BASE`). Every request's Ed25519 signature is checked
-(`spacetimedb/Ed25519.cs`, pure C#, ~70 ms). Commands: `/check message: screenshot:`, the message menu **Apps → Check with Help Bot**,
-`/link <code>` (Help Bot → ⋯ → Link Discord) and `/unlink`. Checks are deferred: a scheduled procedure runs the bot and edits in one
-ephemeral embed (verdict, red flags, what to do; no clickable links). Register the commands with `scripts/discord-register.sh`
-(needs `DISCORD_BOT_TOKEN` in `.env`; the token is never sent to the database) and set `DISCORD_INSTALL_URL` in `web/src/bot/config.ts`.
+<!-- TODO(Diego): confirm full names, spellings and roles before submitting; fill in the designer's name. -->
 
-**Privacy:** chat messages, memory facts and game activity live in private tables; each player sees only their own
-rows through per-user views (`my_messages`, `my_facts`, `my_activity`), and screenshots are never stored.
-"Forget me" deletes the player's messages, facts and game activity.
+Made by the SafeSense team at HackUTD 2026:
 
-## Setup notes
+- **Diego Rodrigues**: project lead; assistant and backend.
+- **Krishna** <!-- TODO(Diego): Krishna's full name -->: game design (BadScam / The Long Con), scam research, Photon.
+- **[designer name]** <!-- TODO(Diego): designer's name -->: SafeSense design.
 
-- **Layout:** `spacetimedb/` = SpacetimeDB C# server module (.NET 8 + `wasi-experimental` workload). `client/` = Unity 6000.3.28f1 project (WebGL target).
-- **Shared server:** Maincloud db `hackathon-1aa18263` (`wss://maincloud.spacetimedb.com`), the default in `GameManager.cs`. Only one person should publish to it at a time; `-c` wipes data for everyone.
-- **Local server:** `127.0.0.1:3001`, db `hackathon-local`. Run `spacetime start --listen-addr 127.0.0.1:3001` (or point your `local` nickname elsewhere with `spacetime server edit local --url ...`).
-- **Scripts:** `scripts/publish.sh` (local), `scripts/publish-cloud.sh` (Maincloud), `scripts/gen-unity.sh` (regenerate C# bindings into `client/Assets/autogen`), `scripts/serve-webgl.sh` (serve a WebGL build on :8081). They publish the *unoptimized* wasm via `-b` because some `wasm-opt` versions (binaryen v133) emit wasm the spacetime CLI can't parse. They expect .NET in `~/.dotnet` — edit `DOTNET_ROOT` if yours is elsewhere.
-- **After changing tables/reducers:** publish (local and/or cloud), then `scripts/gen-web.sh` (and `scripts/gen-unity.sh` if you still use the Unity client).
-- **Scene:** `Assets/Scenes/Main.unity` is generated by **Hackathon → Rebuild Main Scene** (also sets the WebGL template, build scene list, product name). Re-run it rather than hand-editing the scene.
-- **WebGL:** **Hackathon → Build WebGL** → `client/Builds/WebGL` (uses the phone-friendly `Assets/WebGLTemplates/Mobile` template). Test locally with `scripts/serve-webgl.sh` and open `http://localhost:8081/?server=ws://127.0.0.1:3001&db=hackathon-local`.
-- **Public build:** https://diejor.github.io/hackathon/ (GitHub Pages, `gh-pages` branch). Deploy with `scripts/deploy-pages.sh`.
-- **URL parameters:** `room` (auto-join, used by the QR), `name`, `server`, `db`, `joinUrl` (base URL put in QR codes, e.g. your embedding page), `parentOrigin` (enables the iframe bridge).
-- **Names:** server reducers/tables are snake_cased: `JoinRoom` → `join_room`, `RoomMember` → `room_member` (for `spacetime call`/`sql`).
-- **Editor automation (optional):** MCP for Unity (`com.coplaydev.unity-mcp` v10.3.0). In Unity: Ctrl+Shift+M → Transport "HTTP Local" → Start Server; point your MCP client at `http://127.0.0.1:8080/mcp` (e.g. `claude mcp add --transport http UnityMCP http://127.0.0.1:8080/mcp`).
+Built with [Claude Code](https://claude.com/claude-code). Powered by [SpacetimeDB](https://spacetimedb.com),
+[Google Gemini](https://ai.google.dev) and [Photon](https://photon.codes). Icons: [Lucide](https://lucide.dev).
 
-## Unity/Rish gotchas we hit (legacy client)
+## Legacy
 
-- Rish elements **ignore pointer input unless an ancestor sets `--pointer-detection: rect`** in USS
-  (see the top of `app.uss`). A native (non-Rish) UI Toolkit element in between breaks inheritance.
-- Don't use UI Toolkit's `ScrollView` on WebGL: trackpad ticks jump ~100px, the wheel overshoots and
-  snaps back, and drags hitch when they start on a button. Use our `Scroller` (`Components.cs`) inside
-  a `overflow: hidden` viewport instead.
-- Pass callbacks to `AbstractButton` as `Action`s (cast method groups: `(Action)Press`).
-- `Label`/`StyleBackground` clash between `RishUI` and `UnityEngine.UIElements` — alias them.
-- `link.xml` keeps Rish/Roots/Sappy and `UnityEngine.UIElementsModule` from being stripped (Rish reflects into UI Toolkit internals).
-- Roots' editor code needs `com.unity.collab-proxy` (for `Unity.Plastic.Newtonsoft.Json`).
+<details>
+<summary>Security Arcade, Help Bot (C#) and Unity client notes</summary>
+
+Before SafeSense, this repo held the **Security Arcade** (multiplayer phone games in Phaser on a C#
+SpacetimeDB module, db `hackathon-1aa18263`, still live at `/arcade/`) and a Unity 6 + Rish client. The
+assistant started there as the "Help Bot" and was ported to TypeScript with the same names.
+
+Everything still useful is in [`docs/LEGACY.md`](docs/LEGACY.md): the arcade's lobby and security model,
+the `log_activity` contract and `bot.ts` API, Discord setup, C# build scripts, and the Unity/Rish gotchas.
+The most common trap: the C# scripts publish the **unoptimized** wasm (`-b`) because system `wasm-opt`
+(binaryen v133) emits wasm the spacetime CLI can't parse.
+
+</details>
