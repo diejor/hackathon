@@ -37,7 +37,7 @@ export default function Chat() {
   }, [])
 
   // Desktop, with a conversation: the card is as tall as the side panel (chat.css), which can be taller than
-  // the screen. Open it scrolled down once, so the latest messages and the text box are what's on screen.
+  // the screen. Open it scrolled down once (only if needed), so the latest messages and the text box are on screen.
   const scrolledDown = useRef(false)
   const hasMessages = bot.messages.length > 0
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Chat() {
     scrolledDown.current = true
     if (!window.matchMedia('(min-width: 961px)').matches) return
     requestAnimationFrame(() =>
-      document.querySelector('.chat-card .composer')?.scrollIntoView({ block: 'end', behavior: 'instant' }),
+      document.querySelector('.chat-card .composer')?.scrollIntoView({ block: 'nearest', behavior: 'instant' }),
     )
   }, [hasMessages, baseHeight])
 

@@ -506,11 +506,12 @@
   }
 }
 
-/* Desktop with a conversation: follow the side panel all the way down (Diego: use the space beside the long
-   right column). The page opens scrolled to the text box (Chat.tsx), and the messages fill the card. */
+/* Desktop with a conversation: the card grows with the messages until it is level with the side panel (Diego:
+   use the space beside the long right column, but only as needed), then the messages scroll. If it is taller
+   than the screen, the page opens scrolled just enough to show the text box (Chat.tsx). */
 @media (min-width: 961px) {
   .chat-card:has(.chat-scroll:not(.chat-scroll-empty)) {
-    min-height: var(--chat-base, 560px);
-    max-height: var(--chat-base, none);
+    min-height: 0; /* only as tall as the messages need... */
+    max-height: max(560px, var(--chat-base, 560px)); /* ...growing until it's level with the side panel */
   }
 }
