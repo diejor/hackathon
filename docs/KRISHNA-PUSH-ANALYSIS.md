@@ -144,3 +144,16 @@ His LESSONS lines (`scenarios.js:120-132`) are good "how to spot it" texts. Cons
    - two new checks in `tools/photon-sim.mjs --checks`.
 2. **Practice texts (60 min):** as in §3.
 3. **Real test on his iPhone (30 min):** LINK, practice text, REPORT, debrief, then STOP.
+
+## Content credits
+
+These items in SafeSense come from Krishna's work on `origin/web-app` (commit `8f415eb`). The text was rewritten in our voice and rebranded to fictional companies (no real carrier is named or impersonated); no code was copied.
+
+- **Scam or Not?** (`safesense/src/content/scamOrNot.ts`), five rounds from his Friend or Fraud? quiz (`mini-games/friend-or-fraud/quiz.js`), sent by the fictional carrier "BrightLine Mobile" and toll agency "Prairie Tollway":
+  - `carrier-rewards-lookalike-host` (scam: read the web address from the right);
+  - `login-code-you-requested` (genuine);
+  - `transfer-case-code-swap` (scam: a real case number, but the code is for a password reset);
+  - `partial-refund-notice` (genuine);
+  - `toll-receipt-no-action` (genuine).
+- **Fraudle** (`safesense/src/content/fraudle.ts`): the words SMISH, SPOOF, CALLBACK, TRANSFER, URGENCY and GIFTCARD, from his Scam Wordle word list (`mini-games/scam-wordle/dictionary.js`). Clues and lessons are ours; none of the Wordle code or CSS was used.
+- **Assistant prompt** (`spacetimedb-ts/src/bot.ts`, `BotSystemPrompt`): three rules from his BadScam lessons and `T-Mobile-Scam-Research.md`: read a web address from the right; a phone number printed in a message belongs to whoever wrote it; lost service after an unrequested SIM-change or number-transfer notice means contacting the carrier from another phone right away.

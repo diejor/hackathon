@@ -191,6 +191,8 @@ export default function ScamOrNot() {
               className="guess-tracker"
               role="img"
               aria-label={`Round ${round + 1} of ${SCENARIOS.length}`}
+              // 15 rounds: a tighter gap keeps every pip on one line at 360–390px wide.
+              style={{ gap: 4, flexWrap: 'wrap' }}
             >
               {SCENARIOS.map((_, i) => (
                 <span key={i} className={`pip ${i < round + (revealed ? 1 : 0) ? 'used' : ''}`} />

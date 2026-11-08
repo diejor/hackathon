@@ -42,6 +42,8 @@ export const MESSAGE_SIGNS: Sign[] = [
   message('prize-giveaway', 'Prizes you pay for', 'A win that needs a fee or your card first.'),
   message('romance', 'Fast online romance', 'A new admirer who wants to move to another app.'),
   message('job-offer', 'Too-good-to-be-true jobs', 'Easy money offered out of the blue.'),
+  message('carrier-impersonation', 'Lookalike web addresses', 'A familiar name at the start of a link that belongs to another site.'),
+  message('account-locked-otp', 'Requests for your codes', '“Support” asking you to send them a code you were texted.'),
 ]
 
 /** A genuine message: spotting one is a strength, not a sign of a scam. */
