@@ -2498,3 +2498,14 @@ a.points-badge:hover {
     border-radius: 0;
   }
 }
+
+/* Small phones: the header already shows the points, so drop the duplicate badge and let the greeting fit
+   on one line ("Hello there!" wrapped into two big lines at 360-390px). */
+@media (max-width: 480px) {
+  .dash-greeting .points-badge {
+    display: none;
+  }
+  .dash-title {
+    font-size: clamp(1.9rem, 9vw, 2.3rem);
+  }
+}
